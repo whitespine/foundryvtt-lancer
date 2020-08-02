@@ -7,10 +7,12 @@ const stringify = require('json-stringify-pretty-compact');
 const typescript = require('typescript');
 const rollup = require('rollup');
 const rollup_ts = require('@rollup/plugin-typescript');
-// const rollup_resolve = require('@rollup/plugin-node-resolve');
+const rollup_resolve = require('@rollup/plugin-node-resolve');
 const rollup_cjs = require('@rollup/plugin-commonjs');
 const rollup_json = require('@rollup/plugin-json');
 const rollup_copy = require('rollup-plugin-copy');
+const rollup_node = require('rollup-plugin-node-polyfills');
+const rollup_replace = require('@rollup/plugin-replace');
 
 const ts = require('gulp-typescript');
 const less = require('gulp-less');
@@ -147,7 +149,10 @@ async function buildRU() {
 		plugins: [
 			rollup_ts(),
 			rollup_json(),
-			// rollup_resolve(),
+			rollup_resolve.nodeResolve({
+				browser: true,
+				mainFields: ["browser", "module", "main"]
+			}),
 			rollup_cjs({
 				transformMixedEsModules: true,
 			}),
@@ -157,6 +162,12 @@ async function buildRU() {
 					{src: 'node_modules/@mdi/font/**/*', dest: 'dist/fonts/mdi'}
 				]
 			}),
+			rollup_node(),
+			// Haackish but unfortunately rollup doesn't properly handle browser tags in package.json
+			rollup_replace({
+				"process.stderr.fd": 3,
+				"lib/rng": "lib/rng-browser"
+			})
 		]
 	});
 	return bundle.write({
