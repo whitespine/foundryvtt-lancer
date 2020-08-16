@@ -18,20 +18,21 @@ export default {
 			rollup_json(),
 			rollup_resolve.nodeResolve({
 				browser: true, // Doesn't seem to work
-				mainFields: ["browser", "module", "main"]
+				mainFields: ["browser", "module", "main"],
+				preferBuiltins: false
 			}),
 			rollup_cjs({
 				transformMixedEsModules: true,
 			}),
-			// TODO: Copy doesn't seem to be working. Config issue?
-			rollup_copy({
-				targets: [
-					{src: 'node_modules/@mdi/font/**/*', dest: 'dist/fonts/mdi'}
-				]
-			}),
 			rollup_node(),
+			// TODO: Copy doesn't seem to be working. Config issue?
+			// rollup_copy({
+				// targets: [
+					// {src: 'node_modules/@mdi/font/**/*', dest: 'dist/fonts/mdi'}
+				// ]
+			// }),
 			rollup_replace({
 				"process.stderr.fd": 3,
-				"lib/rng": "lib/rng-browser"
-			})
+				// "lib/rng": "lib/rng-browser"
+			})]
 };
