@@ -1,5 +1,5 @@
 
-import data from 'lancer-data';
+import { tags} from "machine-mind";
 import { TagData, TagDataShort } from '../interfaces';
 
 /**
@@ -10,7 +10,6 @@ import { TagData, TagDataShort } from '../interfaces';
 function findTag(id: string): TagData {
   // Only check if we actually got something.
   if(id) {
-    const tags = data.tags;
   	// Find the tag id in lancer-data
     for(let i = 0; i < tags.length; i++) {
       const t = tags[i];

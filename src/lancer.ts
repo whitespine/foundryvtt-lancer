@@ -27,13 +27,11 @@ import { LancerNPCClassSheet } from './module/item/npc-class-sheet';
 import { preloadTemplates } from './module/preloadTemplates';
 import { registerSettings } from './module/settings';
 import { renderCompactTag, renderChunkyTag, renderFullTag } from './module/item/tags';
-import * as migrations from './module/migration.js';
+import * as migrations from './module/migration';
 
 // Import JSON data
-import data from 'lancer-data';
 import { CCDataStore, setup_store, CompendiumItem } from 'machine-mind';
 import { FauxPersistor } from './module/ccdata_io';
-import { CompendiumCategory } from 'machine-mind/dist/store/compendium';
 
 /* ------------------------------------ */
 /* Initialize system                    */
@@ -166,7 +164,7 @@ Hooks.once('init', async function() {
 		return str.toUpperCase();
 	});
 
-	Handlebars.registerHelper('compendiumLookup', function(cat: CompendiumCategory, ID: string) {
+	Handlebars.registerHelper('compendiumLookup', function(cat: any /* CompendiumCategory */, ID: string) {
 		console.log(store.compendium.getItemCollection("Frames"));
 		let item = store.compendium.getReferenceByIDCareful(cat, ID);
 		return (item as CompendiumItem).Description;
