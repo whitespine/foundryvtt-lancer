@@ -13,6 +13,7 @@ const typescript = require('typescript');
 // const rollup_copy = require('rollup-plugin-copy');
 // const rollup_node = require('rollup-plugin-node-polyfills');
 // const rollup_replace = require('@rollup/plugin-replace');
+const webpack = require('webpack-stream');
 
 const ts = require('gulp-typescript');
 const less = require('gulp-less');
@@ -180,7 +181,6 @@ const tsConfig = ts.createProject('tsconfig.json', {
 // }
 
 async function buildWebpack() {
-	/*
 	return gulp
     .src("src/lancer.ts")
     .pipe(
@@ -209,7 +209,6 @@ async function buildWebpack() {
       })
     )
 	.pipe(gulp.dest("dist/"));
-	*/
 }
 
 /**
