@@ -1,5 +1,5 @@
 import { LancerPilotSheetData, LancerFrameData, LancerFrameStatsData, LancerMountData } from "../interfaces";
-import { LancerItem, LancerFrame, LancerMechWeapon } from "../item/lancer-item";
+import { LancerItem, LancerFrame, LancerMechWeapon, LancerItemData } from "../item/lancer-item";
 import { MechType } from "../enums";
 import { LancerActor } from "./lancer-actor";
 import { LancerGame } from "../lancer-game";
@@ -97,7 +97,7 @@ export class LancerPilotSheet extends ActorSheet {
         data.sp_used = 0;
 
         // Mirror items into filtered list properties
-        let sorted = categorize(data.items as LancerItem[]);
+        let sorted = categorize(data.items as unknown as LancerItemData[]);
         let sp_count = count_sp(sorted);
 
         data.sp_used = sp_count;

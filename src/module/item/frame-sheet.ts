@@ -1,5 +1,4 @@
 import { LancerItemSheet } from "./item-sheet";
-import { LancerFrame } from "./lancer-item";
 
 /**
  * Extend the generic Lancer item sheet

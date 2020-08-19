@@ -285,22 +285,26 @@ Hooks.once("init", async function () {
     /*
      * Repeat given markup with given times
      * provides @index for the repeated iteraction
+     * 
+     * TODO: Figure out how to not require ts-ignores
      */
-    // Handlebars.registerHelper("repeat", function (times: number, opts: any) {
-    //     var out = "";
-    //     var i;
+    Handlebars.registerHelper("repeat", function (times: number, opts: any) {
+        var out = "";
+        var i;
 
-    //     if (times) {
-    //         for (i = 0; i < times; i += 1) {
-    //             let data = {index: i};
-    //             out += opts.fn(this as any, { data });
-    //         }
-    //     } else {
-    //         out = opts.inverse(this as any);
-    //     }
+        if (times) {
+            for (i = 0; i < times; i += 1) {
+                let data = {index: i};
+                // @ts-ignore
+                out += opts.fn(this as any, { data });
+            }
+        } else {
+            // @ts-ignore
+            out = opts.inverse(this as any);
+        }
 
-    //     return out;
-    // });
+        return out;
+    });
 });
 
 /* ------------------------------------ */

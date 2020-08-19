@@ -131,14 +131,13 @@ export async function get_NpcFeatures_pack(): Promise<LancerNPCFeatureItemData[]
 
 // Lookups
 async function pack_lookup<T>(pack_name: string, name: string): Promise<T | null> {
-    // Get and check pack
     let pack = game.packs.get(pack_name);
     if(!pack) {
         console.warn("No such pack: ", pack_name);
         return null;
     }
 
-    // Lookup in index
+    // Lookup in indexj
     let index = await pack.getIndex();
     let found = index.find(i => i.name === name);
     if (!found) {

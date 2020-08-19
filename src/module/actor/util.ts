@@ -75,13 +75,13 @@ export async function ingest_pilot(cc_pilot: mm.Pilot): Promise<void> {
     let items = await try_lookup_pilot_items(cc_pilot);
     console.log(items);
     for (let i of items) {
-        await pilot.createOwnedItem(duplicate(i.data));
+        await pilot.createOwnedItem(duplicate(i));
     }
 
     // Deal with mounts eventually
 
     // Fixup actor name -- this might not work
-    pilot.token.update({name: cc_pilot.Name});
+    // pilot.token.update({name: cc_pilot.Name});
 }
 
 export async function give_pilot_compendium_item(
