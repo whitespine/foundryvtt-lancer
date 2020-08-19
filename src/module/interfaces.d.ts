@@ -18,6 +18,7 @@ import {
   } from './enums';
 import { EffectData } from './item/effects'
 import * as mm from 'machine-mind';
+import { MountType } from 'machine-mind';
 
 // ------------------------------------------------------
 // |       UTILITY DATA TYPES                           |
@@ -114,8 +115,14 @@ declare interface LancerMechData {
 
 // Seems like it should eventually mirror IMechLoadoutData
 declare interface LancerMechLoadoutData {
-  mounts: object[]; // TODO
+  mounts: LancerMountData[]; // TODO
   systems: LancerMechSystemData[];
+}
+
+declare interface LancerMountData {
+  secondary_mount: string; // ????
+  type: MountType;
+  weapons: LancerMechWeaponItemData[];
 }
 
 // ------- Pilot data ----------------------------------
@@ -130,11 +137,11 @@ declare interface LancerPilotStatsData {
 }
 
 // Stripped down version of IPilotLoadoutData, that instead uses IDs. Honestly, probably better done this way
-declare interface LancerPilotLoadoutData {
-  armor: string;      // ID of armor Item
-  weapons: string[];  // IDs of weapon Items
-  gear: string[];     // IDs of gear Items
-}
+// declare interface LancerPilotLoadoutData {
+  // armor: string;      // ID of armor Item
+  // weapons: string[];  // IDs of weapon Items
+  // gear: string[];     // IDs of gear Items
+// }
 
 
 // Kind of like IPilotData. Lots of loss here, but dunno how much we care about
@@ -149,7 +156,7 @@ declare interface LancerPilotSubData {
   background: string;
   history: string;
   stats: LancerPilotStatsData;
-  loadout: LancerPilotLoadoutData;
+  // loadout: LancerPilotLoadoutData;
 }
 
 // Ditto above
@@ -297,6 +304,7 @@ declare interface LancerSkillData {
 
 declare interface LancerSkillItemData extends LancerItemData {
   data: LancerSkillData;
+  type: "skill";
 }
 
 declare interface LancerSkillSheetData extends ItemSheetData {
@@ -319,6 +327,7 @@ declare interface LancerTalentData {
 
 declare interface LancerTalentItemData extends LancerItemData {
   data: LancerTalentData;
+  type: "talent";
 }
 
 declare interface LancerTalentSheetData extends ItemSheetData {
@@ -337,6 +346,7 @@ declare interface LancerCoreBonusData {
 
 declare interface LancerCoreBonusItemData extends LancerItemData {
   data: LancerCoreBonusData;
+  type: "core_bonus";
 }
 
 declare interface LancerCoreBonusSheetData extends ItemSheetData {
@@ -358,6 +368,7 @@ declare interface LancerLicenseData {
 
 declare interface LancerLicenseItemData extends LancerItemData {
   data: LancerLicenseData;
+  type: "license";
 }
 
 declare interface LancerLicenseSheetData extends ItemSheetData {
@@ -382,6 +393,7 @@ declare interface LancerPilotArmorData extends LancerCompendiumItemData, LancerP
 
 declare interface LancerPilotArmorItemData extends LancerItemData {
   data: LancerPilotArmorData;
+  type: "pilot_armor";
 }
 
 declare interface LancerPilotArmorSheetData extends ItemSheetData {
@@ -399,6 +411,7 @@ declare interface LancerPilotWeaponData extends LancerCompendiumItemData, Lancer
 
 declare interface LancerPilotWeaponItemData extends LancerItemData {
   data: LancerPilotWeaponData;
+  type: "pilot_weapon";
 }
 
 declare interface LancerPilotWeaponSheetData extends ItemSheetData {
@@ -414,6 +427,7 @@ declare interface LancerPilotGearData extends LancerCompendiumItemData, LancerPi
 
 declare interface LancerPilotGearItemData extends LancerItemData {
   data: LancerPilotGearData;
+  type: "pilot_gear";
 }
 
 declare interface LancerPilotGearSheetData extends ItemSheetData {
@@ -463,6 +477,7 @@ declare interface LancerFrameData extends LancerCompendiumItemData, LancerLicens
 
 declare interface LancerFrameItemData extends LancerItemData {
   data: LancerFrameData;
+  type: "frame";
 }
 
 declare interface LancerFrameSheetData extends ItemSheetData {
@@ -477,6 +492,7 @@ declare interface LancerMechSystemData extends LancerLicensedItemData, LancerMec
 
 declare interface LancerMechSystemItemData extends LancerItemData {
   data: LancerMechSystemData;
+  type: "mech_system";
 }
 
 declare interface LancerMechSystemSheetData extends ItemSheetData {
@@ -496,6 +512,7 @@ declare interface LancerMechWeaponData extends LancerLicensedItemData, LancerMec
 
 declare interface LancerMechWeaponItemData extends LancerItemData {
   data: LancerMechWeaponData;
+  type: "mech_weapon";
 }
 
 declare interface LancerMechWeaponSheetData extends ItemSheetData {
@@ -538,6 +555,7 @@ declare interface LancerNPCClassData extends LancerCompendiumItemData {
 
 declare interface LancerNPCClassItemData extends LancerItemData {
   data: LancerNPCClassData;
+  type: "npc_class";
 }
 
 declare interface LancerNPCClassSheetData extends ItemSheetData {
@@ -553,6 +571,7 @@ declare interface LancerNPCTemplateData extends LancerCompendiumItemData{
 
 declare interface LancerNPCTemplateItemData extends LancerItemData {
   data: LancerNPCTemplateData;
+  type: "npc_template";
 }
 
 declare interface LancerNPCTemplateSheetData extends ItemSheetData {
@@ -578,6 +597,7 @@ declare interface LancerNPCFeatureData extends LancerCompendiumItemData{
 
 declare interface LancerNPCFeatureItemData extends LancerItemData {
   data: LancerNPCFeatureData;
+  type: "npc_feature";
 }
 
 declare interface LancerNPCFeatureSheetData extends ItemSheetData {

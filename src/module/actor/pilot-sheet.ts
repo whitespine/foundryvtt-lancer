@@ -99,7 +99,7 @@ export class LancerPilotSheet extends ActorSheet {
     data.sp_used = 0;
 
     // Mirror items into filtered list properties
-    let sorted = categorize(data.items);
+    let sorted = categorize(data.items as LancerItem[]);
     let sp_count = count_sp(sorted);
 
     data.sp_used = sp_count;

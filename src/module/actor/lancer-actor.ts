@@ -24,7 +24,7 @@ export const DEFAULT_MECH = {
       tech_attack: 0,
 }
 
-export function lancerActorInit(data: any) {
+export function lancerActorInit(data: any) { // Some subtype of ActorData
   console.log(`${lp} Initializing new ${data.type}`);
   if (data.type === "pilot" || data.type === "npc") {
     const mech = {...DEFAULT_MECH };
