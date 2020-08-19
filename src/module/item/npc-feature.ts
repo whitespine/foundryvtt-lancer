@@ -1,5 +1,5 @@
 import { LancerNPCFeatureData, RangeData, NPCDamageData } from "../interfaces";
-import { NPCFeatureType } from "../enums";
+import { NpcFeatureType } from "machine-mind";
 
 export const NPCFeatureIcons = {
   'Other': 'npc_feature.svg',
@@ -12,18 +12,18 @@ export const NPCFeatureIcons = {
 
 declare interface LancerNPCReactionData extends LancerNPCFeatureData {
   trigger: string;
-  feature_type: NPCFeatureType.Reaction;
+  feature_type: NpcFeatureType.Reaction;
 }
 
 declare interface LancerNPCSystemData extends LancerNPCFeatureData {
-  feature_type: NPCFeatureType.System;
+  feature_type: NpcFeatureType.System;
 }
 
 declare interface LancerNPCTechData extends LancerNPCFeatureData {
   tech_type: string;
   accuracy?: number[];
   attack_bonus?: number[];
-  feature_type: NPCFeatureType.Tech;
+  feature_type: NpcFeatureType.Tech;
 }
 
 // -------- NPC WEAPONS -------------------------------------
@@ -35,7 +35,7 @@ declare interface LancerNPCWeaponData extends LancerNPCFeatureData {
   range: RangeData[];
   damage: NPCDamageData[];
   on_hit: string;
-  feature_type: NPCFeatureType.Weapon;
+  feature_type: NpcFeatureType.Weapon;
 }
 
 

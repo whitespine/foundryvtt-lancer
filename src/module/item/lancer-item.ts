@@ -13,54 +13,58 @@ import {  LancerSkillItemData,
           LancerNPCTemplateItemData,
           LancerNPCClassItemData} from '../interfaces'
 import { LANCER } from '../config'
-import { NPCFeatureType } from '../enums';
+import { NpcFeatureType } from 'machine-mind';
 const lp = LANCER.log_prefix;
+
+export type LancerItemType = "skill" | "talent" | "core_bonus" | "license" | "pilot_armor" | "pilot_weapon" | "pilot_gear" | "frame" | "mech_weapon" | "mech_system" | "npc_class" | "npc_template" | "npc_feature";
 
 export function lancerItemInit(data: any) {
   console.log(`${lp} Initializing new ${data.type}`);
   let img: string = 'systems/lancer/assets/icons/';
-  if (data.type === 'skill') {
+
+  let type = data.type as LancerItemType | "_doesnotmatter_justhelpstypecheck";
+  if (type == "skill") {
     img += 'skill.svg';
   }
-  else if (data.type === 'talent') {
+  else if (type === 'talent') {
     img += 'talent.svg';
   }
-  else if (data.type === 'core_bonus') {
+  else if (type === 'core_bonus') {
     img += 'corebonus.svg';
   }
-  else if (data.type === 'license') {
+  else if (type === 'license') {
     img += 'license.svg';
   }
-  else if (data.type === 'pilot_armor') {
+  else if (type === 'pilot_armor') {
     img += 'shield_outline.svg';
   }
-  else if (data.type === 'pilot_weapon') {
+  else if (type === 'pilot_weapon') {
     img += 'weapon.svg';
   }
-  else if (data.type === 'pilot_gear') {
+  else if (type === 'pilot_gear') {
     img += 'generic_item.svg';
   }
-  else if (data.type === 'frame') {
+  else if (type === 'frame') {
     img += 'frame.svg';
   }
-  else if (data.type === 'mech_weapon') {
+  else if (type === 'mech_weapon') {
     img += 'weapon.svg';
   }
-  else if (data.type === 'mech_system') {
+  else if (type === 'mech_system') {
     img += 'system.svg';
     // TODO: set default system type
   }
-  else if (data.type === 'npc_class') {
+  else if (type === 'npc_class') {
     img += 'npc_class.svg';
   }
-  else if (data.type === 'npc_template') {
+  else if (type === 'npc_template') {
     img += 'npc_template.svg';
   }
-  else if (data.type === 'npc_feature') {
+  else if (type === 'npc_feature') {
     img += 'trait.svg';
     mergeObject(data, {
       // Default new NPC features to traits
-      "data.feature_type": NPCFeatureType.Trait
+      "data.feature_type": NpcFeatureType.Trait
     })
   }
   else {
@@ -88,6 +92,11 @@ export class LancerItem extends Item {
     if (this.data.type !== "skill") return 0;
     return (this.data as LancerSkillItemData).data.rank * 2;
   }
+}
+
+// Narrow down our types
+export interface LancerItemData extends ItemData {
+  type: LancerItemType;
 }
 
 export class LancerSkill extends LancerItem {

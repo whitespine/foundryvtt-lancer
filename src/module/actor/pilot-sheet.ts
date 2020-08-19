@@ -4,6 +4,7 @@ import { MechType } from '../enums';
 import { LancerActor } from './lancer-actor';
 import { LancerGame } from '../lancer-game';
 import { LANCER } from '../config';
+import { categorize, count_sp } from '../item/util';
 const lp = LANCER.log_prefix;
 
 // TODO: should probably move to HTML/CSS
@@ -96,32 +97,33 @@ export class LancerPilotSheet extends ActorSheet {
    */
   _prepareItems(data: LancerPilotSheetData) {
     data.sp_used = 0;
+
     // Mirror items into filtered list properties
-    const accumulator = {};
-    for (let item of data.items) {
-      if (accumulator[item.type] === undefined)
-        accumulator[item.type] = [];
-      accumulator[item.type].push(item);
-      if (item.type === 'mech_system') {
-        data.sp_used += (item as any).data.sp;
-      }
+    let sorted = categorize(data.items);
+    let sp_count = count_sp(sorted);
+
+    data.sp_used = sp_count;
+    data.skills = sorted.skills
+    data.talents = sorted.talents;
+    data.licenses = sorted.licenses;
+    data.core_bonuses = sorted.core_bonuses;
+    data.pilot_loadout = {
+      gear: sorted.pilot_gear,
+      weapons: sorted.pilot_weapons,
+      armor: sorted.pilot_armor
+    };
+
+    // Only take one frame
+    if(sorted.frames.length) {
+      data.frame = sorted.frames[0];
+    } else {
+      data.frame = undefined;
     }
 
-    data.skills = accumulator['skill'] || [];
-    data.talents = accumulator['talent'] || [];
-    data.licenses = accumulator['license'] || [];
-    data.core_bonuses = accumulator['core_bonus'] || [];
-    data.pilot_loadout = {
-      gear: accumulator['pilot_gear'] || [],
-      weapons: accumulator['pilot_weapon'] || [],
-      armor: accumulator['pilot_armor'] || []
-    };
-    // Only take one frame
-    if (accumulator['frame']) data.frame = accumulator['frame'][0];
-    else data.frame = undefined;
+    // Equip mech garbo 
     data.mech_loadout = {
-      weapons: accumulator['mech_weapon'] || [], // TODO: subdivide into mounts
-      systems: accumulator['mech_system'] || []
+      weapons: sorted.mech_weapons, // TODO: Handle mounts
+      systems: sorted.mech_systems
     }
 
     // Update mounted weapons to stay in sync with owned items

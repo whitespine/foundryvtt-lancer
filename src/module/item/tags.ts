@@ -1,6 +1,7 @@
 
 import { tags} from "machine-mind";
 import { TagData, TagDataShort } from '../interfaces';
+import { CORE_BREW_ID } from "machine-mind/dist/classes/CompendiumItem";
 
 /**
  * Search for a tag in lancer-data.
@@ -27,7 +28,7 @@ function findTag(id: string): TagData {
  */
 function prepareTag(tag: TagData): TagData {
   // Initialize if we need to
-  if (tag === null) tag = {name: "", description: "", id: ""};
+  if (tag === null) tag = {name: "", description: "", id: "", brew: "n/a", counters: []};
 
   // If we have a pre-defined tag, insert info. Otherwise, leave it as-is.
   if (tag["id"]) {

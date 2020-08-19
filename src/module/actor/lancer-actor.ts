@@ -3,10 +3,7 @@ import { LancerPilotActorData, LancerNPCActorData, LancerDeployableActorData, La
 import { LANCER } from '../config'
 const lp = LANCER.log_prefix;
 
-export function lancerActorInit(data: any) {
-  console.log(`${lp} Initializing new ${data.type}`);
-  if (data.type === "pilot" || data.type === "npc") {
-    const mech = {
+export const DEFAULT_MECH = {
       name: "",
       size: 1,
       hull: 0,
@@ -25,7 +22,12 @@ export function lancerActorInit(data: any) {
       sensors: 0,
       save: 0,
       tech_attack: 0,
-    };
+}
+
+export function lancerActorInit(data: any) {
+  console.log(`${lp} Initializing new ${data.type}`);
+  if (data.type === "pilot" || data.type === "npc") {
+    const mech = {...DEFAULT_MECH };
 
     if (data.type === "npc") {
       mech.structure.value = 1;

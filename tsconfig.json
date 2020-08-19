@@ -1,16 +1,10 @@
 {
 	"compilerOptions": {
 		"target": "ES2017",
-		// "importHelpers": true,
-		// "moduleResolution": "node",
 		"experimentalDecorators": true,
-		// "esModuleInterop": true,
-		// "allowSyntheticDefaultImports": true,
-		// "baseUrl": ".",
 		"outDir": "./dist/",
 		"module": "commonjs",
 		"sourceMap": true,
-		// "noImplicitAny": true,
 		"lib": [
 			"DOM",
 			"ES6",

@@ -1,7 +1,7 @@
 import { LancerSkillSheetData } from '../interfaces';
 import { LANCER } from '../config';
-import { NPCFeatureType } from '../enums';
 import { NPCFeatureIcons } from './npc-feature';
+import { NpcFeatureType, Npc } from 'machine-mind';
 const lp = LANCER.log_prefix;
 
 /**
@@ -40,7 +40,7 @@ export class LancerItemSheet extends ItemSheet {
   getData() {
     const data: ItemSheetData = super.getData();
 
-    if (data.item.type === "npc_feature" && data.data.feature_type === NPCFeatureType.Weapon) {
+    if (data.item.type === "npc_feature" && data.data.feature_type === NpcFeatureType.Weapon) {
       if (data.data.weapon_type) {
         const parts = data.data.weapon_type.split(' ');
         data.data.weapon_size = parts[0];
@@ -181,7 +181,7 @@ export class LancerItemSheet extends ItemSheet {
       }
   
       // Re-build NPC Weapon size and type
-      if (this.item.data.type === "npc_feature" && this.item.data.data.feature_type === NPCFeatureType.Weapon) {
+      if (this.item.data.type === "npc_feature" && this.item.data.data.feature_type === NpcFeatureType.Weapon) {
         formData['data.weapon_type'] = `${formData['data.weapon_size']} ${formData['data.weapon_type']}`;
         delete formData['data.weapon_size'];
       }  
@@ -190,7 +190,7 @@ export class LancerItemSheet extends ItemSheet {
     if (LANCER.weapon_items.includes(this.item.data.type)) {
       // Safeguard against non-weapon NPC features
       if ( this.item.data.type !== "npc_feature" ||
-            (this.item.data.type === "npc_feature" && this.item.data.data.feature_type === NPCFeatureType.Weapon)) {
+            (this.item.data.type === "npc_feature" && this.item.data.data.feature_type === NpcFeatureType.Weapon)) {
         // Build range and damage arrays
         let damage = [];
         let range = [];

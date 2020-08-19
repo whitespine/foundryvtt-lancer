@@ -1,65 +1,13 @@
-enum MountType {
-  Main = 'Main',
-  Heavy = 'Heavy',
-  AuxAux = 'Aux/Aux',
-  Aux = 'Aux',
-  MainAux = 'Main/Aux',
-  Flex = 'Flex',
-  Integrated = 'Integrated',
-}
+import { NpcFeatureType } from "machine-mind"
 
-enum WeaponSize {
-  Aux = 'Auxiliary',
-  Main = 'Main',
-  Heavy = 'Heavy',
-  Superheavy = 'Superheavy',
-}
+// TODO: Just use machine mind, where possible
 
-enum WeaponType {
-  Rifle = 'Rifle',
-  Cannon = 'Cannon',
-  Launcher = 'Launcher',
-  CQB = 'CQB',
-  Nexus = 'Nexus',
-  Melee = 'Melee',
-}
-
-enum ItemType {
-  None = '',
-  Action = 'Action',
-  CoreBonus = 'CoreBonus',
-  Frame = 'Frame',
-  PilotArmor = 'PilotArmor',
-  PilotWeapon = 'PilotWeapon',
-  PilotGear = 'PilotGear',
-  Skill = 'Skill',
-  Talent = 'Talent',
-  Tag = 'Tag',
-  MechWeapon = 'MechWeapon',
-  MechSystem = 'MechSystem',
-  WeaponMod = 'WeaponMod',
-  NpcFeature = 'NpcFeature',
-}
 
 enum PilotEquipType {
   PilotArmor = 'armor',
   PilotWeapon = 'weapon',
   PilotGear = 'gear',
 }
-
-enum SystemType {
-  System = 'System',
-  AI = 'AI',
-  Shield = 'Shield',
-  Deployable = 'Deployable',
-  Drone = 'Drone',
-  Tech = 'Tech',
-  Armor = 'Armor',
-  FlightSystem = 'Flight System',
-  Integrated = 'Integrated',
-  Mod = 'Mod',
-}
-
 enum RangeType {
   Range = 'Range',
   Threat = 'Threat',
@@ -68,15 +16,6 @@ enum RangeType {
   Cone = 'Cone',
   Blast = 'Blast',
   Burst = 'Burst',
-}
-
-enum DamageType {
-  Kinetic = 'Kinetic',
-  Energy = 'Energy',
-  Explosive = 'Explosive',
-  Heat = 'Heat',
-  Burn = 'Burn',
-  Variable = 'Variable',
 }
 
 enum EffectType {
@@ -118,13 +57,6 @@ enum MechType {
   Defender = 'Defender',
 }
 
-enum HASE {
-  H = 'hull',
-  A = 'agi',
-  S = 'sys',
-  E = 'eng',
-}
-
 enum NPCTag{
   Mech = 'Mech',
   Vehicle = 'Vehicle',
@@ -133,29 +65,14 @@ enum NPCTag{
   Squad = 'Squad'
 }
 
-enum NPCFeatureType {
-  Trait = 'Trait',
-  System = 'System',
-  Reaction = 'Reaction',
-  Weapon = 'Weapon',
-  Tech = 'Tech',
-}
-
 
 export {
-  MountType,
-  WeaponSize,
-  WeaponType,
-  ItemType,
+
   PilotEquipType,
-  SystemType,
   RangeType,
-  DamageType,
   EffectType,
   ActivationType,
   ChargeType,
-  HASE,
   MechType,
-  NPCTag,
-  NPCFeatureType
+  NPCTag
 }

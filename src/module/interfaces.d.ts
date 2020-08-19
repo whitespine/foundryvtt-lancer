@@ -10,17 +10,14 @@ import { LancerSkill,
   LancerMechSystem,
   LancerNPCFeature, 
   LancerNPCClass, 
-  LancerNPCTemplate } from './item/lancer-item';
-import { DamageType, 
+  LancerNPCTemplate, 
+  LancerItemData} from './item/lancer-item';
+import {  
   RangeType, 
-  WeaponSize, 
-  WeaponType, 
-  SystemType,
-  MechType, 
-  ItemType,
   NPCTag,
-  NPCFeatureType } from './enums';
+  } from './enums';
 import { EffectData } from './item/effects'
+import * as mm from 'machine-mind';
 
 // ------------------------------------------------------
 // |       UTILITY DATA TYPES                           |
@@ -29,11 +26,16 @@ import { EffectData } from './item/effects'
 // TODO: several of these may be moved to classes later to enable specialized logic
 // TODO: Range and Damage are good examples of objects that should be aware of their string representation and html representation
 
+/*
 declare interface TagDataShort {
   id: string;
   val?: number | string;
 }
+*/
+declare type TagDataShort = mm.ITagData;
 
+// Alias, except it also have a val for some reason? TODO: Verify that this wasn't just a typo. Why would val matter here (reliable maybe? why not present in CC/mm?)
+/*
 declare interface TagData {
   id: string;
   name: string;
@@ -42,22 +44,36 @@ declare interface TagData {
   filter_ignore?: boolean;
   hidden?: boolean;
 }
+*/
+declare interface TagData extends mm.ITagCompendiumData {
+  val?: number | string;
+}
 
+// Alias
+/*
 declare interface RangeData {
   type: RangeType;
   val: number;
   override?: boolean;
   bonus?: number;
-}
+}*/
+declare type RangeData = mm.IRangeData;
 
+
+// Alias
+/*
 declare interface DamageData {
   type: DamageType;
   val: string | number;
   override?: boolean;
 }
+*/
+declare type DamageData = mm.IDamageData;
 
+// This type significantly diverges for some reason. 
+// declare type NPCDamageData = mm.INpcDamageData;
 declare interface NPCDamageData {
-  type: DamageType;
+  type: mm.DamageType;
   val: number[];
   override?: boolean;
 }
@@ -73,6 +89,7 @@ declare interface ResourceData {
   max: number;
 }
 
+// Significance divergence from the CC mech. Seems useful for code reuse, but more than any other data type I'd like to have this one refactored to mirror CC/MM
 declare interface LancerMechData {
   name: string;
   size: number;
@@ -95,12 +112,14 @@ declare interface LancerMechData {
   sp: number;
 }
 
+// Seems like it should eventually mirror IMechLoadoutData
 declare interface LancerMechLoadoutData {
   mounts: object[]; // TODO
   systems: LancerMechSystemData[];
 }
 
 // ------- Pilot data ----------------------------------
+// No MM equivalent
 declare interface LancerPilotStatsData {
   size: number;
   hp: ResourceData;
@@ -110,12 +129,15 @@ declare interface LancerPilotStatsData {
   speed: number;
 }
 
+// Stripped down version of IPilotLoadoutData, that instead uses IDs. Honestly, probably better done this way
 declare interface LancerPilotLoadoutData {
   armor: string;      // ID of armor Item
   weapons: string[];  // IDs of weapon Items
   gear: string[];     // IDs of gear Items
 }
 
+
+// Kind of like IPilotData. Lots of loss here, but dunno how much we care about
 declare interface LancerPilotSubData {
   level: number;
   grit: number;
@@ -130,16 +152,19 @@ declare interface LancerPilotSubData {
   loadout: LancerPilotLoadoutData;
 }
 
+// Ditto above
 declare interface LancerPilotData {
   pilot: LancerPilotSubData;
   mech: LancerMechData;
   mech_loadout: LancerMechLoadoutData;
 }
 
+// Utility interface that basically just asserts the type of an actors data
 declare interface LancerPilotActorData extends ActorData {
   data: LancerPilotData;
 }
 
+// Derived/consolidated data for an actor, used by handlebars template.
 declare interface LancerPilotSheetData extends ActorSheetData {
   actor: LancerPilotActorData;
   data: LancerPilotData;
@@ -163,6 +188,7 @@ declare interface LancerPilotSheetData extends ActorSheetData {
 }
 
 // ------- NPC data ---------------------------------------------
+// Similar to mech and pilot, not currently easily converted
 declare interface LancerNPCData {
   mech: LancerMechData;
   type: string;
@@ -174,10 +200,12 @@ declare interface LancerNPCData {
   npc_size: string;
 }
 
+// Utility interface that basically just asserts the type of an actors data
 declare interface LancerNPCActorData extends ActorData {
   data: LancerNPCData;
 }
 
+// Derived/consolidated data for an npc, used by handlebars template.
 declare interface LancerNPCSheetData extends ActorSheetData {
   actor: LancerNPCActorData;
   data: LancerNPCData;
@@ -188,6 +216,8 @@ declare interface LancerNPCSheetData extends ActorSheetData {
 }
 
 // ------- Deployable data --------------------------------------
+// Represents a _significant_ divergence from the CC/MM way of doing things
+// This is likely because this is serving a dual role as a token stats and a resource, whereas CC just tracks the resource
 declare interface LancerDeployableData {
   name: string;
   size: number;
@@ -200,6 +230,7 @@ declare interface LancerDeployableData {
   effect: EffectData;
 }
 
+// Utility interface that basically just asserts the type of an actors data
 declare interface LancerDeployableActorData extends ActorData {
   data: LancerDeployableData;
 }
@@ -214,16 +245,19 @@ declare interface LancerDeployableSheetData extends ActorSheetData {
 // ------------------------------------------------------
 
 // -------- Item data templates -------------------------
+// This is similar to CompendiumItem. Note however, that CompendiumItem does not actually implement usage of flavor_name and flavor_description.
+// they are, at this time, utterly useless on the CC/MM side
 declare interface LancerCompendiumItemData {
   id: string;
   name: string;
   description: string;
   note: string;
-  item_type: ItemType;
+  item_type: mm.ItemType;
   flavor_name: string;
   flavor_description: string;
 }
 
+// Highly simplified version of CC PilotEquipment
 declare interface LancerPilotEquipmentData {
   tags: TagData[];
 }
@@ -258,9 +292,10 @@ declare interface LancerSkillData {
   description: string;
   detail: string;
   rank: number;
+  family: string;
 }
 
-declare interface LancerSkillItemData extends ItemData {
+declare interface LancerSkillItemData extends LancerItemData {
   data: LancerSkillData;
 }
 
@@ -270,11 +305,10 @@ declare interface LancerSkillSheetData extends ItemSheetData {
 }
 
 // -------- Talent data ------------------------------------------
-declare interface LancerTalentRank {
-  name: string;
-  description: string;
-}
+declare type LancerTalentRank = mm.ITalentRank;
 
+// Basically is an ITalentData + an IRankedData. An acceptable divergence, as it needs to encapsulate
+//
 declare interface LancerTalentData {
   id: string;
   name: string;
@@ -283,7 +317,7 @@ declare interface LancerTalentData {
   rank: number;
 }
 
-declare interface LancerTalentItemData extends ItemData {
+declare interface LancerTalentItemData extends LancerItemData {
   data: LancerTalentData;
 }
 
@@ -297,11 +331,11 @@ declare interface LancerCoreBonusData {
   id: string;
   name: string;
   source: string;
-  effect: EffectData;
+  effect: string; // EffectData; -- it is patently not an effect data
   mounted_effect: string;
 }
 
-declare interface LancerCoreBonusItemData extends ItemData {
+declare interface LancerCoreBonusItemData extends LancerItemData {
   data: LancerCoreBonusData;
 }
 
@@ -322,7 +356,7 @@ declare interface LancerLicenseData {
   rank: number;
 }
 
-declare interface LancerLicenseItemData extends ItemData {
+declare interface LancerLicenseItemData extends LancerItemData {
   data: LancerLicenseData;
 }
 
@@ -346,7 +380,7 @@ declare interface LancerPilotArmorData extends LancerCompendiumItemData, LancerP
   evasion_bonus: number;
 }
 
-declare interface LancerPilotArmorItemData extends ItemData {
+declare interface LancerPilotArmorItemData extends LancerItemData {
   data: LancerPilotArmorData;
 }
 
@@ -359,11 +393,11 @@ declare interface LancerPilotArmorSheetData extends ItemSheetData {
 declare interface LancerPilotWeaponData extends LancerCompendiumItemData, LancerPilotEquipmentData {
   range: RangeData[];
   damage: DamageData[];
-  effect: EffectData;
-  custom_damage_type: DamageType;
+  effect: string;
+  custom_damage_type: mm.DamageType;
 }
 
-declare interface LancerPilotWeaponItemData extends ItemData {
+declare interface LancerPilotWeaponItemData extends LancerItemData {
   data: LancerPilotWeaponData;
 }
 
@@ -378,7 +412,7 @@ declare interface LancerPilotGearData extends LancerCompendiumItemData, LancerPi
   current_uses: number;
 }
 
-declare interface LancerPilotGearItemData extends ItemData {
+declare interface LancerPilotGearItemData extends LancerItemData {
   data: LancerPilotGearData;
 }
 
@@ -420,14 +454,14 @@ declare interface LancerCoreSystemData {
 }
 
 declare interface LancerFrameData extends LancerCompendiumItemData, LancerLicensedItemData {
-  mechtype: MechType[];
+  mechtype: mm.MechType[];
   stats: LancerFrameStatsData;
   traits: LancerMechTraitData[];
-  mounts: object[]; // TODO: replace with specific type
+  mounts: mm.MountType[]; 
   core_system: LancerCoreSystemData;
 }
 
-declare interface LancerFrameItemData extends ItemData {
+declare interface LancerFrameItemData extends LancerItemData {
   data: LancerFrameData;
 }
 
@@ -438,10 +472,10 @@ declare interface LancerFrameSheetData extends ItemSheetData {
 
 // -------- Mech System data -------------------------------------
 declare interface LancerMechSystemData extends LancerLicensedItemData, LancerMechEquipmentData {
-  system_type: SystemType;
+  system_type: mm.SystemType;
 }
 
-declare interface LancerMechSystemItemData extends ItemData {
+declare interface LancerMechSystemItemData extends LancerItemData {
   data: LancerMechSystemData;
 }
 
@@ -452,15 +486,15 @@ declare interface LancerMechSystemSheetData extends ItemSheetData {
 
 // -------- Mech Weapon data -------------------------------------
 declare interface LancerMechWeaponData extends LancerLicensedItemData, LancerMechEquipmentData {
-  mount: WeaponSize;
-  weapon_type: WeaponType;
+  mount: mm.WeaponSize;
+  weapon_type: mm.WeaponType;
   damage: DamageData[];
   range: RangeData[];
   mod: object | null; // TODO: weapon mod type
-  custom_damage_type: DamageType;
+  custom_damage_type: mm.DamageType;
 }
 
-declare interface LancerMechWeaponItemData extends ItemData {
+declare interface LancerMechWeaponItemData extends LancerItemData {
   data: LancerMechWeaponData;
 }
 
@@ -495,14 +529,14 @@ declare interface LancerNPCInfoData {
 }
 
 declare interface LancerNPCClassData extends LancerCompendiumItemData {
-  mechtype: MechType;
+  mechtype: mm.MechType;
   info: LancerNPCInfoData;
   stats: LancerNPCClassStatsData;
   base_features: string[];
   optional_features: string[];
 }
 
-declare interface LancerNPCClassItemData extends ItemData {
+declare interface LancerNPCClassItemData extends LancerItemData {
   data: LancerNPCClassData;
 }
 
@@ -517,7 +551,7 @@ declare interface LancerNPCTemplateData extends LancerCompendiumItemData{
   optional_features: string[];
 }
 
-declare interface LancerNPCTemplateItemData extends ItemData {
+declare interface LancerNPCTemplateItemData extends LancerItemData {
   data: LancerNPCTemplateData;
 }
 
@@ -531,7 +565,7 @@ declare interface LancerNPCFeatureData extends LancerCompendiumItemData{
   origin_type: string;
   origin_name: string;
   origin_base: boolean;
-  feature_type: NPCFeatureType;
+  feature_type: mm.NpcFeatureType;
   effect?: string;
   bonus?: object;
   override?: object;
@@ -542,7 +576,7 @@ declare interface LancerNPCFeatureData extends LancerCompendiumItemData{
   max_uses: number;
 }
 
-declare interface LancerNPCFeatureItemData extends ItemData {
+declare interface LancerNPCFeatureItemData extends LancerItemData {
   data: LancerNPCFeatureData;
 }
 

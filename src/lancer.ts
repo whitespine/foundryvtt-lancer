@@ -73,7 +73,7 @@ Hooks.once('init', async function() {
 	await preloadTemplates();
 
     // Do some CC magic
-    let store = new CCDataStore(new FauxPersistor());
+    let store = new CCDataStore(new FauxPersistor(), {disable_core_data: true});
 	setup_store(store);
 	await store.load_all(f => f(store));
 	console.log("Initialized store!!!");
