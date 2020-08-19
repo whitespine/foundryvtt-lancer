@@ -40,9 +40,6 @@ export async function ingest_pilot(cc_pilot: mm.Pilot): Promise<void> {
     pd.pilot.stats.size = 0.5;
     pd.pilot.stats.speed = cc_pilot.Speed;
 
-    // Fixup actor name
-    pilot.data.token.update({ name: cc_pilot.Callsign });
-
     // Now handle mech (ugh)
     let am = cc_pilot.ActiveMech;
     pd.mech.hull = cc_pilot.MechSkills.Hull;
@@ -50,25 +47,27 @@ export async function ingest_pilot(cc_pilot: mm.Pilot): Promise<void> {
     pd.mech.systems = cc_pilot.MechSkills.Sys;
     pd.mech.engineering = cc_pilot.MechSkills.Eng;
 
-    // All dem stats
-    pd.mech.armor = am.Armor;
-    pd.mech.edef = am.EDefense;
-    pd.mech.evasion = am.Evasion;
-    pd.mech.heat.max = am.HeatCapacity;
-    pd.mech.heat.value = am.CurrentHeat;
-    pd.mech.name = am.Name;
-    pd.mech.save = am.SaveTarget;
-    pd.mech.sp = am.CurrentSP;
-    pd.mech.stress.value = am.CurrentStress;
-    pd.mech.stress.max = am.MaxStress;
-    pd.mech.structure.value = am.CurrentStructure;
-    pd.mech.structure.max = am.MaxStructure;
-    pd.mech.tech_attack = am.TechAttack;
-    pd.mech.repairs.max = am.CurrentRepairs;
-    pd.mech.repairs.value = am.RepairCapacity;
-    pd.mech.sensors = am.SensorRange;
-    pd.mech.size = am.Size;
-    pd.mech.speed = am.Speed;
+    if(am) {
+        // All dem stats
+        pd.mech.armor = am.Armor;
+        pd.mech.edef = am.EDefense;
+        pd.mech.evasion = am.Evasion;
+        pd.mech.heat.max = am.HeatCapacity;
+        pd.mech.heat.value = am.CurrentHeat;
+        pd.mech.name = am.Name;
+        pd.mech.save = am.SaveTarget;
+        pd.mech.sp = am.CurrentSP;
+        pd.mech.stress.value = am.CurrentStress;
+        pd.mech.stress.max = am.MaxStress;
+        pd.mech.structure.value = am.CurrentStructure;
+        pd.mech.structure.max = am.MaxStructure;
+        pd.mech.tech_attack = am.TechAttack;
+        pd.mech.repairs.max = am.CurrentRepairs;
+        pd.mech.repairs.value = am.RepairCapacity;
+        pd.mech.sensors = am.SensorRange;
+        pd.mech.size = am.Size;
+        pd.mech.speed = am.Speed;
+    }
 
     pilot.update(pad);
 
@@ -80,6 +79,9 @@ export async function ingest_pilot(cc_pilot: mm.Pilot): Promise<void> {
     }
 
     // Deal with mounts eventually
+
+    // Fixup actor name -- this might not work
+    pilot.token.update({name: cc_pilot.Name});
 }
 
 export async function give_pilot_compendium_item(
@@ -94,6 +96,7 @@ export async function give_pilot_compendium_item(
     }
 
     // Try getting the item. We assume an initialized store
+    console.log(store.compendium.getItemCollection(cat));
     let item = store.compendium.getReferenceByIDCareful(cat, id);
     if (!item) {
         console.error(`Unable to find item ${id} of type ${cat}`);

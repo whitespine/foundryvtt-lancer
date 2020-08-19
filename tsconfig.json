@@ -10,7 +10,8 @@
 			"ES6",
 			"ES2017"
 		],
-		"types": ["foundry-pc-types"]
-    
+		"types": ["foundry-pc-types"],
+		"strict": true,
+		"skipLibCheck": true,
 	}
 }

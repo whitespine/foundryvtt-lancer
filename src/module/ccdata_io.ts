@@ -317,7 +317,7 @@ export class Converter {
 
     LancerMechLoadoutData_to_IMechLoadoutData(l: LancerMechLoadoutData): IMechLoadoutData {
         // This is just a copy of the MechLoadout constructor
-        let integratedMounts = []; // Normally grabs from mech. Here we assume that would've been done already
+        let integratedMounts: IntegratedMount[] = []; // Normally grabs from mech. Here we assume that would've been done already
 
         // Map the mounts based on size
         let equippableMounts: EquippableMount[] = [];
@@ -472,10 +472,9 @@ export class Converter {
 // function init_compendium_from_items()
 // Stores/retrieves. For now does nothing. Might eventually hook into entity ids, perhaps?
 export class FauxPersistor extends PersistentStore {
-    set_item(key: string, val: any): Promise<void> {
-        return null;
+    async set_item(key: string, val: any): Promise<void> {
     }
-    get_item<T>(key: string): Promise<T> {
-        return null;
+    async get_item<T>(key: string): Promise<T> {
+        return null as unknown as T;
     }
 }

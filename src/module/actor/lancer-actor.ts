@@ -75,17 +75,17 @@ export function lancerActorInit(data: any) {
  * Extend the Actor class for Lancer Actors.
  */
 export class LancerActor extends Actor {
-    data: LancerPilotActorData | LancerNPCActorData | LancerDeployableActorData;
+    data!: LancerPilotActorData | LancerNPCActorData | LancerDeployableActorData;
 
     /**
      * Change mech frames for a pilot. Recalculates all mech-related stats on the pilot.
      * @param newFrame Stats object from the new mech frame.
      * @param oldFrame Stats object from the old mech frame, optional.
      */
-    swapFrames(
+    async swapFrames(
         newFrame: LancerFrameStatsData,
         oldFrame?: LancerFrameStatsData
-    ): Promise<LancerActor> {
+    ): Promise<void> {
         // Function is only applicable to pilots.
         if (this.data.type !== "pilot") return;
 
@@ -129,18 +129,18 @@ export class LancerActor extends Actor {
 
         // Update the actor
         data.data.mech = mech;
-        return this.update(data) as Promise<LancerActor>;
+        await this.update(data);
     }
 
     /**
      * Change Class or Tier on a NPC. Recalculates all stats on the NPC.
      * @param newNPCClass Stats object from the new Class.
      */
-    swapNPCClassOrTier(
+    async swapNPCClassOrTier(
         newNPCClass: LancerNPCClassStatsData,
         ClassSwap: boolean,
         tier?: string
-    ): Promise<LancerActor> {
+    ): Promise<void> {
         // Function is only applicable to NPCs.
         if (this.data.type !== "npc") return;
 
@@ -156,7 +156,8 @@ export class LancerActor extends Actor {
         switch (tier) {
             case "npc-tier-custom":
                 data.data.tier_num = 4;
-                return this.update(data) as Promise<LancerActor>;
+                await this.update(data);
+                return;
             case "npc-tier-2":
                 data.data.tier_num = 2;
                 i = 1;
@@ -216,6 +217,6 @@ export class LancerActor extends Actor {
 
         // Update the actor
         data.data.mech = mech;
-        return this.update(data) as Promise<LancerActor>;
+        await this.update(data) ;
     }
 }

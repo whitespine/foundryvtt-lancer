@@ -1,10 +1,11 @@
-import { LancerPilotSheetData, LancerFrameData, LancerFrameStatsData } from "../interfaces";
-import { LancerItem, LancerFrame } from "../item/lancer-item";
+import { LancerPilotSheetData, LancerFrameData, LancerFrameStatsData, LancerMountData } from "../interfaces";
+import { LancerItem, LancerFrame, LancerMechWeapon } from "../item/lancer-item";
 import { MechType } from "../enums";
 import { LancerActor } from "./lancer-actor";
 import { LancerGame } from "../lancer-game";
 import { LANCER } from "../config";
 import { categorize, count_sp } from "../item/util";
+import { MountType } from "machine-mind";
 const lp = LANCER.log_prefix;
 
 // TODO: should probably move to HTML/CSS
@@ -14,11 +15,7 @@ const entryPrompt = "//:AWAIT_ENTRY>";
  * Extend the basic ActorSheet
  */
 export class LancerPilotSheet extends ActorSheet {
-    _sheetTab: string;
-
-    constructor(...args) {
-        super(...args);
-    }
+    _sheetTab: string = ""; // What is this
 
     /**
      * A convenience reference to the Actor entity
@@ -83,7 +80,7 @@ export class LancerPilotSheet extends ActorSheet {
                 data.frame_size = `size-${frame.data.stats.size}`;
             }
         } else {
-            data.frame_size = undefined;
+            data.frame_size = "N/A";
         }
 
         console.log(`${lp} Pilot sheet data: `, data);
@@ -117,9 +114,7 @@ export class LancerPilotSheet extends ActorSheet {
         // Only take one frame
         if (sorted.frames.length) {
             data.frame = sorted.frames[0];
-        } else {
-            data.frame = undefined;
-        }
+        } // The else case simple leaves the data in its default init state
 
         // Equip mech garbo
         data.mech_loadout = {
@@ -153,14 +148,14 @@ export class LancerPilotSheet extends ActorSheet {
      * Activate event listeners using the prepared sheet HTML
      * @param html {HTML}   The prepared HTML object ready to be rendered into the DOM
      */
-    activateListeners(html) {
+    activateListeners(html: any) {
         super.activateListeners(html);
 
         // Macro triggers
         if (this.actor.owner) {
             // Stat rollers
             let statMacro = html.find(".stat-macro");
-            statMacro.click(ev => {
+            statMacro.click((ev: any) => {
                 ev.stopPropagation(); // Avoids triggering parent event handlers
                 console.log(`${lp} Stat macro button click`, ev);
 
@@ -180,7 +175,7 @@ export class LancerPilotSheet extends ActorSheet {
 
             // Trigger rollers
             let triggerMacro = html.find(".roll-trigger");
-            triggerMacro.click(ev => {
+            triggerMacro.click((ev: any) => {
                 ev.stopPropagation();
                 console.log(`${lp} Skill macro button click`, ev);
 
@@ -197,7 +192,7 @@ export class LancerPilotSheet extends ActorSheet {
 
             // Weapon rollers
             let weaponMacro = html.find(".roll-attack");
-            weaponMacro.click(ev => {
+            weaponMacro.click((ev: any) => {
                 ev.stopPropagation();
                 console.log(`${lp} Weapon macro button click`, ev);
 
@@ -209,7 +204,7 @@ export class LancerPilotSheet extends ActorSheet {
                 }
                 // Mech weapon
                 else {
-                    let weaponMountIndex = weaponElement.getAttribute("data-item-id");
+                    let weaponMountIndex = weaponElement.getAttribute("data-item-id") || 0;
                     const mountElement = $(ev.currentTarget).closest(".lancer-mount-container");
                     if (mountElement.length) {
                         const mounts = this.actor.data.data.mech_loadout.mounts;
@@ -230,15 +225,15 @@ export class LancerPilotSheet extends ActorSheet {
             // Item Dragging
             html.find('li[class*="item"]')
                 .add('span[class*="item"]')
-                .each((i, item) => {
+                .each((i: number, item: any) => {
                     if (item.classList.contains("inventory-header")) return;
                     item.setAttribute("draggable", true);
-                    item.addEventListener("dragstart", ev => this._onDragStart(ev), false);
+                    item.addEventListener("dragstart", (ev: any) => this._onDragStart(ev), false);
                 });
 
             // Update Inventory Item
             let items = html.find(".item");
-            items.click(ev => {
+            items.click((ev: any) => {
                 console.log(ev);
                 const li = $(ev.currentTarget);
                 //TODO: Check if in mount and update mount
@@ -249,7 +244,7 @@ export class LancerPilotSheet extends ActorSheet {
             });
 
             // Delete Item on Right Click
-            items.contextmenu(ev => {
+            items.contextmenu((ev: any) => {
                 console.log(ev);
                 const item = $(ev.currentTarget);
                 const itemId = item.data("itemId");
@@ -263,7 +258,7 @@ export class LancerPilotSheet extends ActorSheet {
                     weapons.splice(parseInt(weapon_element.data("itemId")), 1);
                     this.actor.update({ "data.mech_loadout.mounts": mounts });
                     this._onSubmit(ev);
-                } else if (this.actor.getOwnedItem(itemId).data.type === "mech_weapon") {
+                } else if (this.actor.getOwnedItem(itemId)!.data.type === "mech_weapon") {
                     // Search mounts to remove the weapon
                     let mounts = duplicate(this.actor.data.data.mech_loadout.mounts);
                     for (let i = 0; i < mounts.length; i++) {
@@ -286,7 +281,7 @@ export class LancerPilotSheet extends ActorSheet {
 
             // Delete Item when trash can is clicked
             items = html.find('.stats-control[data-action*="delete"]');
-            items.click(ev => {
+            items.click((ev: any) => {
                 ev.stopPropagation(); // Avoids triggering parent event handlers
                 console.log(ev);
                 const item = $(ev.currentTarget).closest(".item");
@@ -301,7 +296,7 @@ export class LancerPilotSheet extends ActorSheet {
                     weapons.splice(parseInt(weapon_element.data("itemId")), 1);
                     this.actor.update({ "data.mech_loadout.mounts": mounts });
                     this._onSubmit(ev);
-                } else if (this.actor.getOwnedItem(itemId).data.type === "mech_weapon") {
+                } else if (this.actor.getOwnedItem(itemId)!.data.type === "mech_weapon") {
                     // Search mounts to remove the weapon
                     let mounts = duplicate(this.actor.data.data.mech_loadout.mounts);
                     for (let i = 0; i < mounts.length; i++) {
@@ -324,11 +319,11 @@ export class LancerPilotSheet extends ActorSheet {
 
             // Create Mounts
             let add_button = html.find('.add-button[data-action*="create"]');
-            add_button.click(ev => {
+            add_button.click((ev: any) => {
                 ev.stopPropagation();
                 console.log(ev);
-                let mount = {
-                    type: "Main",
+                let mount: LancerMountData = {
+                    type: MountType.Main,
                     weapons: [],
                     secondary_mount: "This counts, right?",
                 };
@@ -341,7 +336,7 @@ export class LancerPilotSheet extends ActorSheet {
 
             // Update Mounts
             let mount_selector = html.find('select.mounts-control[data-action*="update"]');
-            mount_selector.change(ev => {
+            mount_selector.change((ev: any) => {
                 ev.stopPropagation();
                 console.log(ev);
                 let mounts = duplicate(this.actor.data.data.mech_loadout.mounts);
@@ -354,7 +349,7 @@ export class LancerPilotSheet extends ActorSheet {
 
             // Delete Mounts
             let mount_trash = html.find('a.mounts-control[data-action*="delete"]');
-            mount_trash.click(ev => {
+            mount_trash.click((ev: any) => {
                 ev.stopPropagation();
                 console.log(ev);
                 let mounts = duplicate(this.actor.data.data.mech_loadout.mounts);
@@ -372,7 +367,7 @@ export class LancerPilotSheet extends ActorSheet {
         }
     }
 
-    async _onDrop(event) {
+    async _onDrop(event: any) {
         event.preventDefault();
 
         // Get dropped data
@@ -385,13 +380,13 @@ export class LancerPilotSheet extends ActorSheet {
         }
         console.log(event);
 
-        let item: Item;
+        let item: Item | null = null;
         const actor = this.actor as LancerActor;
         // NOTE: these cases are copied almost verbatim from ActorSheet._onDrop
 
         // Case 1 - Item is from a Compendium pack
         if (data.pack) {
-            item = (await game.packs.get(data.pack).getEntity(data.id)) as Item;
+            item = (await game.packs.get(data.pack)!.getEntity(data.id)) as Item;
             console.log(`${lp} Item dropped from compendium: `, item);
         }
         // Case 2 - Item is a World entity
@@ -415,7 +410,7 @@ export class LancerPilotSheet extends ActorSheet {
             // Swap mech frame
             if (item.type === "frame") {
                 let newFrameStats: LancerFrameStatsData;
-                let oldFrameStats: LancerFrameStatsData;
+                let oldFrameStats: LancerFrameStatsData | undefined = undefined;
                 // Remove old frame
                 actor.items.forEach(async (i: LancerItem) => {
                     if (i.type === "frame") {
@@ -465,7 +460,7 @@ export class LancerPilotSheet extends ActorSheet {
                     };
 
                     let mount = mounts[parseInt(mount_element.data("itemId"))];
-                    let valid = mount_whitelist[item.data.data.mount];
+                    let valid = mount_whitelist[(item as LancerMechWeapon).data.data.mount];
                     if (!valid.includes(mount.type)) {
                         ui.notifications.error(
                             "The weapon you dropped is too large for this weapon mount!"

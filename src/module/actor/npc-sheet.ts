@@ -8,6 +8,7 @@ import {
 import { MechType } from "../enums";
 import { LancerActor } from "./lancer-actor";
 import { LANCER } from "../config";
+import { categorize } from "../item/util";
 const lp = LANCER.log_prefix;
 
 const entryPrompt = "//:AWAIT_ENTRY>";
@@ -16,11 +17,7 @@ const entryPrompt = "//:AWAIT_ENTRY>";
  * Extend the basic ActorSheet
  */
 export class LancerNPCSheet extends ActorSheet {
-    _sheetTab: string;
-
-    constructor(...args) {
-        super(...args);
-    }
+    _sheetTab: string = ""; // Unused?
 
     /**
      * A convenience reference to the Actor entity
@@ -77,14 +74,10 @@ export class LancerNPCSheet extends ActorSheet {
     _prepareItems(data: LancerNPCSheetData) {
         // Mirror items into filtered list properties
         const accumulator = {};
-        for (let item of data.items) {
-            if (accumulator[item.type] === undefined) accumulator[item.type] = [];
-            accumulator[item.type].push(item);
-        }
-        data.npc_templates = accumulator["npc_template"] || [];
-        data.npc_features = accumulator["npc_feature"] || [];
-        if (accumulator["npc_class"]) data.npc_class = accumulator["npc_class"][0];
-        else data.npc_class = undefined;
+        let sorted = categorize(data.items as LancerItem[]);
+        data.npc_templates = sorted.npc_templates.map(x => x.data.data);
+        data.npc_features = sorted.npc_features;
+        data.npc_class = sorted.npc_classes[0]; // Failure here should absolutely error
         //TODO Templates, Classes and Features
     }
 
@@ -94,7 +87,7 @@ export class LancerNPCSheet extends ActorSheet {
      * Activate event listeners using the prepared sheet HTML
      * @param html {HTML}   The prepared HTML object ready to be rendered into the DOM
      */
-    activateListeners(html) {
+    activateListeners(html: any) {
         super.activateListeners(html);
 
         // Everything below here is only needed if the sheet is editable
@@ -104,7 +97,7 @@ export class LancerNPCSheet extends ActorSheet {
         if (this.actor.owner) {
             // Stat rollers
             let statMacro = html.find(".stat-macro");
-            statMacro.click(ev => {
+            statMacro.click((ev: any) => {
                 ev.stopPropagation(); // Avoids triggering parent event handlers
                 console.log(ev);
 
@@ -121,7 +114,7 @@ export class LancerNPCSheet extends ActorSheet {
 
             // Trigger rollers
             let triggerMacro = html.find(".roll-trigger");
-            triggerMacro.click(ev => {
+            triggerMacro.click((ev: any) => {
                 ev.stopPropagation();
                 console.log(ev);
 
@@ -138,7 +131,7 @@ export class LancerNPCSheet extends ActorSheet {
 
             // Weapon rollers
             let weaponMacro = html.find(".roll-attack");
-            weaponMacro.click(ev => {
+            weaponMacro.click((ev: any) => {
                 ev.stopPropagation();
                 console.log(`${lp} Weapon macro button click`, ev);
 
@@ -149,7 +142,7 @@ export class LancerNPCSheet extends ActorSheet {
 
             // Tech rollers
             let techMacro = html.find(".roll-tech");
-            techMacro.click(ev => {
+            techMacro.click((ev: any) => {
                 ev.stopPropagation();
                 console.log(`${lp} Tech attack macro button click`, ev);
 
@@ -160,10 +153,10 @@ export class LancerNPCSheet extends ActorSheet {
         }
         if (this.actor.owner) {
             // Item Dragging
-            let handler = ev => this._onDragStart(ev);
+            let handler = (ev: any) => this._onDragStart(ev);
             html.find('li[class*="item"]')
                 .add('span[class*="item"]')
-                .each((i, item) => {
+                .each((i: number, item: any) => {
                     if (item.classList.contains("inventory-header")) return;
                     item.setAttribute("draggable", true);
                     // TODO: I think handler needs to be item.*something*._onDragStart(ev).
@@ -172,7 +165,7 @@ export class LancerNPCSheet extends ActorSheet {
 
             // Update Inventory Item
             let items = html.find(".item");
-            items.click(ev => {
+            items.click((ev: any) => {
                 console.log(ev);
                 const li = $(ev.currentTarget);
                 //TODO: Check if in mount and update mount
@@ -183,7 +176,7 @@ export class LancerNPCSheet extends ActorSheet {
             });
 
             // Delete Item on Right Click
-            items.contextmenu(ev => {
+            items.contextmenu((ev: any) => {
                 console.log(ev);
                 const li = $(ev.currentTarget);
                 this.actor.deleteOwnedItem(li.data("itemId"));
@@ -192,7 +185,7 @@ export class LancerNPCSheet extends ActorSheet {
 
             // Delete Item when trash can is clicked
             items = html.find('.stats-control[data-action*="delete"]');
-            items.click(ev => {
+            items.click((ev: any) => {
                 ev.stopPropagation(); // Avoids triggering parent event handlers
                 console.log(ev);
                 const li = $(ev.currentTarget).closest(".item");
@@ -201,7 +194,7 @@ export class LancerNPCSheet extends ActorSheet {
             });
 
             let tier_selector = html.find('select.tier-control[data-action*="update"]');
-            tier_selector.change(ev => {
+            tier_selector.change((ev: any) => {
                 ev.stopPropagation();
                 console.log(ev);
                 let tier = ev.currentTarget.selectedOptions[0].value;
@@ -219,7 +212,7 @@ export class LancerNPCSheet extends ActorSheet {
 
     /* -------------------------------------------- */
 
-    async _onDrop(event) {
+    async _onDrop(event: any) {
         event.preventDefault();
         // Get dropped data
         let data;
@@ -231,13 +224,13 @@ export class LancerNPCSheet extends ActorSheet {
         }
         console.log(event);
 
-        let item: Item;
+        let item: Item | null = null;
         const actor = this.actor as LancerActor;
         // NOTE: these cases are copied almost verbatim from ActorSheet._onDrop
 
         // Case 1 - Item is from a Compendium pack
         if (data.pack) {
-            item = (await game.packs.get(data.pack).getEntity(data.id)) as Item;
+            item = (await game.packs.get(data.pack)!.getEntity(data.id)) as Item;
             console.log(`${lp} Item dropped from compendium: `, item);
         }
         // Case 2 - Item is a World entity

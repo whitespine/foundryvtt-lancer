@@ -280,7 +280,7 @@ declare interface LancerMechEquipmentData {
     cascading: boolean;
     loaded: boolean;
     tags: TagData[];
-    effect: EffectData;
+    effect:  string; // EffectData;
     integrated: boolean;
     // TODO: not needed? Used in Comp/Con for some of its mech building logic.
     // talent_item: boolean;

@@ -7,7 +7,7 @@ import { CORE_BREW_ID } from "machine-mind/dist/classes/CompendiumItem";
  * @param id The tag's lancer-data id string.
  * @returns The full tag data.
  */
-function findTag(id: string): TagData {
+function findTag(id: string): TagData | null {
     // Only check if we actually got something.
     if (id) {
         // Find the tag id in lancer-data
@@ -27,23 +27,30 @@ function findTag(id: string): TagData {
  */
 function prepareTag(tag: TagData): TagData {
     // Initialize if we need to
-    if (tag === null) tag = { name: "", description: "", id: "", brew: "n/a", counters: [] };
+    const default_tag = { name: "", description: "", id: "", brew: "n/a", counters: [] };
 
     // If we have a pre-defined tag, insert info. Otherwise, leave it as-is.
     if (tag["id"]) {
         // Look up values
         const tagdata = findTag(tag["id"]);
-        tag["name"] = tagdata["name"];
-        tag["description"] = tagdata["description"];
+        if(tagdata) {
+            tag["name"] = tagdata["name"];
+            tag["description"] = tagdata["description"];
 
-        let val: string | number = 0;
-        if (tag.val) val = tag.val;
-        else if (tagdata.val) val = tagdata.val;
-        // If the tag has a value, insert it into the text.
-        if (val !== 0) {
-            tag["val"] = val;
-            tag["name"] = tag["name"].replace("{VAL}", String(tag["val"]));
-            tag["description"] = tag["description"].replace("{VAL}", String(tag["val"]));
+            let val: string | number = 0;
+            if (tag.val) {
+                val = tag.val;
+            } else if (tagdata.val) {
+                val = tagdata.val;
+            }
+            // If the tag has a value, insert it into the text.
+            if (val !== 0) {
+                tag["val"] = val;
+                tag["name"] = tag["name"].replace("{VAL}", String(tag["val"]));
+                tag["description"] = tag["description"].replace("{VAL}", String(tag["val"]));
+            }
+        } else {
+            tag = default_tag
         }
     }
     return tag;

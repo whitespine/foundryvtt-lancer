@@ -79,7 +79,7 @@ export function lancerItemInit(data: any) {
 }
 
 export class LancerItem extends Item {
-    data:
+    data!:
         | LancerSkillItemData
         | LancerTalentItemData
         | LancerCoreBonusItemData
@@ -110,53 +110,53 @@ export interface LancerItemData extends ItemData {
 }
 
 export class LancerSkill extends LancerItem {
-    data: LancerSkillItemData;
+    data!: LancerSkillItemData;
 }
 
 export class LancerTalent extends LancerItem {
-    data: LancerTalentItemData;
+    data!: LancerTalentItemData;
 }
 
 export class LancerCoreBonus extends LancerItem {
-    data: LancerCoreBonusItemData;
+    data!: LancerCoreBonusItemData;
 }
 
 export class LancerLicense extends LancerItem {
-    data: LancerLicenseItemData;
+    data!: LancerLicenseItemData;
 }
 
 export class LancerPilotArmor extends LancerItem {
-    data: LancerPilotArmorItemData;
+    data!: LancerPilotArmorItemData;
 }
 
 export class LancerPilotWeapon extends LancerItem {
-    data: LancerPilotWeaponItemData;
+    data!: LancerPilotWeaponItemData;
 }
 
 export class LancerPilotGear extends LancerItem {
-    data: LancerPilotGearItemData;
+    data!: LancerPilotGearItemData;
 }
 
 export class LancerFrame extends LancerItem {
-    data: LancerFrameItemData;
+    data!: LancerFrameItemData;
 }
 
 export class LancerMechSystem extends LancerItem {
-    data: LancerMechSystemItemData;
+    data!: LancerMechSystemItemData;
 }
 
 export class LancerMechWeapon extends LancerItem {
-    data: LancerMechWeaponItemData;
+    data!: LancerMechWeaponItemData;
 }
 
 export class LancerNPCFeature extends LancerItem {
-    data: LancerNPCFeatureItemData;
+    data!: LancerNPCFeatureItemData;
 }
 
 export class LancerNPCTemplate extends LancerItem {
-    data: LancerNPCTemplateItemData;
+    data!: LancerNPCTemplateItemData;
 }
 
 export class LancerNPCClass extends LancerItem {
-    data: LancerNPCClassItemData;
+    data!: LancerNPCClassItemData;
 }

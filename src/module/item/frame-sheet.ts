@@ -23,7 +23,7 @@ export class LancerFrameSheet extends LancerItemSheet {
      * Tag controls event handler
      * @param event The click event
      */
-    async _onClickTagControl(event) {
+    async _onClickTagControl(event: any) {
         event.preventDefault();
         const a = $(event.currentTarget);
         const action = a.data("action");

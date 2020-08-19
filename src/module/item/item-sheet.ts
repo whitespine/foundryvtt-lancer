@@ -1,4 +1,4 @@
-import { LancerSkillSheetData } from "../interfaces";
+import { LancerSkillSheetData, LancerNPCFeatureSheetData } from "../interfaces";
 import { LANCER } from "../config";
 import { NPCFeatureIcons } from "./npc-feature";
 import { NpcFeatureType, Npc } from "machine-mind";
@@ -42,8 +42,13 @@ export class LancerItemSheet extends ItemSheet {
      * Prepare data for rendering the Item sheet
      * The prepared data object contains both the item data as well as additional sheet options
      */
-    getData() {
+    getData(): ItemSheetData {
         const data: ItemSheetData = super.getData();
+
+        if(!data.item) {
+            // Just junk it
+            return {};
+        }
 
         if (data.item.type === "npc_feature" && data.data.feature_type === NpcFeatureType.Weapon) {
             if (data.data.weapon_type) {
@@ -80,7 +85,7 @@ export class LancerItemSheet extends ItemSheet {
      * Activate event listeners using the prepared sheet HTML
      * @param html {HTML}   The prepared HTML object ready to be rendered into the DOM
      */
-    activateListeners(html) {
+    activateListeners(html: any) {
         super.activateListeners(html);
 
         // Everything below here is only needed if the sheet is editable
@@ -107,7 +112,7 @@ export class LancerItemSheet extends ItemSheet {
      * @param event    The originating event
      * @private
      */
-    async _onSelectDelete(event) {
+    async _onSelectDelete(event: any) {
         const s = $(event.currentTarget);
         if (s.val() === "delete") {
             event.preventDefault();
@@ -129,7 +134,7 @@ export class LancerItemSheet extends ItemSheet {
      * @param {MouseEvent} event    The originating left click event
      * @private
      */
-    async _onClickArrayControl(event) {
+    async _onClickArrayControl(event: any) {
         event.preventDefault();
         const a = $(event.currentTarget);
         const action = a.data("action");
@@ -147,9 +152,11 @@ export class LancerItemSheet extends ItemSheet {
         if (action === "create") {
             // I can't figure out a better way to prevent collisions
             // Feel free to come up with something better
+            // TODOTODTODOTODTODOTODTODOTODTODOTODTODOTODTODOTODTODOTODTODOTODTODOTODTODOTODTODOTODTODOTODOOOOOOOOOOOOOTODOTODO resolve this crime against software >:(
             const keys = Object.keys(itemArr);
             var newIndex = 0;
             if (keys.length > 0) {
+                // @ts-ignore
                 newIndex = Math.max.apply(Math, keys) + 1;
             }
             itemArr[newIndex] = null;
@@ -178,7 +185,8 @@ export class LancerItemSheet extends ItemSheet {
     /* -------------------------------------------- */
 
     /** @override */
-    _updateObject(event, formData) {
+    // Todo: type this
+    _updateObject(event: any, formData: any) {
         if (this.item.data.type === "npc_feature") {
             // TODO: sanitize fields from other feature types
 
@@ -189,7 +197,7 @@ export class LancerItemSheet extends ItemSheet {
                 formData["img"].startsWith(imgPath) &&
                 Object.values(NPCFeatureIcons).includes(shortImg)
             ) {
-                formData["img"] = imgPath + NPCFeatureIcons[formData["data.feature_type"]];
+                formData["img"] = imgPath + NPCFeatureIcons[formData["data.feature_type"] as NpcFeatureType];
             }
 
             // Re-build NPC Weapon size and type
@@ -251,7 +259,7 @@ export class LancerItemSheet extends ItemSheet {
 }
 
 // Helper function to get arbitrarily deep array references
-function getValue(object, path) {
+function getValue(object: any, path: string) {
     return path
         .replace(/\[/g, ".")
         .replace(/\]/g, "")

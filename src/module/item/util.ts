@@ -50,6 +50,18 @@ import {
     LancerNPCTemplateData,
     LancerNPCClassData,
     LancerNPCFeatureData,
+    LancerSkillItemData,
+    LancerTalentItemData,
+    LancerCoreBonusItemData,
+    LancerPilotArmorItemData,
+    LancerPilotWeaponItemData,
+    LancerPilotGearItemData,
+    LancerFrameItemData,
+    LancerMechSystemItemData,
+    LancerMechWeaponItemData,
+    LancerNPCClassItemData,
+    LancerNPCTemplateItemData,
+    LancerNPCFeatureItemData,
 } from "../interfaces";
 import { IContentPackData } from "machine-mind/dist/classes/ContentPack";
 
@@ -69,53 +81,64 @@ export const NPC_FEATURE_PACK = "lancer.npc_features";
 
 // Quick helper
 async function get_pack<T>(pack_name: string): Promise<T[]> {
-    return game.packs
-        .get(pack_name)
-        .getContent()
+    let pack = game.packs.get(pack_name);
+    if(pack) {
+        return pack.getContent()
         .then(g => g.map(v => v.data)) as Promise<T[]>;
+    } else {
+        console.warn("No such pack: ", pack_name);
+        return [];
+    }
 }
 
 // Quick accessors to entire arrays of rhe descript items
-export async function get_Skills_pack(): Promise<LancerSkill[]> {
+export async function get_Skills_pack(): Promise<LancerSkillItemData[]> {
     return get_pack(SKILLS_PACK);
 }
-export async function get_Talents_pack(): Promise<LancerTalent[]> {
+export async function get_Talents_pack(): Promise<LancerTalentItemData[]> {
     return get_pack(TALENTS_PACK);
 }
-export async function get_CoreBonuses_pack(): Promise<LancerCoreBonus[]> {
+export async function get_CoreBonuses_pack(): Promise<LancerCoreBonusItemData[]> {
     return get_pack(CORE_BONUS_PACK);
 }
-export async function get_PilotArmor_pack(): Promise<LancerPilotArmor[]> {
+export async function get_PilotArmor_pack(): Promise<LancerPilotArmorItemData[]> {
     return get_pack(PILOT_ARMOR_PACK);
 }
-export async function get_PilotWeapons_pack(): Promise<LancerPilotWeapon[]> {
+export async function get_PilotWeapons_pack(): Promise<LancerPilotWeaponItemData[]> {
     return get_pack(PILOT_WEAPON_PACK);
 }
-export async function get_PilotGear_pack(): Promise<LancerPilotGear[]> {
+export async function get_PilotGear_pack(): Promise<LancerPilotGearItemData[]> {
     return get_pack(PILOT_GEAR_PACK);
 }
-export async function get_Frames_pack(): Promise<LancerFrame[]> {
+export async function get_Frames_pack(): Promise<LancerFrameItemData[]> {
     return get_pack(FRAME_PACK);
 }
-export async function get_MechSystems_pack(): Promise<LancerMechSystem[]> {
+export async function get_MechSystems_pack(): Promise<LancerMechSystemItemData[]> {
     return get_pack(MECH_SYSTEM_PACK);
 }
-export async function get_MechWeapons_pack(): Promise<LancerMechWeapon[]> {
+export async function get_MechWeapons_pack(): Promise<LancerMechWeaponItemData[]> {
     return get_pack(MECH_WEAPON_PACK);
 }
-export async function get_NpcClassses_pack(): Promise<LancerNPCClass[]> {
+export async function get_NpcClassses_pack(): Promise<LancerNPCClassItemData[]> {
     return get_pack(NPC_CLASS_PACK);
 }
-export async function get_NpcTemplates_pack(): Promise<LancerNPCTemplate[]> {
+export async function get_NpcTemplates_pack(): Promise<LancerNPCTemplateItemData[]> {
     return get_pack(NPC_TEMPLATE_PACK);
 }
-export async function get_NpcFeatures_pack(): Promise<LancerNPCFeature[]> {
+export async function get_NpcFeatures_pack(): Promise<LancerNPCFeatureItemData[]> {
     return get_pack(NPC_FEATURE_PACK);
 }
 
 // Lookups
 async function pack_lookup<T>(pack_name: string, name: string): Promise<T | null> {
+    // Get and check pack
     let pack = game.packs.get(pack_name);
+    if(!pack) {
+        console.warn("No such pack: ", pack_name);
+        return null;
+    }
+
+    // Lookup in index
     let index = await pack.getIndex();
     let found = index.find(i => i.name === name);
     if (!found) {
@@ -123,7 +146,9 @@ async function pack_lookup<T>(pack_name: string, name: string): Promise<T | null
     }
 
     // Get by index
-    let x = pack.getEntry(found.id);
+    console.log("Found: ");
+    console.log(found);
+    let x = pack.getEntry(found._id);
     return x;
 }
 // Quick accessors to content pack items
@@ -295,6 +320,7 @@ export function compendium_item_to_lancer_item_data(
 
 // Basically, just wraps the awaiting and null checking aspects of pushing found items to an array
 async function push_helper<T>(into: T[], pack: string, name: string) {
+  console.log("Lookup " + pack + " | " + name);
     let item = await pack_lookup<T>(pack, name);
     if (item) {
         into.push(item);
@@ -303,53 +329,41 @@ async function push_helper<T>(into: T[], pack: string, name: string) {
 
 // Just hunts items down by matching ids
 export async function try_lookup_pilot_items(p: Pilot): Promise<LancerItem[]> {
-    let mech = p.ActiveMech.ActiveLoadout;
+    let mech = p.ActiveMech;
     let pilot = p.Loadout;
 
-    // Pilot data
-    let pilot_armor = pilot.Armor;
-    let pilot_gear = [...pilot.Gear, ...pilot.ExtendedGear];
-
-    // Mech data
-    let mech_weapons = mech.Weapons;
-    let mech_systems = mech.Systems;
-
-    // The mech itself
-    let mech_frame = p.ActiveMech.Frame;
-
-    // Pilot licenses etc
-    let licenses = p.Licenses;
-    let core_bonuses = p.CoreBonuses;
-
-    // Skills
-    let skills = p.Skills;
-    let talents = p.Talents;
-
-    // Consolidate them all
-    // let all_items: CompendiumItem[] = [...pilot_weapons, ...pilot_armor, ...pilot_gear, ...mech_weapons, ...mech_systems, mech_frame, ...licenses, ...core_bonuses, ...skills, ...talents];
     let r: LancerItem[] = [];
 
+    let x = pilot.Weapons;
+    let v = [...pilot.Weapons];
     for (let x of [...pilot.Weapons, ...pilot.ExtendedWeapons]) {
-        await push_helper(r, PILOT_WEAPON_PACK, x.Name);
+        if(x)
+            await push_helper(r, PILOT_WEAPON_PACK, x.Name);
     }
 
     for (let x of pilot.Armor) {
+        if(x)
         await push_helper(r, PILOT_ARMOR_PACK, x.Name);
     }
 
     for (let x of [...pilot.Gear, ...pilot.ExtendedGear]) {
+        if(x)
         await push_helper(r, PILOT_GEAR_PACK, x.Name);
     }
 
-    for (let x of mech.Weapons) {
-        await push_helper(r, MECH_WEAPON_PACK, x.Name);
-    }
+    if(mech) {
+        if(mech.ActiveLoadout) {
+            for (let x of mech.ActiveLoadout.Weapons) {
+                await push_helper(r, MECH_WEAPON_PACK, x.Name);
+            }
 
-    for (let x of mech.Systems) {
-        await push_helper(r, MECH_SYSTEM_PACK, x.Name);
-    }
+            for (let x of mech.ActiveLoadout.Systems) {
+                await push_helper(r, MECH_SYSTEM_PACK, x.Name);
+            }
+        }
 
-    await push_helper(r, FRAME_PACK, p.ActiveMech.Frame.Name);
+        await push_helper(r, FRAME_PACK, mech.Frame.Name);
+    }
 
     // for(let x of p.Licenses) {
     // await push_helper(r, LICENSE_PACK, x.ID);
@@ -391,29 +405,29 @@ export async function CompendiumData_as_ContentPack(): Promise<IContentPack> {
     let raw_npc_features = await get_NpcFeatures_pack();
 
     // Convert
-    let skills = raw_skills.map(c => conv.LancerSkillData_to_ISkillData(c.data.data));
+    let skills = raw_skills.map(c => conv.LancerSkillData_to_ISkillData(c.data));
     let coreBonuses = raw_core_bonuses.map(c =>
-        conv.LancerCoreBonusData_to_ICoreBonusData(c.data.data)
+        conv.LancerCoreBonusData_to_ICoreBonusData(c.data)
     );
-    let frames = raw_frames.map(c => conv.LancerFrameData_to_IFrameData(c.data.data));
+    let frames = raw_frames.map(c => conv.LancerFrameData_to_IFrameData(c.data));
     // let mods = raw_frames.map(LancerModData_to_IModData);
     let npcClasses = raw_npc_classes.map(c =>
-        conv.LancerNPCClassData_to_INpcClassData(c.data.data)
+        conv.LancerNPCClassData_to_INpcClassData(c.data)
     );
     let npcFeatures = raw_npc_features.map(c =>
-        conv.LancerNPCFeatureData_to_INpcFeatureData(c.data.data)
+        conv.LancerNPCFeatureData_to_INpcFeatureData(c.data)
     );
     let npcTemplates = raw_npc_templates.map(c =>
-        conv.LancerNPCTemplateData_to_INpcTemplateData(c.data.data)
+        conv.LancerNPCTemplateData_to_INpcTemplateData(c.data)
     );
-    let pilotGear = raw_gear.map(c => conv.LancerPilotGearData_to_IPilotEquipment(c.data.data));
-    let pilotArmor = raw_armor.map(c => conv.LancerPilotArmorData_to_IPilotEquipment(c.data.data));
+    let pilotGear = raw_gear.map(c => conv.LancerPilotGearData_to_IPilotEquipment(c.data));
+    let pilotArmor = raw_armor.map(c => conv.LancerPilotArmorData_to_IPilotEquipment(c.data));
     let pilotWeapons = raw_pilot_weapons.map(c =>
-        conv.LancerPilotWeaponData_to_IPilotEquipment(c.data.data)
+        conv.LancerPilotWeaponData_to_IPilotEquipment(c.data)
     );
-    let systems = raw_systems.map(c => conv.LancerMechSystemData_to_IMechSystemData(c.data.data));
-    let talents = raw_talents.map(c => conv.LancerTalentData_to_ITalentData(c.data.data));
-    let weapons = raw_weapons.map(c => conv.LancerMechWeaponData_to_IMechWeaponData(c.data.data));
+    let systems = raw_systems.map(c => conv.LancerMechSystemData_to_IMechSystemData(c.data));
+    let talents = raw_talents.map(c => conv.LancerTalentData_to_ITalentData(c.data));
+    let weapons = raw_weapons.map(c => conv.LancerMechWeaponData_to_IMechWeaponData(c.data));
 
     let res: IContentPackData = {
         skills,
@@ -449,7 +463,7 @@ export async function CompendiumData_as_ContentPack(): Promise<IContentPack> {
     return icp;
 }
 
-// Populates the store with all compendium items
+// Populates the store with all compendium items, as well as maybe player items (in the future - we'll see)
 export async function reload_store(): Promise<void> {
     // Get all compendium data
     let comp = CompendiumData_as_ContentPack();

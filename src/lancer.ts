@@ -12,12 +12,15 @@ import { LANCER } from "./module/config";
 const lp = LANCER.log_prefix;
 import { LancerGame } from "./module/lancer-game";
 import { LancerActor, lancerActorInit } from "./module/actor/lancer-actor";
-import { LancerItem, lancerItemInit, LancerNPCFeature } from "./module/item/lancer-item";
+import { LancerItem, lancerItemInit, LancerNPCFeature, LancerPilotWeapon } from "./module/item/lancer-item";
 import {
     DamageData,
     LancerPilotActorData,
     TagDataShort,
     LancerNPCActorData,
+    LancerNPCFeatureData,
+    LancerMechWeaponData,
+    LancerPilotWeaponData,
 } from "./module/interfaces";
 
 // Import applications
@@ -35,8 +38,11 @@ import { renderCompactTag, renderChunkyTag, renderFullTag } from "./module/item/
 import * as migrations from "./module/migration";
 
 // Import JSON data
-import { CCDataStore, setup_store, CompendiumItem } from "machine-mind";
+import { CCDataStore, setup_store, CompendiumItem, DamageType } from "machine-mind";
 import { FauxPersistor } from "./module/ccdata_io";
+import { import_pilot_by_code, ingest_pilot } from "./module/actor/util";
+import { reload_store } from "./module/item/util";
+import { LancerNPCWeaponData } from "./module/item/npc-feature";
 
 /* ------------------------------------ */
 /* Initialize system                    */
@@ -83,7 +89,13 @@ Hooks.once("init", async function () {
     let store = new CCDataStore(new FauxPersistor(), { disable_core_data: true });
     setup_store(store);
     await store.load_all(f => f(store));
+    await reload_store();
     console.log("Initialized store!!!");
+
+    let drazil = "2a4a572f304efa1244f91bb6a59647eb";
+    await import_pilot_by_code(drazil).then(ingest_pilot).then(x => {
+        console.log("Import succeeded");
+    });
 
     // Register sheet application classes
     Actors.unregisterSheet("core", ActorSheet);
@@ -274,24 +286,21 @@ Hooks.once("init", async function () {
      * Repeat given markup with given times
      * provides @index for the repeated iteraction
      */
-    Handlebars.registerHelper("repeat", function (times, opts) {
-        var out = "";
-        var i;
-        var data = {};
+    // Handlebars.registerHelper("repeat", function (times: number, opts: any) {
+    //     var out = "";
+    //     var i;
 
-        if (times) {
-            for (i = 0; i < times; i += 1) {
-                data["index"] = i;
-                out += opts.fn(this, {
-                    data: data,
-                });
-            }
-        } else {
-            out = opts.inverse(this);
-        }
+    //     if (times) {
+    //         for (i = 0; i < times; i += 1) {
+    //             let data = {index: i};
+    //             out += opts.fn(this as any, { data });
+    //         }
+    //     } else {
+    //         out = opts.inverse(this as any);
+    //     }
 
-        return out;
-    });
+    //     return out;
+    // });
 });
 
 /* ------------------------------------ */
@@ -331,14 +340,18 @@ function getMacroSpeaker(): Actor | null {
     // Determine which Actor to speak as
     const speaker = ChatMessage.getSpeaker();
     console.log(`${lp} Macro speaker`, speaker);
-    let actor: Actor;
+    let actor: Actor | null = null;
     // console.log(game.actors.tokens);
     try {
-        if (speaker.token) actor = game.actors.tokens[speaker.token].actor;
+        if (speaker.token)  {
+            actor = game.actors.tokens[speaker.token].actor;
+        }
     } catch (TypeError) {
         // Need anything here?
     }
-    if (!actor) actor = game.actors.get(speaker.actor, { strict: false }) as Actor;
+    if (!actor) {
+        actor = game.actors.get(speaker.actor, { strict: false });
+    }
     if (!actor) {
         ui.notifications.warn(`Failed to find Actor for macro. Do you need to select a token?`);
         return null;
@@ -362,7 +375,7 @@ async function renderMacro(actor: Actor, template: string, templateData: any) {
 }
 
 async function rollTriggerMacro(title: string, modifier: number, sheetMacro: boolean = false) {
-    let actor: Actor = getMacroSpeaker();
+    let actor: Actor | null = getMacroSpeaker();
     if (actor === null) return;
     console.log(`${lp} rollTriggerMacro actor`, actor);
 
@@ -400,7 +413,7 @@ async function rollStatMacro(
     sheetMacro: boolean = false
 ) {
     // Determine which Actor to speak as
-    let actor: Actor = getMacroSpeaker();
+    let actor: Actor | null = getMacroSpeaker();
     if (actor === null) return;
     console.log(`${lp} rollStatMacro actor`, actor);
 
@@ -448,11 +461,11 @@ async function rollStatMacro(
 
 async function rollAttackMacro(w: string, a: string) {
     // Determine which Actor to speak as
-    let actor: Actor = getMacroSpeaker();
+    let actor: Actor | null = getMacroSpeaker();
     if (actor === null) return;
 
     // Get the item
-    const item: Item = game.actors.get(a).getOwnedItem(w);
+    const item: Item | null = game.actors.get(a).getOwnedItem(w);
     console.log(`${lp} Rolling attack macro`, item, w, a);
     if (!item) {
         ui.notifications.error(
@@ -472,32 +485,38 @@ async function rollAttackMacro(w: string, a: string) {
     let damage: DamageData[];
     let effect: string;
     let tags: TagDataShort[];
-    const wData = item.data.data;
+
     if (item.type === "mech_weapon") {
-        grit = (item.actor.data as LancerPilotActorData).data.pilot.grit;
+        let wData = item.data.data as LancerMechWeaponData;
+        grit = (item.actor!.data as LancerPilotActorData).data.pilot.grit;
         damage = wData.damage;
         tags = wData.tags;
         effect = wData.effect;
     } else if (item.type === "pilot_weapon") {
-        grit = (item.actor.data as LancerPilotActorData).data.pilot.grit;
+        let wData = item.data.data as LancerPilotWeaponData;
+        grit = (item.actor!.data as LancerPilotActorData).data.pilot.grit;
         damage = wData.damage;
         tags = wData.tags;
         effect = wData.effect;
     } else if (item.type === "npc_feature") {
-        const tier = (item.actor.data as LancerNPCActorData).data.tier_num - 1;
+        let wData = item.data.data as LancerNPCWeaponData;
+        const tier = (item.actor!.data as LancerNPCActorData).data.tier_num - 1;
         if (wData.attack_bonus && wData.attack_bonus[tier]) {
-            grit = parseInt(wData.attack_bonus[tier]);
+            grit = wData.attack_bonus[tier];
         }
         if (wData.accuracy && wData.accuracy[tier]) {
-            acc = parseInt(wData.accuracy[tier]);
+            acc = wData.accuracy[tier];
         }
         // Reduce damage values to only this tier
-        damage = duplicate(wData.damage);
-        damage.forEach(d => {
-            d.val = d.val[tier];
-        });
+        damage = [];
+        for(let d of wData.damage) {
+            damage.push({
+                val: d.val[tier],
+                type: d.type
+            });
+        }
         tags = wData.tags;
-        effect = wData.effect;
+        effect = wData.effect || "";
     } else {
         ui.notifications.error(`Error rolling attack macro - ${item.name} is not a weapon!`);
         return Promise.resolve();
@@ -519,7 +538,7 @@ async function rollAttackMacro(w: string, a: string) {
     let attack_roll = new Roll(atk_str).roll();
 
     // Iterate through damage types, rolling each
-    let damage_results = [];
+    let damage_results: Array<{roll: Roll, tt: HTMLElement | JQuery<HTMLElement>, dtype: DamageType}> = [];
     damage.forEach(async x => {
         const droll = new Roll(x.val.toString()).roll();
         const tt = await droll.getTooltip();
@@ -548,11 +567,11 @@ async function rollAttackMacro(w: string, a: string) {
 
 async function rollTechMacro(t: string, a: string) {
     // Determine which Actor to speak as
-    let actor: Actor = getMacroSpeaker();
+    let actor: Actor | null = getMacroSpeaker();
     if (actor === null) return;
 
     // Get the item
-    const item: Item = game.actors.get(a).getOwnedItem(t);
+    const item: Item | null = game.actors.get(a).getOwnedItem(t);
     console.log(`${lp} Rolling tech attack macro`, item, t, a);
     if (!item) {
         ui.notifications.error(
@@ -573,11 +592,11 @@ async function rollTechMacro(t: string, a: string) {
     let tags: TagDataShort[];
     const tData = item.data.data;
     if (item.type === "mech_system") {
-        t_atk = (item.actor.data as LancerPilotActorData).data.mech.tech_attack;
+        t_atk = (item.actor!.data as LancerPilotActorData).data.mech.tech_attack;
         tags = tData.tags;
         effect = tData.effect;
     } else if (item.type === "npc_feature") {
-        const tier = (item.actor.data as LancerNPCActorData).data.tier_num - 1;
+        const tier = (item.actor!.data as LancerNPCActorData).data.tier_num - 1;
         if (tData.attack_bonus && tData.attack_bonus[tier]) {
             t_atk = parseInt(tData.attack_bonus[tier]);
         }
