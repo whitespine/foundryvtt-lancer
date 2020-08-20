@@ -73,7 +73,6 @@ export async function ingest_pilot(cc_pilot: mm.Pilot): Promise<void> {
 
     // Get those items
     let items = await MachineMind_pilot_to_VTT_items_compendium_lookup(cc_pilot);
-    console.log(items);
     for (let i of items) {
         await pilot.createOwnedItem(duplicate(i));
     }

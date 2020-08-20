@@ -65,8 +65,6 @@ export class LancerFrameSheet extends LancerItemSheet {
         // TODO: frame size
 
         // TODO: find integrated weapon
-
-        console.log(data);
         return data;
     }
 }
