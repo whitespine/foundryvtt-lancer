@@ -8,7 +8,7 @@ import {
 import { MechType } from "../enums";
 import { LancerActor } from "./lancer-actor";
 import { LANCER } from "../config";
-import { categorize } from "../item/util";
+import { ItemManifest } from "../item/util";
 const lp = LANCER.log_prefix;
 
 const entryPrompt = "//:AWAIT_ENTRY>";
@@ -74,7 +74,7 @@ export class LancerNPCSheet extends ActorSheet {
     _prepareItems(data: LancerNPCSheetData) {
         // Mirror items into filtered list properties
         const accumulator = {};
-        let sorted = categorize(data.actor.items as LancerItem[]);
+        let sorted = new ItemManifest().add_items(data.items as LancerItem[]);
         data.npc_templates = sorted.npc_templates.map(x => x.data.data);
         data.npc_features = sorted.npc_features;
         data.npc_class = sorted.npc_classes[0]; // Failure here should absolutely error

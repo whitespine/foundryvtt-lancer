@@ -2,7 +2,7 @@ import * as mm from "machine-mind";
 import { LancerActor, lancerActorInit } from "./lancer-actor";
 import { CompendiumCategory, store, CompendiumItem } from "machine-mind";
 import { LancerPilotData, LancerPilotActorData } from "../interfaces";
-import { try_lookup_pilot_items } from "../item/util";
+import { MachineMind_pilot_to_VTT_items_compendium_lookup } from "../item/util";
 
 export async function import_pilot_by_code(code: string): Promise<mm.Pilot> {
     let data = await mm.loadPilot(code);
@@ -72,7 +72,7 @@ export async function ingest_pilot(cc_pilot: mm.Pilot): Promise<void> {
     pilot.update(pad);
 
     // Get those items
-    let items = await try_lookup_pilot_items(cc_pilot);
+    let items = await MachineMind_pilot_to_VTT_items_compendium_lookup(cc_pilot);
     console.log(items);
     for (let i of items) {
         await pilot.createOwnedItem(duplicate(i));

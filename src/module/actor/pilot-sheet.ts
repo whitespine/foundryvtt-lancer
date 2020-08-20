@@ -9,7 +9,7 @@ import { MechType } from "../enums";
 import { LancerActor } from "./lancer-actor";
 import { LancerGame } from "../lancer-game";
 import { LANCER } from "../config";
-import { categorize, count_sp, ItemDataManifest, ItemManifest } from "../item/util";
+import { ItemDataManifest, ItemManifest } from "../item/util";
 import { MountType } from "machine-mind";
 const lp = LANCER.log_prefix;
 
@@ -103,8 +103,9 @@ export class LancerPilotSheet extends ActorSheet {
 
         // Mirror items into filtered list properties
         let sorted = new ItemDataManifest().add_items((data.items as unknown) as LancerItemData[]) as unknown as ItemManifest; // Have to deal with an improper type annotation
+        let sorted_data = sorted.demote();
         console.log("What the heck is happening");
-        let sp_count = count_sp(sorted);
+        let sp_count = sorted_data.count_sp();
 
         data.sp_used = sp_count;
         data.skills = sorted.skills;
