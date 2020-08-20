@@ -4,6 +4,7 @@ import {
     LancerFrameStatsData,
     LancerMountData,
     LancerPilotActorData,
+    LancerPilotData,
 } from "../interfaces";
 import { LancerItem, LancerFrame, LancerMechWeapon, LancerItemData, LancerSkill, LancerTalent, LancerLicense, LancerCoreBonus, LancerPilotGear, LancerPilotWeapon, LancerPilotArmor, LancerMechSystem } from "../item/lancer-item";
 import { MechType } from "../enums";
@@ -12,6 +13,7 @@ import { LancerGame } from "../lancer-game";
 import { LANCER } from "../config";
 import { ItemDataManifest, ItemManifest } from "../item/util";
 import { MountType, CoreBonus } from "machine-mind";
+import { import_pilot_by_code, update_pilot } from "./util";
 const lp = LANCER.log_prefix;
 
 // TODO: should probably move to HTML/CSS
@@ -379,7 +381,11 @@ export class LancerPilotSheet extends ActorSheet {
             let download = html.find('.cloud-control[data-action*="download"]');
             download.click((ev: any) => {
                 ev.stopPropagation();
-                console.log("Downloading.........");
+                // Get the data
+                import_pilot_by_code((this.actor.data.data as LancerPilotData).pilot.cloud_code)
+                    .then(cc_pilot => update_pilot(this.actor as LancerActor, cc_pilot))
+                    .then(() => { console.log("Successfully loaded update pilot from cloud"); })
+                    .catch((e) => { console.error("Failed to update pilot", e); });
             });
         }
     }

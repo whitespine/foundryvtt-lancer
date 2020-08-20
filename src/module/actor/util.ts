@@ -11,12 +11,17 @@ export async function import_pilot_by_code(code: string): Promise<mm.Pilot> {
 }
 
 // oh no
-export async function ingest_pilot(cc_pilot: mm.Pilot): Promise<void> {
+export async function update_pilot(pilot: LancerActor, cc_pilot: mm.Pilot): Promise<void> {
     // Initialize a pilot
-    let pilot: LancerActor = await (LancerActor.create({
-        type: "pilot",
-        name: cc_pilot.Name,
-    }) as Promise<LancerActor>);
+    // let pilot: LancerActor = await (LancerActor.create({
+        // type: "pilot",
+        // name: cc_pilot.Callsign,
+    // }) as Promise<LancerActor>);
+    if(pilot.data.type !== "pilot") {
+        throw TypeError("Cannot operate on non-pilot actors");
+    }
+
+    // Get data aliases
     let pad = duplicate(pilot.data) as LancerPilotActorData;
     let pd = pad.data;
 
@@ -30,6 +35,8 @@ export async function ingest_pilot(cc_pilot: mm.Pilot): Promise<void> {
     pd.pilot.notes = cc_pilot.Notes;
     pd.pilot.quirk = cc_pilot.Quirk;
     pd.pilot.status = cc_pilot.Status;
+    pd.pilot.cloud_code = cc_pilot.CloudID;
+    pd.pilot.cloud_owner_code = cc_pilot.CloudOwnerID;
 
     // Stats
     pd.pilot.stats.armor = cc_pilot.Armor;
@@ -70,6 +77,11 @@ export async function ingest_pilot(cc_pilot: mm.Pilot): Promise<void> {
     }
 
     pilot.update(pad);
+
+    // Wipe old items
+    for(let item of pilot.items.values()) {
+        pilot.deleteOwnedItem(item._id);
+    }
 
     // Get those items
     let items = await MachineMind_pilot_to_VTT_items_compendium_lookup(cc_pilot);

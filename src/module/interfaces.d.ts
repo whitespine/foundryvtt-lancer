@@ -153,6 +153,8 @@ declare interface LancerPilotSubData {
     background: string;
     history: string;
     stats: LancerPilotStatsData;
+    cloud_code: string;
+    cloud_owner_code: string;
     // loadout: LancerPilotLoadoutData;
 }
 

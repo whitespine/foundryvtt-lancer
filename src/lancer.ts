@@ -15,15 +15,12 @@ import { LancerActor, lancerActorInit } from "./module/actor/lancer-actor";
 import {
     LancerItem,
     lancerItemInit,
-    LancerNPCFeature,
-    LancerPilotWeapon,
 } from "./module/item/lancer-item";
 import {
     DamageData,
     LancerPilotActorData,
     TagDataShort,
     LancerNPCActorData,
-    LancerNPCFeatureData,
     LancerMechWeaponData,
     LancerPilotWeaponData,
 } from "./module/interfaces";
@@ -45,7 +42,6 @@ import * as migrations from "./module/migration";
 // Import JSON data
 import { CCDataStore, setup_store, CompendiumItem, DamageType } from "machine-mind";
 import { FauxPersistor } from "./module/ccdata_io";
-import { import_pilot_by_code, ingest_pilot } from "./module/actor/util";
 import { reload_store } from "./module/item/util";
 import { LancerNPCWeaponData } from "./module/item/npc-feature";
 
@@ -96,13 +92,6 @@ Hooks.once("init", async function () {
     await store.load_all(f => f(store));
     await reload_store();
     console.log("Initialized store!!!");
-
-    let drazil = "2a4a572f304efa1244f91bb6a59647eb";
-    await import_pilot_by_code(drazil)
-        .then(ingest_pilot)
-        .then(x => {
-            console.log("Import succeeded");
-        });
 
     // Register sheet application classes
     Actors.unregisterSheet("core", ActorSheet);
