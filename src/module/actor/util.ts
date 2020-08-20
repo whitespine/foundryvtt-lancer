@@ -21,10 +21,6 @@ export async function update_pilot(pilot: LancerActor, cc_pilot: mm.Pilot): Prom
     throw TypeError("Cannot operate on non-pilot actors");
   }
 
-  // Get data aliases
-  let pad = duplicate(pilot.data) as LancerPilotActorData;
-  let pd = pad.data;
-
   // Wipe old items
   for (let item of pilot.items.values()) {
     pilot.deleteOwnedItem(item._id);
@@ -36,7 +32,14 @@ export async function update_pilot(pilot: LancerActor, cc_pilot: mm.Pilot): Prom
     await pilot.createOwnedItem(duplicate(i));
   }
 
+  // Get data aliases
+  let pad = duplicate(pilot.data) as LancerPilotActorData;
+  let pd = pad.data;
+
   // Basics
+  console.log("Pilots:");
+  console.log(pilot);
+  console.log(cc_pilot);
   pd.pilot.background = cc_pilot.Background;
   pd.pilot.callsign = cc_pilot.Callsign;
   pd.pilot.grit = cc_pilot.Grit;
