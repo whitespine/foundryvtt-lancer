@@ -374,6 +374,13 @@ export class LancerPilotSheet extends ActorSheet {
                 this.actor.update({ "data.mech_loadout.mounts": mounts });
                 this._onSubmit(ev);
             });
+
+            // Cloud upload
+            let download = html.find('.cloud-control[data-action*="download"]');
+            download.click((ev: any) => {
+                ev.stopPropagation();
+                console.log("Downloading.........");
+            });
         }
     }
 
