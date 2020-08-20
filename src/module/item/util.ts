@@ -356,7 +356,6 @@ export function MachineMind_to_VTT_data(x: SupportedCompconEntity): LancerItemDa
 
 // Basically, just wraps the awaiting and null checking aspects of pushing found items to an array
 async function push_helper<T extends LancerItem>(into: T[], pack: string, id: string) {
-  console.log("Lookup " + pack + " | " + id);
   let item = await pack_lookup<T>(pack, id);
   if (item) {
     into.push(item);

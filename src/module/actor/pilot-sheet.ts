@@ -391,7 +391,6 @@ export class LancerPilotSheet extends ActorSheet {
       let download = html.find('.cloud-control[data-action*="download"]');
       download.click((ev: any) => {
         ev.stopPropagation();
-        console.log("Form!");
         // Get the data
         import_pilot_by_code((this.actor.data.data as LancerPilotData).pilot.cloud_code)
           .then(cc_pilot => update_pilot(this.actor as LancerActor, cc_pilot))

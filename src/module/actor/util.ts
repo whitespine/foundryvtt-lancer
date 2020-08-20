@@ -37,9 +37,6 @@ export async function update_pilot(pilot: LancerActor, cc_pilot: mm.Pilot): Prom
   let pd = pad.data;
 
   // Basics
-  console.log("Pilots:");
-  console.log(pilot);
-  console.log(cc_pilot);
   pd.pilot.background = cc_pilot.Background;
   pd.pilot.callsign = cc_pilot.Callsign;
   pd.pilot.grit = cc_pilot.Grit;
@@ -88,6 +85,8 @@ export async function update_pilot(pilot: LancerActor, cc_pilot: mm.Pilot): Prom
     pd.mech.sensors = am.SensorRange;
     pd.mech.size = am.Size;
     pd.mech.speed = am.Speed;
+    pd.mech.hp.value = am.CurrentHP;
+    pd.mech.hp.max = am.MaxHP;
   }
 
   pilot.update(pad);
@@ -111,7 +110,6 @@ export async function give_pilot_compendium_item(
   }
 
   // Try getting the item. We assume an initialized store
-  console.log(store.compendium.getItemCollection(cat));
   let item = store.compendium.getReferenceByIDCareful(cat, id);
   if (!item) {
     console.error(`Unable to find item ${id} of type ${cat}`);
