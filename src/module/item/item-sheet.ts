@@ -45,7 +45,7 @@ export class LancerItemSheet extends ItemSheet {
     getData(): ItemSheetData {
         const data: ItemSheetData = super.getData();
 
-        if(!data.item) {
+        if (!data.item) {
             // Just junk it
             return {};
         }
@@ -197,7 +197,8 @@ export class LancerItemSheet extends ItemSheet {
                 formData["img"].startsWith(imgPath) &&
                 Object.values(NPCFeatureIcons).includes(shortImg)
             ) {
-                formData["img"] = imgPath + NPCFeatureIcons[formData["data.feature_type"] as NpcFeatureType];
+                formData["img"] =
+                    imgPath + NPCFeatureIcons[formData["data.feature_type"] as NpcFeatureType];
             }
 
             // Re-build NPC Weapon size and type

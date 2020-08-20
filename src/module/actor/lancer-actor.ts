@@ -217,6 +217,6 @@ export class LancerActor extends Actor {
 
         // Update the actor
         data.data.mech = mech;
-        await this.update(data) ;
+        await this.update(data);
     }
 }

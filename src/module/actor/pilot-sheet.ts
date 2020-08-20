@@ -1,10 +1,15 @@
-import { LancerPilotSheetData, LancerFrameData, LancerFrameStatsData, LancerMountData } from "../interfaces";
+import {
+    LancerPilotSheetData,
+    LancerFrameData,
+    LancerFrameStatsData,
+    LancerMountData,
+} from "../interfaces";
 import { LancerItem, LancerFrame, LancerMechWeapon, LancerItemData } from "../item/lancer-item";
 import { MechType } from "../enums";
 import { LancerActor } from "./lancer-actor";
 import { LancerGame } from "../lancer-game";
 import { LANCER } from "../config";
-import { categorize, count_sp } from "../item/util";
+import { categorize, count_sp, ItemDataManifest, ItemManifest } from "../item/util";
 import { MountType } from "machine-mind";
 const lp = LANCER.log_prefix;
 
@@ -97,7 +102,8 @@ export class LancerPilotSheet extends ActorSheet {
         data.sp_used = 0;
 
         // Mirror items into filtered list properties
-        let sorted = categorize(data.items as unknown as LancerItemData[]);
+        let sorted = new ItemDataManifest().add_items((data.items as unknown) as LancerItemData[]) as unknown as ItemManifest; // Have to deal with an improper type annotation
+        console.log("What the heck is happening");
         let sp_count = count_sp(sorted);
 
         data.sp_used = sp_count;

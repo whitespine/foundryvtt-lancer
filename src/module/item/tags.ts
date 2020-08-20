@@ -33,7 +33,7 @@ function prepareTag(tag: TagData): TagData {
     if (tag["id"]) {
         // Look up values
         const tagdata = findTag(tag["id"]);
-        if(tagdata) {
+        if (tagdata) {
             tag["name"] = tagdata["name"];
             tag["description"] = tagdata["description"];
 
@@ -50,7 +50,7 @@ function prepareTag(tag: TagData): TagData {
                 tag["description"] = tag["description"].replace("{VAL}", String(tag["val"]));
             }
         } else {
-            tag = default_tag
+            tag = default_tag;
         }
     }
     return tag;

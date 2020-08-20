@@ -47,7 +47,7 @@ export async function ingest_pilot(cc_pilot: mm.Pilot): Promise<void> {
     pd.mech.systems = cc_pilot.MechSkills.Sys;
     pd.mech.engineering = cc_pilot.MechSkills.Eng;
 
-    if(am) {
+    if (am) {
         // All dem stats
         pd.mech.armor = am.Armor;
         pd.mech.edef = am.EDefense;

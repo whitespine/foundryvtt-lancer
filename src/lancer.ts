@@ -12,7 +12,12 @@ import { LANCER } from "./module/config";
 const lp = LANCER.log_prefix;
 import { LancerGame } from "./module/lancer-game";
 import { LancerActor, lancerActorInit } from "./module/actor/lancer-actor";
-import { LancerItem, lancerItemInit, LancerNPCFeature, LancerPilotWeapon } from "./module/item/lancer-item";
+import {
+    LancerItem,
+    lancerItemInit,
+    LancerNPCFeature,
+    LancerPilotWeapon,
+} from "./module/item/lancer-item";
 import {
     DamageData,
     LancerPilotActorData,
@@ -93,9 +98,11 @@ Hooks.once("init", async function () {
     console.log("Initialized store!!!");
 
     let drazil = "2a4a572f304efa1244f91bb6a59647eb";
-    await import_pilot_by_code(drazil).then(ingest_pilot).then(x => {
-        console.log("Import succeeded");
-    });
+    await import_pilot_by_code(drazil)
+        .then(ingest_pilot)
+        .then(x => {
+            console.log("Import succeeded");
+        });
 
     // Register sheet application classes
     Actors.unregisterSheet("core", ActorSheet);
@@ -285,7 +292,7 @@ Hooks.once("init", async function () {
     /*
      * Repeat given markup with given times
      * provides @index for the repeated iteraction
-     * 
+     *
      * TODO: Figure out how to not require ts-ignores
      */
     Handlebars.registerHelper("repeat", function (times: number, opts: any) {
@@ -294,7 +301,7 @@ Hooks.once("init", async function () {
 
         if (times) {
             for (i = 0; i < times; i += 1) {
-                let data = {index: i};
+                let data = { index: i };
                 // @ts-ignore
                 out += opts.fn(this as any, { data });
             }
@@ -347,7 +354,7 @@ function getMacroSpeaker(): Actor | null {
     let actor: Actor | null = null;
     // console.log(game.actors.tokens);
     try {
-        if (speaker.token)  {
+        if (speaker.token) {
             actor = game.actors.tokens[speaker.token].actor;
         }
     } catch (TypeError) {
@@ -513,10 +520,10 @@ async function rollAttackMacro(w: string, a: string) {
         }
         // Reduce damage values to only this tier
         damage = [];
-        for(let d of wData.damage) {
+        for (let d of wData.damage) {
             damage.push({
                 val: d.val[tier],
-                type: d.type
+                type: d.type,
             });
         }
         tags = wData.tags;
@@ -542,7 +549,11 @@ async function rollAttackMacro(w: string, a: string) {
     let attack_roll = new Roll(atk_str).roll();
 
     // Iterate through damage types, rolling each
-    let damage_results: Array<{roll: Roll, tt: HTMLElement | JQuery<HTMLElement>, dtype: DamageType}> = [];
+    let damage_results: Array<{
+        roll: Roll;
+        tt: HTMLElement | JQuery<HTMLElement>;
+        dtype: DamageType;
+    }> = [];
     damage.forEach(async x => {
         const droll = new Roll(x.val.toString()).roll();
         const tt = await droll.getTooltip();

@@ -472,9 +472,8 @@ export class Converter {
 // function init_compendium_from_items()
 // Stores/retrieves. For now does nothing. Might eventually hook into entity ids, perhaps?
 export class FauxPersistor extends PersistentStore {
-    async set_item(key: string, val: any): Promise<void> {
-    }
+    async set_item(key: string, val: any): Promise<void> {}
     async get_item<T>(key: string): Promise<T> {
-        return null as unknown as T;
+        return (null as unknown) as T;
     }
 }
