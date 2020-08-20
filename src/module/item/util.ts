@@ -144,26 +144,23 @@ export async function get_NpcFeatures_pack(): Promise<LancerNPCFeatureItemData[]
   return get_pack(NPC_FEATURE_PACK);
 }
 
-// Lookups
-async function pack_lookup<T>(pack_name: string, name: string): Promise<T | null> {
+// Lookups. Currently a bit inefficient as it just looks in literally every item in the pack. But oh well
+async function pack_lookup<T extends LancerItem>(pack_name: string, compcon_id: string): Promise<T | null> {
   let pack = game.packs.get(pack_name);
   if (!pack) {
     console.warn("No such pack: ", pack_name);
     return null;
   }
 
-  // Lookup in indexj
-  let index = await pack.getIndex();
-  let found = index.find(i => i.name === name);
+  // Lookup in all items
+  let index = await pack.getContent();
+  let found = index.find(i => i.data.data.id === compcon_id);
   if (!found) {
     return null;
   }
 
   // Get by index
-  console.log("Found: ");
-  console.log(found);
-  let x = pack.getEntry(found._id);
-  return x;
+  return found as T;
 }
 
 // These two accumulator classes accomplish mostly the same thing, except one tracks items vs the other data.
@@ -358,9 +355,9 @@ export function MachineMind_to_VTT_data(x: SupportedCompconEntity): LancerItemDa
 }
 
 // Basically, just wraps the awaiting and null checking aspects of pushing found items to an array
-async function push_helper<T>(into: T[], pack: string, name: string) {
-  console.log("Lookup " + pack + " | " + name);
-  let item = await pack_lookup<T>(pack, name);
+async function push_helper<T extends LancerItem>(into: T[], pack: string, id: string) {
+  console.log("Lookup " + pack + " | " + id);
+  let item = await pack_lookup<T>(pack, id);
   if (item) {
     into.push(item);
   }
@@ -378,29 +375,29 @@ export async function MachineMind_pilot_to_VTT_items_compendium_lookup(
   let x = pilot.Weapons;
   let v = [...pilot.Weapons];
   for (let x of [...pilot.Weapons, ...pilot.ExtendedWeapons]) {
-    if (x) await push_helper(r, PILOT_WEAPON_PACK, x.Name);
+    if (x) await push_helper(r, PILOT_WEAPON_PACK, x.ID);
   }
 
   for (let x of pilot.Armor) {
-    if (x) await push_helper(r, PILOT_ARMOR_PACK, x.Name);
+    if (x) await push_helper(r, PILOT_ARMOR_PACK, x.ID);
   }
 
   for (let x of [...pilot.Gear, ...pilot.ExtendedGear]) {
-    if (x) await push_helper(r, PILOT_GEAR_PACK, x.Name);
+    if (x) await push_helper(r, PILOT_GEAR_PACK, x.ID);
   }
 
   if (mech) {
     if (mech.ActiveLoadout) {
       for (let x of mech.ActiveLoadout.Weapons) {
-        await push_helper(r, MECH_WEAPON_PACK, x.Name);
+        await push_helper(r, MECH_WEAPON_PACK, x.ID);
       }
 
       for (let x of mech.ActiveLoadout.Systems) {
-        await push_helper(r, MECH_SYSTEM_PACK, x.Name);
+        await push_helper(r, MECH_SYSTEM_PACK, x.ID);
       }
     }
 
-    await push_helper(r, FRAME_PACK, mech.Frame.Name);
+    await push_helper(r, FRAME_PACK, mech.Frame.ID);
   }
 
   // for(let x of p.Licenses) {
@@ -408,15 +405,15 @@ export async function MachineMind_pilot_to_VTT_items_compendium_lookup(
   // }
 
   for (let x of p.CoreBonuses) {
-    await push_helper(r, CORE_BONUS_PACK, x.Name);
+    await push_helper(r, CORE_BONUS_PACK, x.ID);
   }
 
   for (let x of p.Skills) {
-    await push_helper(r, SKILLS_PACK, x.Skill.Name);
+    await push_helper(r, SKILLS_PACK, x.Skill.ID);
   }
 
   for (let x of p.Talents) {
-    await push_helper(r, SKILLS_PACK, x.Talent.Name);
+    await push_helper(r, SKILLS_PACK, x.Talent.ID);
   }
 
   return r;

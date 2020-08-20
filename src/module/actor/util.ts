@@ -25,6 +25,17 @@ export async function update_pilot(pilot: LancerActor, cc_pilot: mm.Pilot): Prom
   let pad = duplicate(pilot.data) as LancerPilotActorData;
   let pd = pad.data;
 
+  // Wipe old items
+  for (let item of pilot.items.values()) {
+    pilot.deleteOwnedItem(item._id);
+  }
+
+  // Get those items
+  let items = await MachineMind_pilot_to_VTT_items_compendium_lookup(cc_pilot);
+  for (let i of items) {
+    await pilot.createOwnedItem(duplicate(i));
+  }
+
   // Basics
   pd.pilot.background = cc_pilot.Background;
   pd.pilot.callsign = cc_pilot.Callsign;
@@ -78,16 +89,6 @@ export async function update_pilot(pilot: LancerActor, cc_pilot: mm.Pilot): Prom
 
   pilot.update(pad);
 
-  // Wipe old items
-  for (let item of pilot.items.values()) {
-    pilot.deleteOwnedItem(item._id);
-  }
-
-  // Get those items
-  let items = await MachineMind_pilot_to_VTT_items_compendium_lookup(cc_pilot);
-  for (let i of items) {
-    await pilot.createOwnedItem(duplicate(i));
-  }
 
   // Deal with mounts eventually
 
