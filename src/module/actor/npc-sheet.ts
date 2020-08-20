@@ -4,11 +4,12 @@ import {
     LancerNPCClass,
     LancerNPCTemplate,
     LancerNPCFeature,
+    LancerItemData,
 } from "../item/lancer-item";
 import { MechType } from "../enums";
 import { LancerActor } from "./lancer-actor";
 import { LANCER } from "../config";
-import { ItemManifest } from "../item/util";
+import { ItemManifest, ItemDataManifest } from "../item/util";
 const lp = LANCER.log_prefix;
 
 const entryPrompt = "//:AWAIT_ENTRY>";
@@ -72,12 +73,14 @@ export class LancerNPCSheet extends ActorSheet {
     /* -------------------------------------------- */
 
     _prepareItems(data: LancerNPCSheetData) {
-        // Mirror items into filtered list properties
-        const accumulator = {};
-        let sorted = new ItemManifest().add_items(data.items as LancerItem[]);
-        data.npc_templates = sorted.npc_templates.map(x => x.data.data);
-        data.npc_features = sorted.npc_features;
-        data.npc_class = sorted.npc_classes[0]; // Failure here should absolutely error
+        // let npc_items = this.actor.items as Collection<LancerItem>;
+        // let sorted = new ItemManifest().add_items(npc_items.values());
+        let npc_item_data = data.items as unknown as LancerItemData[];
+        let sorted = new ItemDataManifest().add_items(npc_item_data.values());
+
+        data.npc_templates = sorted.npc_templates.map(x => x.data); // Why does this work. Like someone fixed exactly one, lol???
+        data.npc_features = sorted.npc_features as unknown as LancerNPCFeature[];
+        data.npc_class = sorted.npc_classes[0] as unknown as LancerNPCClass; 
         //TODO Templates, Classes and Features
     }
 

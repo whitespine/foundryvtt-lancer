@@ -3,14 +3,15 @@ import {
     LancerFrameData,
     LancerFrameStatsData,
     LancerMountData,
+    LancerPilotActorData,
 } from "../interfaces";
-import { LancerItem, LancerFrame, LancerMechWeapon, LancerItemData } from "../item/lancer-item";
+import { LancerItem, LancerFrame, LancerMechWeapon, LancerItemData, LancerSkill, LancerTalent, LancerLicense, LancerCoreBonus, LancerPilotGear, LancerPilotWeapon, LancerPilotArmor, LancerMechSystem } from "../item/lancer-item";
 import { MechType } from "../enums";
 import { LancerActor } from "./lancer-actor";
 import { LancerGame } from "../lancer-game";
 import { LANCER } from "../config";
 import { ItemDataManifest, ItemManifest } from "../item/util";
-import { MountType } from "machine-mind";
+import { MountType, CoreBonus } from "machine-mind";
 const lp = LANCER.log_prefix;
 
 // TODO: should probably move to HTML/CSS
@@ -102,31 +103,33 @@ export class LancerPilotSheet extends ActorSheet {
         data.sp_used = 0;
 
         // Mirror items into filtered list properties
-        let sorted = new ItemDataManifest().add_items((data.items as unknown) as LancerItemData[]) as unknown as ItemManifest; // Have to deal with an improper type annotation
-        let sorted_data = sorted.demote();
-        console.log("What the heck is happening");
-        let sp_count = sorted_data.count_sp();
+        // let pilot_items = this.actor.items as Collection<LancerItem>;
+        let item_data = data.items as unknown as LancerItemData[]; // This is a "True" casting. The typing of data.items is just busted
+        // let sorted = new ItemManifest().add_items(pilot_items.values()); 
+        let sorted = new ItemDataManifest().add_items(item_data.values()); 
+        let sp_count = sorted.count_sp();
 
         data.sp_used = sp_count;
-        data.skills = sorted.skills;
-        data.talents = sorted.talents;
-        data.licenses = sorted.licenses;
-        data.core_bonuses = sorted.core_bonuses;
+        // This is all so wrong but necessary for the time being. Really, both sides of this are just ItemData but the LancerPilotSheetData types are messed up
+        data.skills = sorted.skills as unknown as LancerSkill[];
+        data.talents = sorted.talents as unknown as LancerTalent[];
+        data.licenses = sorted.licenses as unknown as LancerLicense[];
+        data.core_bonuses = sorted.core_bonuses as unknown as LancerCoreBonus[];
         data.pilot_loadout = {
-            gear: sorted.pilot_gear,
-            weapons: sorted.pilot_weapons,
-            armor: sorted.pilot_armor,
+            gear: sorted.pilot_gear as unknown as LancerPilotGear[], 
+            weapons: sorted.pilot_weapons as unknown as LancerPilotWeapon[],
+            armor: sorted.pilot_armor as unknown as LancerPilotArmor[],
         };
 
         // Only take one frame
         if (sorted.frames.length) {
-            data.frame = sorted.frames[0];
+            data.frame = sorted.frames[0] as unknown as LancerFrame;
         } // The else case simple leaves the data in its default init state
 
         // Equip mech garbo
         data.mech_loadout = {
-            weapons: sorted.mech_weapons, // TODO: Handle mounts
-            systems: sorted.mech_systems,
+            weapons: sorted.mech_weapons as unknown as LancerMechWeapon[], // TODO: Handle mounts
+            systems: sorted.mech_systems as unknown as LancerMechSystem[],
         };
 
         // Update mounted weapons to stay in sync with owned items
