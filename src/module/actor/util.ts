@@ -47,8 +47,8 @@ export async function update_pilot(pilot: LancerActor, cc_pilot: mm.Pilot): Prom
     talent.data.rank = corr_talent_rank;
   }
 
-  for(let skill of item_data_sorted.talents) {
-    let corr_skill_rank = cc_pilot.getTalentRank(skill.data.id);
+  for(let skill of item_data_sorted.skills) {
+    let corr_skill_rank = cc_pilot.getSkillRank(skill.data.id);
     skill.data.rank = corr_skill_rank;
   }
   
@@ -75,12 +75,9 @@ export async function update_pilot(pilot: LancerActor, cc_pilot: mm.Pilot): Prom
   pd.pilot.cloud_owner_code = cc_pilot.CloudOwnerID;
 
   // Stats
-  console.log("EVADE BEFORE" + pd.pilot.stats.evasion);
   pd.pilot.stats.armor = cc_pilot.Armor;
   pd.pilot.stats.edef = cc_pilot.EDefense;
   pd.pilot.stats.evasion = cc_pilot.Evasion;
-  console.log("EVADE AFTER" + pd.pilot.stats.evasion);
-  console.log(cc_pilot);
   pd.pilot.stats.hp.max = cc_pilot.MaxHP;
   pd.pilot.stats.hp.value = cc_pilot.CurrentHP;
   pd.pilot.stats.size = 0.5;
