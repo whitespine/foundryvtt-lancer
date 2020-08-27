@@ -34,6 +34,7 @@ import {
   IContentPack,
   store,
   ContentPack,
+  CustomSkill,
 } from "machine-mind";
 
 import { Converter } from "../ccdata_io";
@@ -145,7 +146,10 @@ export async function get_NpcFeatures_pack(): Promise<LancerNPCFeatureItemData[]
 }
 
 // Lookups. Currently a bit inefficient as it just looks in literally every item in the pack. But oh well
-async function pack_lookup<T extends LancerItem>(pack_name: string, compcon_id: string): Promise<T | null> {
+async function pack_lookup<T extends LancerItem>(
+  pack_name: string,
+  compcon_id: string
+): Promise<T | null> {
   let pack = game.packs.get(pack_name);
   if (!pack) {
     console.warn("No such pack: ", pack_name);
@@ -355,48 +359,59 @@ export function MachineMind_to_VTT_data(x: SupportedCompconEntity): LancerItemDa
 }
 
 // Basically, just wraps the awaiting and null checking aspects of pushing found items to an array
-async function push_helper<T extends LancerItem>(into: T[], pack: string, id: string) {
-  let item = await pack_lookup<T>(pack, id);
-  if (item) {
-    into.push(item);
+async function push_helper<T extends LancerItem>(
+  into: T[],
+  errors: string[],
+  pack: string,
+  item: CompendiumItem | CustomSkill
+) {
+  let found_item = await pack_lookup<T>(pack, item.ID);
+  if (found_item) {
+    into.push(found_item);
+  } else {
+    // ui.notifications.warn(`Unable to find ${item.Name} (${item.ID}) in pack ${pack}`);
+    errors.push(`Unable to find ${item.Name} (${item.ID}) in pack ${pack}`);
   }
 }
 
-// Just hunts items down by matching ids
+// Given a machine mind pilot, attempts to find all of its equipment by ID in the compendium.
+// From there, it adds them all to the pilot
+// Failed items will be shown by import
 export async function MachineMind_pilot_to_VTT_items_compendium_lookup(
   p: Pilot
-): Promise<LancerItem[]> {
+): Promise<{ items: LancerItem[]; errors: string[] }> {
   let mech = p.ActiveMech;
   let pilot = p.Loadout;
 
   let r: LancerItem[] = [];
+  let e: string[] = [];
 
   let x = pilot.Weapons;
   let v = [...pilot.Weapons];
   for (let x of [...pilot.Weapons, ...pilot.ExtendedWeapons]) {
-    if (x) await push_helper(r, PILOT_WEAPON_PACK, x.ID);
+    if (x) await push_helper(r, e, PILOT_WEAPON_PACK, x);
   }
 
   for (let x of pilot.Armor) {
-    if (x) await push_helper(r, PILOT_ARMOR_PACK, x.ID);
+    if (x) await push_helper(r, e, PILOT_ARMOR_PACK, x);
   }
 
   for (let x of [...pilot.Gear, ...pilot.ExtendedGear]) {
-    if (x) await push_helper(r, PILOT_GEAR_PACK, x.ID);
+    if (x) await push_helper(r, e, PILOT_GEAR_PACK, x);
   }
 
   if (mech) {
     if (mech.ActiveLoadout) {
       for (let x of mech.ActiveLoadout.Weapons) {
-        await push_helper(r, MECH_WEAPON_PACK, x.ID);
+        await push_helper(r, e, MECH_WEAPON_PACK, x);
       }
 
       for (let x of mech.ActiveLoadout.Systems) {
-        await push_helper(r, MECH_SYSTEM_PACK, x.ID);
+        await push_helper(r, e, MECH_SYSTEM_PACK, x);
       }
     }
 
-    await push_helper(r, FRAME_PACK, mech.Frame.ID);
+    await push_helper(r, e, FRAME_PACK, mech.Frame);
   }
 
   // for(let x of p.Licenses) {
@@ -404,18 +419,21 @@ export async function MachineMind_pilot_to_VTT_items_compendium_lookup(
   // }
 
   for (let x of p.CoreBonuses) {
-    await push_helper(r, CORE_BONUS_PACK, x.ID);
+    await push_helper(r, e, CORE_BONUS_PACK, x);
   }
 
   for (let x of p.Skills) {
-    await push_helper(r, SKILLS_PACK, x.Skill.ID);
+    await push_helper(r, e, SKILLS_PACK, x.Skill);
   }
 
   for (let x of p.Talents) {
-    await push_helper(r, SKILLS_PACK, x.Talent.ID);
+    await push_helper(r, e, SKILLS_PACK, x.Talent);
   }
 
-  return r;
+  return {
+    items: r,
+    errors: e,
+  };
 }
 
 // Move data to cc from foundry, and vice versa

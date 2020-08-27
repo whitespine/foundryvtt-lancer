@@ -392,13 +392,16 @@ export class LancerPilotSheet extends ActorSheet {
       download.click((ev: any) => {
         ev.stopPropagation();
         // Get the data
+        ui.notifications.info("Importing character...");
         import_pilot_by_code((this.actor.data.data as LancerPilotData).pilot.cloud_code)
           .then(cc_pilot => update_pilot(this.actor as LancerActor, cc_pilot))
           .then(() => {
-            console.log("Successfully loaded update pilot from cloud");
+            ui.notifications.info("Successfully loaded pilot state from cloud");
           })
           .catch(e => {
-            console.error("Failed to update pilot", e);
+            ui.notifications.warn(
+              "Failed to update pilot, likely due to missing LCP data: " + e.message
+            );
           });
       });
     }

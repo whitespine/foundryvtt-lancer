@@ -10,7 +10,7 @@ export async function import_pilot_by_code(code: string): Promise<mm.Pilot> {
   return pilot;
 }
 
-// oh no
+// Make the specified actor be the specified pilot
 export async function update_pilot(pilot: LancerActor, cc_pilot: mm.Pilot): Promise<void> {
   // Initialize a pilot
   // let pilot: LancerActor = await (LancerActor.create({
@@ -28,7 +28,15 @@ export async function update_pilot(pilot: LancerActor, cc_pilot: mm.Pilot): Prom
 
   // Get those items
   let items = await MachineMind_pilot_to_VTT_items_compendium_lookup(cc_pilot);
-  for (let i of items) {
+
+  if (items.errors.length) {
+    for (let e of items.errors) {
+      ui.notifications.warn(e);
+    }
+    // Escape
+    return;
+  }
+  for (let i of items.items) {
     await pilot.createOwnedItem(duplicate(i));
   }
 
@@ -91,7 +99,6 @@ export async function update_pilot(pilot: LancerActor, cc_pilot: mm.Pilot): Prom
 
   pilot.update(pad);
 
-
   // Deal with mounts eventually
 
   // Fixup actor name -- this might not work
@@ -102,7 +109,7 @@ export async function give_pilot_compendium_item(
   cat: CompendiumCategory,
   id: string,
   pilot: LancerActor
-) {
+): Promise<void> {
   // Validate
   if (pilot.data.type != "pilot") {
     console.error("For now, cannot give items to npcs/deployables this way");
