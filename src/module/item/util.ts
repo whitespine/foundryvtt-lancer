@@ -427,7 +427,7 @@ export async function MachineMind_pilot_to_VTT_items_compendium_lookup(
   }
 
   for (let x of p.Talents) {
-    await push_helper(r, e, SKILLS_PACK, x.Talent);
+    await push_helper(r, e, TALENTS_PACK, x.Talent);
   }
 
   return {
