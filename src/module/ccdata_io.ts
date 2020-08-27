@@ -263,6 +263,7 @@ export class Converter {
     return {
       brew: this.brew,
       counters: [],
+      type: "gear",
       ...t,
     };
   }
@@ -271,6 +272,7 @@ export class Converter {
     return {
       brew: this.brew,
       counters: [],
+      type: "weapon",
       ...t,
     };
   }
@@ -279,6 +281,7 @@ export class Converter {
     return {
       brew: this.brew,
       counters: [],
+      type: "armor",
       ...t,
     };
   }
