@@ -1,7 +1,7 @@
 import * as mm from "machine-mind";
 import { LancerActor, lancerActorInit } from "./lancer-actor";
-import { CompendiumCategory, store, CompendiumItem } from "machine-mind";
-import { LancerPilotData, LancerPilotActorData } from "../interfaces";
+import { CompendiumCategory, store, CompendiumItem, Mount, MechWeapon } from "machine-mind";
+import { LancerPilotData, LancerPilotActorData, LancerMountData, LancerMechWeaponData } from "../interfaces";
 import { MachineMind_pilot_to_VTT_items_compendium_lookup, ItemManifest, ItemDataManifest } from "../item/util";
 import { LancerItem, LancerItemData } from "../item/lancer-item";
 
@@ -21,11 +21,7 @@ export async function update_pilot(pilot: LancerActor, cc_pilot: mm.Pilot): Prom
   if (pilot.data.type !== "pilot") {
     throw TypeError("Cannot operate on non-pilot actors");
   }
-
-  // Wipe old items
-  for (let item of pilot.items.values()) {
-    pilot.deleteOwnedItem(item._id);
-  }
+  console.log((pilot.data as LancerPilotActorData).data.mech_loadout);
 
   // Get those items
   let items = await MachineMind_pilot_to_VTT_items_compendium_lookup(cc_pilot);
@@ -37,6 +33,12 @@ export async function update_pilot(pilot: LancerActor, cc_pilot: mm.Pilot): Prom
     // Escape
     return;
   }
+
+  // Wipe old items
+  for (let item of pilot.items.values()) {
+    pilot.deleteOwnedItem(item._id);
+  }
+
 
   // Do some pre-editing before owning
   let item_data = items.items.map(i => duplicate(i.data));
@@ -112,11 +114,54 @@ export async function update_pilot(pilot: LancerActor, cc_pilot: mm.Pilot): Prom
     pd.mech.speed = am.Speed;
     pd.mech.hp.value = am.CurrentHP;
     pd.mech.hp.max = am.MaxHP;
+
+    // pd.mech_loadout.mounts
+    if(am.ActiveLoadout) {
+      let aml = am.ActiveLoadout;
+      let raw_mounts: Mount[] = [];
+
+      // Check the core bonuses
+      let int = store.compendium.getReferenceByIDCareful("CoreBonuses", "cb_integrated_weapon")
+      let has_int = int ? cc_pilot.has(int) : false;
+      let ia = store.compendium.getReferenceByID("CoreBonuses", "cb_improved_armament");
+      let has_ia = ia ? cc_pilot.has(ia) : false;
+
+      // Build out our list
+      raw_mounts.push(...aml.IntegratedMounts);
+      if(has_int) {
+        raw_mounts.push(aml.IntegratedWeaponMount);
+      }
+      if(has_ia && aml.EquippableMounts.length < 3) {
+        raw_mounts.push(aml.ImprovedArmamentMount);
+      }
+      raw_mounts.push(...aml.EquippableMounts);
+
+      // Convert to foundry
+      let mounts: LancerMountData[] = [];
+      for(let raw of raw_mounts) {
+        let weapons = raw.Weapons.map(wep => {
+          let result: LancerMechWeaponData = {
+
+          }
+        });
+
+
+        mounts.push({
+          secondary_mount: "I don't think this does anything",
+          type: r.Type,
+          weapons
+        })j
+      }
+
+      for(let m of [...aml.AllMounts])
+      console.log("henlo");
+      console.log(pd.mech_loadout);
+      console.log(am.ActiveLoadout);
+    }
   }
 
   pilot.update(pad);
 
-  // Deal with mounts eventually
 
   // Fixup actor name -- this might not work
   // pilot.token.update({name: cc_pilot.Name});

@@ -16,6 +16,7 @@ import {
   LancerPilotArmorData,
   LancerNPCFeatureData,
   LancerNPCClassStatsData,
+  LancerMountData,
 } from "./interfaces";
 
 // const x: LancerPilotData;
@@ -51,6 +52,12 @@ import {
   MountType,
   WeaponSize,
   MechSystem,
+  MechWeapon,
+  DamageType,
+  ItemType,
+  Mount,
+  IDamageData,
+  IRangeData,
 } from "machine-mind";
 import {
   LancerTalent,
@@ -304,6 +311,64 @@ export class Converter {
       counters: [],
       type: t.weapon_type,
     };
+  }
+
+  MechWeapon(t: MechWeapon): LancerMechWeaponData {
+    // Convert damage, range, tags
+    let damage: IDamageData[] = t.Damage.map(d => ({
+        type: d.Type,
+        val: d.Value,
+        override: d.Override
+    }));
+
+    let range: IRangeData[] = t.Range.map(r => ({
+      type: r.Type,
+      val: r.Value,
+      // bonus: r.kl
+      override: r.Override
+    }));
+      
+    return {
+      damage,
+      mount: t.Size,
+      weapon_type: t.Type,
+      description: t.Description,
+      effect: "" + t.Effect, // TODO: Handle arrays
+      id: t.ID,
+      license: t.License,
+      license_level: t.LicenseLevel,
+      name: t.Name,
+      range,
+      source: t.Source,
+      sp: t.SP,
+      tags: t.Tags,
+
+      mod: null,
+      flavor_name: "",
+      cascading: false,
+      destroyed: false,
+      custom_damage_type: DamageType.Kinetic, // Unsure if this matters
+      note: "",
+      item_type: ItemType.MechWeapon,
+      flavor_description: "",
+      uses: 0,
+      max_uses: 0,
+      max_use_override: 0,
+      loaded: true,
+      integrated: false
+    };
+  }
+
+  Mount_to_LancerMountData(m: Mount): LancerMountData {
+    // Get the weapon(s)
+    let weapons: LancerMechWeaponData[] = m.Weapons.map(w => {
+      let base = this.IMechWeaponData_to_LancerMechWeaponData(w);
+      return {
+        
+      }
+    })
+
+
   }
 
   // Converts the active state of a system to equip data. Note: still need to do compendium loading

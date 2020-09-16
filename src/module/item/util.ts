@@ -520,7 +520,8 @@ export async function reload_store(): Promise<void> {
   // -- todo
 
   // Add the data
+  let replacement = new ContentPack(await comp);
   store.compendium.deleteContentPack(COMPENDIUM_CONTENT_PACK);
-  store.compendium.addContentPack(new ContentPack(await comp));
+  store.compendium.addContentPack(replacement);
   store.compendium.populate();
 }
