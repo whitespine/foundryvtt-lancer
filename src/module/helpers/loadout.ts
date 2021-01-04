@@ -1,10 +1,9 @@
 import { HelperOptions } from "handlebars";
-import { EntryType, Frame, funcs, LiveEntryTypes, Mech, MechLoadout, RegEntry, WeaponMod  } from "machine-mind";
-import { WeaponMount, WeaponSlot } from "machine-mind";
+import { EntryType, Mech, MechLoadout  } from "machine-mind";
+import { WeaponMount } from "machine-mind";
 import { SystemMount } from "machine-mind/dist/class";
-import { LancerActorType, LancerItemType } from "../config";
-import { resolve_dotpath, resolve_helper_dotpath } from "./commons";
-import { frame_refview, mech_weapon_refview } from "./item";
+import { resolve_helper_dotpath } from "./commons";
+import { mech_weapon_refview } from "./item";
 import { simple_mm_ref } from "./refs";
 
 // A drag-drop slot for a system mount. TODO: delete button, clear button
@@ -63,7 +62,7 @@ function all_weapon_mount_view(mech_path: string, loadout_path: string, helper: 
         <a class="add-weapon-mount-button">+</a>
         <a class="reset-all-weapon-mounts-button"><i class="fas fa-redo"></i></a>
     </span>
-    <div class="flexrow">
+    <div class="wraprow triple">
       ${weapon_mounts.join("")}
     </div>
     `;
@@ -80,7 +79,7 @@ function all_system_mount_view(mech_path: string, loadout_path: string, helper: 
         <a class="add-system-mount-button">+</a>
         <a class="reset-all-system-mounts-button"><i class="fas fa-redo"></i></a>
     </span>
-    <div class="flexrow">
+    <div class="wraprow quadruple">
       ${system_slots.join("")}
     </div>
     `;
@@ -112,4 +111,13 @@ export function pilot_slot(data_path: string, options: HelperOptions): string {
   // get the existing
   let existing = resolve_helper_dotpath(options, data_path);
   return simple_mm_ref(EntryType.PILOT, existing, "No Pilot", data_path);
+}
+
+// A drag-drop slot for a frame. TODO: fancify, giving basic stats or something???
+export function frame_refview(frame_path: string, helper: HelperOptions): string {
+  let frame = resolve_helper_dotpath(helper, frame_path);
+  return `<span class="lancer-loadout-header major">
+            CURRENT FRAME 
+          </span>
+          ${simple_mm_ref(EntryType.FRAME, frame, "No Frame", frame_path)}`;
 }

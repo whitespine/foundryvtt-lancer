@@ -1,30 +1,40 @@
 import { HelperOptions } from "handlebars";
 import { EntryType,funcs, RegEntry  } from "machine-mind";
-import {  resolve_helper_dotpath } from "./commons";
-import { simple_mm_ref } from "./refs";
+import { LancerItemType } from "../config";
+import { resolve_helper_dotpath } from "./commons";
+import { ref_commons } from "./refs";
 
 // A helper suitable for showing lists of refs that aren't really slots.
 // trash_actions controls what happens when the trashcan is clicked. Delete destroys an item, splice removes it from the array it is found in, and null replaces with null
-export function editable_mm_ref_list_item<T extends EntryType>(item_path: string, trash_action: "delete" | "splice" | "null",  helper: HelperOptions) {
-  let item: RegEntry<T> | null = resolve_helper_dotpath(helper, item_path);
+export function editable_mm_ref_list_item<T extends LancerItemType>(item_path: string, trash_action: "delete" | "splice" | "null",  helper: HelperOptions) {
+  // Fetch the item
+  let item_: RegEntry<T> | null = resolve_helper_dotpath(helper, item_path);
 
-  if(item) {
-    // Add controls if the item exists
-    let controls = `<div class="ref-list-controls">
-      <a class="gen-control i--dark" data-action="${trash_action}" data-path="${item_path}"><i class="fas fa-trash"></i></a>
-    </div>`
+  // Generate commons
+  let cd = ref_commons(item_);
 
-    return `
-      <div class="flexrow">
-        ${simple_mm_ref(item.Type, item, "")} 
-        ${controls}
-    </div>`;
-
-  } else {
-    // If item not recovered, we produce nothing. This shouldn't really happen, like, ever, so we make a fuss and print an error
-    console.error("List item failed to resolve");
-    return "";
+  if (!cd) {
+    // This probably shouldn't be happening
+    console.error(`Unable to resolve ${item_path}`);
+    return "ERR: Devs, don't try and show null things in a list. this ain't a slot";
   }
+
+  let item = item_!; // cd truthiness implies item truthiness
+
+  // Basically the same as the simple ref card, but with control assed
+  return `
+    <div class="valid ${cd.ref.type} ref ref-card" 
+            data-id="${cd.ref.id}" 
+            data-ref-type="${cd.ref.type}" 
+            data-reg-name="${cd.ref.reg_name}" 
+            data-type="${item.Type}">
+      <img class="ref-icon" src="${cd.img}"></img>
+      <span class="major">${cd.name}</span>
+      <hr class="vsep"> 
+      <div class="ref-list-controls">
+        <a class="gen-control i--dark" data-action="${trash_action}" data-path="${item_path}"><i class="fas fa-trash"></i></a>
+      </div>
+    </div>`;
 }
 
 // ---------------------------------------

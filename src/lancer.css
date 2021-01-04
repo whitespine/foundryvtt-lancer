@@ -515,8 +515,6 @@ tr.lcp-index-header {
   flex: 1 0 0;
   justify-content: space-evenly;
   align-content: stretch;
-  min-width: 33%;
-  max-width: 66%;
 }
 
 .lancer-core-sys-header {
@@ -666,13 +664,9 @@ tr.lcp-index-header {
 }
 
 .ref-list-controls {
-  max-width: 50px;
   margin: 5px;
-  border: 2px solid black;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  flex-wrap: nowrap;
+  margin-left: auto;
+  max-width: 40px;
 }
 
 .pilot-stats {
@@ -1136,6 +1130,7 @@ input.core-power-toggle:not(:checked)::before
   flex-wrap: wrap;
 }
 
+
 /* Two items per row */
 .wraprow.double > * {
   flex: 1 0 calc(50% - 14px); /* the px here is 2x the margin. adjust accordingly */
@@ -1202,7 +1197,6 @@ input.core-power-toggle:not(:checked)::before
   flex: 1 0 calc(80% - 14px); 
   margin: 7px;
 }
-
 
 /* Glow effect courtesy of https://codepen.io/jackrugile/pen/ABeIi */
 .highlight-can-drop {

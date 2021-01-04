@@ -945,12 +945,3 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
     </div>
   </div>`
 };
-
-// A drag-drop slot for a frame.
-export function frame_refview(frame_path: string, helper: HelperOptions): string {
-  let frame = resolve_helper_dotpath(helper, frame_path);
-  return `<span class="lancer-loadout-header major">
-            CURRENT FRAME 
-          </span>
-          ${simple_mm_ref(EntryType.FRAME, frame, "No Frame", frame_path)}`;
-}
