@@ -3,6 +3,7 @@ import { activate_general_controls, del_arr_key,  gentle_merge, is_ref, resolve_
 import { enable_native_dropping_mm_wrap, enable_simple_ref_dragging, enable_simple_ref_dropping, NativeDrop, ResolvedNativeDrop, resolve_native_drop } from "../helpers/dragdrop";
 import { HANDLER_openRefOnClick } from "../helpers/refs";
 import { LancerActorSheetData, LancerStatMacroData } from "../interfaces";
+import { FoundryRegActorData } from "../mm-util/foundry-reg";
 import { mm_wrap_actor } from "../mm-util/helpers";
 import { LancerActor } from "./lancer-actor";
 const lp = LANCER.log_prefix;
@@ -297,8 +298,9 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
   async getData(): Promise<LancerActorSheetData<T>> {
     const data = super.getData() as LancerActorSheetData<T>; // Not fully populated yet!
 
-    // Load mech meta stuff
-    data.mm = await mm_wrap_actor(this.actor as LancerActor<T>);
+    // Drag up the mm context (when ready) to a top level entry in the sheet data
+    await (this.actor.data as FoundryRegActorData<T>).data.derived.mmec_ready;
+    data.mm = (this.actor.data as FoundryRegActorData<T>).data.derived.mmec;
     console.log(`${lp} Actor ctx: `, data);
     this._currData = data;
     return data;

@@ -501,12 +501,8 @@ export class LancerPilotSheet extends LancerActorSheet<EntryType.PILOT> {
    * @private
    */
   async _updateObject(event: Event | JQuery.Event, formData: any): Promise<any> {
-    // Do some pre-processing
-
-    // Copy the pilot's callsign to the prototype token
+    // Only unique behavior we've got here is we want to set the token name using the callsign
     formData["actor.token.name"] = formData["data.callsign"];
-
-    // Then let poarent handle
     return super._updateObject(event, formData);
   }
 }

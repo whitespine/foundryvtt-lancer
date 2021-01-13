@@ -6,9 +6,11 @@ import {
   LancerMountData,
 } from "../interfaces";
 import { LANCER, LancerActorType } from "../config";
-import { EntryType, MountType, funcs, RegEntryTypes, RegMechData } from "machine-mind";
+import { EntryType, MountType, funcs, RegEntryTypes, RegMechData, OpCtx, Mech, Pilot, Deployable } from "machine-mind";
 import { FoundryRegActorData, FoundryRegItemData } from "../mm-util/foundry-reg";
 import { LancerHooks, LancerSubscription } from "../helpers/hooks";
+import { mm_wrap_actor } from "../mm-util/helpers";
+import { system_ready } from "../../lancer";
 const lp = LANCER.log_prefix;
 
 export function lancerActorInit(data: any) {
@@ -56,11 +58,36 @@ export function lancerActorInit(data: any) {
   console.log(data);
 }
 
+// Use for HP, etc
+interface BoundedValue {
+  min: number,
+  max: number,
+  value: number
+}
+
 /**
  * Extend the Actor class for Lancer Actors.
  */
 export class LancerActor<T extends LancerActorType> extends Actor {
-  data!: FoundryRegActorData<T>;
+  data!: FoundryRegActorData<T> & {
+    data: {
+      // Include additional derived info
+      derived: {
+        // These are all derived and populated by MM
+        hp: BoundedValue,
+        heat: BoundedValue,
+        stress: BoundedValue,
+        structure: BoundedValue,
+        overshield: BoundedValue, // Though not truly a bounded value, useful to have it as such for bars etc 
+
+        // Other values we particularly appreciate having cached
+        evasion: number,
+        edef: number,
+        save_target: number,
+        // todo - bonuses and stuff. How to allow for accuracy?
+      }
+    }
+  };
 
   /**
    * Change Class or Tier on a NPC. Recalculates all stats on the NPC.
@@ -173,14 +200,92 @@ export class LancerActor<T extends LancerActorType> extends Actor {
 
   subscriptions = new Array<LancerSubscription>()
 
-  /** @override */
+
+  /** @override 
+   * We need to both:
+   *  - Re-generate all of our subscriptions
+   *  - Re-initialize our MM context
+  */
   prepareDerivedData() {
     this.subscriptions?.forEach( subscription => {
       subscription.unsubscribe()
     })
     this.subscriptions = []
-    this.setupLancerHooks()
+    this.setupLancerHooks();
+
+    // Prepare our derived stat data by first initializing an empty has
+    let dr: this["data"]["data"]["derived"] = {} as any;
+
+    // We set it via defineProperty so it does not show up in JSON stringifies. Also, no point in having it writeable
+    Object.defineProperty(this.data.data, "derived", {
+      value: dr,
+      configurable: true // So we can overwrite it!
+    });
+
+
+    // Default in fields
+    let default_bounded = () => ({
+      min: 0,
+      max: 0,
+      value: 0,
+    });
+    dr.edef = 0;
+    dr.evasion = 0;
+    dr.save_target = 0
+    dr.heat = default_bounded();
+    dr.hp = default_bounded();
+    dr.overshield = default_bounded();
+    dr.structure = default_bounded();
+    dr.stress = default_bounded();
+
+    // Begin the task of wrapping our actor. When done, it will setup our derived fields
+    // Need to wait for system ready to avoid having this break if prepareData called during init step (spoiler alert - it is)
+    dr.mmec_ready = system_ready.then(() => mm_wrap_actor(this)).then(async mmec => {
+      // Always save the context
+      dr.mmec = mmec;
+
+      // Depending on type, setup fields more precisely as able
+      if(mmec.ent.Type == EntryType.MECH) {
+        let mech = mmec.ent as Mech;
+        dr.edef = mech.EDefense;
+        dr.evasion = mech.Evasion;
+        dr.save_target = mech.SaveTarget;
+
+        dr.heat.max = mech.HeatCapacity;
+        dr.heat.value = mech.CurrentHeat;
+
+        dr.hp.max = mech.MaxHP;
+        dr.hp.value = mech.CurrentHP;
+
+        dr.overshield.max = mech.MaxHP; // As good a number as any i guess.
+        dr.overshield.value = mech.Overshield;
+
+        dr.structure.max = mech.MaxStructure;
+        dr.structure.value = mech.CurrentStructure;
+
+        dr.stress.max = mech.MaxStress;
+        dr.stress.value = mech.CurrentStress;
+      } else if (mmec.ent.Type == EntryType.PILOT) {
+        // Pilots only really have base stats + hp + overshield
+        let pilot = mmec.ent as Pilot;
+        dr.edef = pilot.EDefense;
+        dr.evasion = pilot.Evasion;
+
+        dr.hp.max = pilot.MaxHP;
+        dr.hp.value = pilot.CurrentHP;
+
+        dr.overshield.max = pilot.MaxHP; // As good a number as any i guess.
+        dr.overshield.value = pilot.Overshield;
+      } else if (mmec.ent.Type == EntryType.DEPLOYABLE) {
+        // Ditto, although some deployables could theoretically have heat?
+        // let dep = mmec.ent as Deployable;
+        console.log("Deployable stats are not yet put in derived data, pending full implementation in machine mind");
+      } else if (mmec.ent.Type == EntryType.NPC) {
+        console.log("NPC stats are not yet put in derived data, pending full implementation in machine mind");
+      }
+    });
   }
+
 
   /** @override */
   _onUpdate(data: object, options: object, userId: string, context: object) {
@@ -189,12 +294,12 @@ export class LancerActor<T extends LancerActorType> extends Actor {
   }
 
   setupLancerHooks() {
-    let mechData = this.data.data as RegMechData
+    let mechData = this.data.data as unknown as RegMechData; // An uncertain casting, which is why we check for pilot
     if (mechData.pilot) {
       let sub = LancerHooks.on(mechData.pilot, (async (pilot: LancerActor<EntryType.PILOT>) => {
-        this.update(this.data)
+        this.update(this.data);
       }).bind(this))
-      this.subscriptions.push(sub)
+      this.subscriptions.push(sub);
     }
   }
 }

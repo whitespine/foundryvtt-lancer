@@ -93,6 +93,7 @@ export interface FoundryRegItemData<T extends EntryType> {
     // Derived data. Should be removed from any update calls
     derived: {
       mmec: MMEntityContext<T>;
+      mmec_ready: Promise<void>;
       // Include other details as appropriate to the entity
     }
   };
