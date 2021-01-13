@@ -51,6 +51,7 @@ import {
   EntFor,
   GetResult,
 } from "./db_abstractions";
+import { MMEntityContext } from "./helpers";
 
 // Pluck
 const defaults = funcs.defaults;
@@ -88,7 +89,13 @@ Things I'll need
 // This is what an item-data for machine-mind compatible items looks like in foundry.
 export interface FoundryRegItemData<T extends EntryType> {
   _id: string;
-  data: RegEntryTypes<T>;
+  data: RegEntryTypes<T> & {
+    // Derived data. Should be removed from any update calls
+    derived: {
+      mmec: MMEntityContext<T>;
+      // Include other details as appropriate to the entity
+    }
+  };
   type: T;
   img: string;
   flags: any;
