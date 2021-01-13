@@ -52,6 +52,7 @@ export class LancerHooks {
         }
         if (callback) {
             console.log(`${lp} Unsubscribing from ${id}`)
+            //@ts-ignore Pending Bolts' code merger, hooks types are incorrect
             return Hooks.off(id, callback)
         }
     }
@@ -71,6 +72,7 @@ export class LancerSubscription {
     }
 
     unsubscribe() {
+        //@ts-ignore Pending Bolts' code merger, hooks types are incorrect
         Hooks.off(this.name, this.id)
     }
 }
