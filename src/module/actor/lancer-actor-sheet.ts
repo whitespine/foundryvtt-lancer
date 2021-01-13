@@ -299,9 +299,8 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
     const data = super.getData() as LancerActorSheetData<T>; // Not fully populated yet!
 
     // Drag up the mm context (when ready) to a top level entry in the sheet data
-    await (this.actor.data as FoundryRegActorData<T>).data.derived.mmec_ready;
-    data.mm = (this.actor.data as FoundryRegActorData<T>).data.derived.mmec;
-    console.log(`${lp} Actor ctx: `, data);
+    data.mm = await (this.actor.data as FoundryRegActorData<T>).data.derived.mmec_promise;
+    console.log(`${lp} Rendering(?) with following actor ctx: `, data);
     this._currData = data;
     return data;
   }

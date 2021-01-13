@@ -240,7 +240,7 @@ export class LancerActor<T extends LancerActorType> extends Actor {
 
     // Begin the task of wrapping our actor. When done, it will setup our derived fields
     // Need to wait for system ready to avoid having this break if prepareData called during init step (spoiler alert - it is)
-    dr.mmec_ready = system_ready.then(() => mm_wrap_actor(this)).then(async mmec => {
+    dr.mmec_promise = system_ready.then(() => mm_wrap_actor(this)).then(mmec => {
       // Always save the context
       dr.mmec = mmec;
 
@@ -283,6 +283,8 @@ export class LancerActor<T extends LancerActorType> extends Actor {
       } else if (mmec.ent.Type == EntryType.NPC) {
         console.log("NPC stats are not yet put in derived data, pending full implementation in machine mind");
       }
+
+      return mmec;
     });
   }
 
