@@ -301,7 +301,7 @@ export class LancerItemSheet<T extends LancerItemType> extends ItemSheet {
    */
   async _updateObject(event: Event | JQuery.Event, formData: any): Promise<any> {
     // hmm
-    console.log("UPDATE OBJECT CALLED");
+    console.log("UPDATE OBJECT CALLED FROM ITEM SHEET");
 
     // Fetch data, modify, and writeback
     let ct = await this.getDataLazy();

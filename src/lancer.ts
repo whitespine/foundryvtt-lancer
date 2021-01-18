@@ -616,3 +616,18 @@ Hooks.on("hotbarDrop", (_bar: any, data: any, slot: number) => {
     game.user.assignHotbarMacro(macro, slot).then();
   }
 });
+
+// Make derived fields properly update their intended origin target
+Hooks.on("modifyTokenAttribute", (_: any, data: any) => {
+  for(let key of Object.keys(data)) {
+    // If starts with "data.derived", replace with just "data"
+    if(key.includes("data.derived.")) {
+      // Cut the .derived, and also remove any trailing .value to resolve pseudo-bars
+      let new_key = key.replace(/^data\.derived\./, "data.");
+      new_key = new_key.replace(/\.value$/, "");
+      data[new_key] = data[key];
+
+      console.log(`Overrode assignment from ${key} to ${new_key}`);
+    }
+  }
+})

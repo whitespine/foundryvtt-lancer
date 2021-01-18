@@ -1,32 +1,9 @@
 import { DamageData, NPCDamageData, RangeData, TagData } from "../interfaces";
 import { LANCER, LancerItemType, TypeIcon } from "../config";
 import {
-  DamageType,
   EntryType,
   NpcFeatureType,
-  RangeType,
-  SystemType,
-  WeaponSize,
-  WeaponType,
-  Range,
-  Damage,
-  RegEntry,
-  LiveEntryTypes,
 } from "machine-mind";
-import {
-  npc_reaction_effect_preview,
-  npc_system_effect_preview,
-  npc_tech_effect_preview,
-  npc_trait_effect_preview,
-  npc_weapon_effect_preview,
-} from "./effects";
-import {
-  LancerNPCReactionData,
-  LancerNPCSystemData,
-  LancerNPCTechData,
-  LancerNPCTraitData,
-  LancerNPCWeaponData,
-} from "./npc-feature";
 import { FoundryRegItemData } from "../mm-util/foundry-reg";
 
 const lp = LANCER.log_prefix;
@@ -74,19 +51,6 @@ export class LancerItem<T extends LancerItemType> extends Item {
     this.data.data.name = this.data.name;
     if (!this.data.img) this.data.img = CONST.DEFAULT_TOKEN;
   }
-
-  // ============================================================
-  //          SKILLS
-  // ============================================================
-
-  /**
-   * Return a skill trigger's bonus to rolls
-   */
-  // get triggerBonus(): number {
-  //   // Only works for skills.
-  //   if (this.data.type !== EntryType.SKILL) return 0;
-  //   return (this.data as LancerSkillItemData).data.rank * 2;
-  // }
 
   // ============================================================
   //          WEAPONS
@@ -201,34 +165,6 @@ export class LancerItem<T extends LancerItemType> extends Item {
   }
 
   // ============================================================
-  //          NPC FEATURES
-  // ============================================================
-
-  /*
-  get base_feature_items(): Promise<FoundryRegItemData<EntryType.NPC_FEATURE>[]> {
-    const itemData = this.data.data;
-    if ("base_features" in itemData) {
-      return get_pack_content(EntryType.NPC_FEATURE).then(async allFeatures => {
-        return allFeatures.filter(feature => itemData.base_features.includes(feature.data.id));
-      });
-    } else {
-      return Promise.resolve([]);
-    }
-  }
-
-  get optional_feature_items(): Promise<LancerNPCFeatureItemData[]> {
-    const itemData = this.data.data;
-    if ("optional_features" in itemData) {
-      return get_NpcFeatures_pack().then(async allFeatures => {
-        return allFeatures.filter(feature => itemData.optional_features.includes(feature.data.id));
-      });
-    } else {
-      return Promise.resolve([]);
-    }
-  }
-  */
-
-  // ============================================================
   //          GENERAL
   // ============================================================
 
@@ -291,3 +227,5 @@ export type LancerTalent = LancerItem<EntryType.TALENT>;
 
 export type LancerWeaponModData = FoundryRegItemData<EntryType.WEAPON_MOD>;
 export type LancerWeaponMod = LancerItem<EntryType.WEAPON_MOD>;
+
+export type AnyLancerItem = LancerItem<LancerItemType>;

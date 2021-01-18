@@ -124,7 +124,7 @@ export function recreate_ref_from_element<T extends EntryType>(element: HTMLElem
     let id = element.dataset.id;
     let type = element.dataset.refType as T | undefined;
     let reg_name = element.dataset.regName;
-    let is_unresolved_mmid = false;
+    let fallback_mmid = "";
 
     // Check existence
     if(!id) {
@@ -142,7 +142,7 @@ export function recreate_ref_from_element<T extends EntryType>(element: HTMLElem
     id,
     type,
     reg_name,
-    is_unresolved_mmid,
+    fallback_mmid,
   };
 
   return ref;

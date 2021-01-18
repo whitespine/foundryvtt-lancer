@@ -39,7 +39,7 @@ import {
   InsinuationRecord,
   InventoriedRegEntry,
 } from "machine-mind";
-import { LancerActor } from "../actor/lancer-actor";
+import { LancerActor, LancerActorTypes } from "../actor/lancer-actor";
 import { LANCER, LancerActorType, LancerItemType } from "../config";
 import { LancerItem } from "../item/lancer-item";
 import {
@@ -50,6 +50,7 @@ import {
   WorldItemsWrapper,
   EntFor,
   GetResult,
+  cached_get_pack_map,
 } from "./db_abstractions";
 import { MMEntityContext } from "./helpers";
 
@@ -120,37 +121,24 @@ export interface FlagData<T extends EntryType> {
  * comp_actor:{{actor_id}}  // The inventory of an actor in the compendium
  * world                    // The general world registry
  * world_actor:{{actor_id}} // The inventory of an actor in the world
+ * actor:{{actor_id}}       // The inventory of an actor in the world/compendium (it is unknown)
  */
+const cached_regs = new Map<string, FoundryReg>(); // Since regs are stateless, we can just do this
 export class FoundryReg extends Registry {
-  // This reduces the number of new registries we must create. Caches both RegEntry lookups and string lookups
-  private cached_regs = new Map<any, FoundryReg>();
+  // This reduces the number of new registries we must create. Caches both RegEntry lookups and actor string lookups
 
   // Give a registry for the provided inventoried item
-  switch_reg_inv(for_inv_item: InventoriedRegEntry<EntryType>): Registry {
-    // Check cache
-    if (this.cached_regs.has(for_inv_item)) {
-      return this.cached_regs.get(for_inv_item)!;
-    }
+  async switch_reg_inv(for_inv_item: InventoriedRegEntry<EntryType>): Promise<Registry> {
+    // We don't generally know if its compendium or not, so we attempt with wildcard key
+    let key = `actor:${for_inv_item.RegistryID}`; 
 
-    // Base our decision on for_inv_item's registry
-    let fii_regname = for_inv_item.Registry.name();
-
-    // Behaviour changes if original was compendium - if so, need a compendium + actor reg
-    let reg: FoundryReg;
-    if (fii_regname.substr(0, 4) == "comp") {
-      console.warn("Compendium actor inventories not yet properly supported");
-      reg = new FoundryReg({ /*for_actor: actor*/ for_compendium: true });
-    } else {
-      let actor = game.actors.get(for_inv_item.RegistryID) as LancerActor<LancerActorType>;
-      reg = new FoundryReg({ for_actor: actor });
-    }
-
-    // Set cache and return
-    this.cached_regs.set(for_inv_item, reg);
-    return reg;
+    // From here just use switch_reg, so as not to duplicate logic.
+    // It will automatically handle caching and all that, and if the actor doesn't exist, we'll just try the next
+    return (await this.switch_reg(key))!;
   }
 
   // Get a name descriptor of what region/set of items/whatever this registry represents/ provides access to
+  // Sibling function to switch_reg. See comment above class def for explanation of naming convention
   name(): string {
     // Depends on our actor and compendium flags
     if (this.for_compendium) {
@@ -168,83 +156,109 @@ export class FoundryReg extends Registry {
     }
   }
 
-  switch_reg(inventory_id: string): Registry | null {
-    // Check cache
-    if (this.cached_regs.has(inventory_id)) {
-      return this.cached_regs.get(inventory_id)!;
+  async switch_reg(reg_id: string): Promise<Registry | null> {
+    // Check cache. Use cached entry if available
+    if (cached_regs.has(reg_id)) {
+      return cached_regs.get(reg_id)!;
     }
 
-    // Get subtype
-    let [subtype, id] = inventory_id.split(":");
+    // Get subtype/id by splitting on colon. See comment above class def for explanation
+    let [subtype, id] = reg_id.split(":");
     id = id ?? "";
+
+    // Find a reg based on the subtype
     let reg: FoundryReg;
     switch (subtype) {
       case "comp":
+        // Generic compendium reg. Handles items/actors in the compendium (but not embedded within compendium actors)
         reg = new FoundryReg({ for_compendium: true });
         break;
       case "world":
+        // Generic world reg. Handles items/actors in the world (but not embedded within world actors)
         reg = new FoundryReg();
         break;
       case "world_actor":
-        // return an actor-compendium with actor fetched v. simply
-        let actor = game.actors.get(id);
-        if (actor) {
-          reg = new FoundryReg({ for_actor: actor });
+        // World actor inventory reg. Specifically allows access to items in that actor. Accessing actors within this reg just scopes back to world
+        let world_actor = game.actors.get(id);
+        if(world_actor) {
+          reg = new FoundryReg({ for_actor: world_actor });
           break;
         } else {
           return null;
         }
       case "comp_actor":
-        console.warn("Compendium actor item refs not yet supported");
-        return null;
+        // Compendium actor inventory reg. Specifically allows access to items in that actor. Accessing actors within this reg just scopes back to compendium
+        // A bit kludgey, but we check all actor packs for a matching item. 
+        // Caching makes this less onerous than it otherwise might be
+        let comp_actor = (
+                  (await cached_get_pack_map(EntryType.DEPLOYABLE)).get(id)
+                ??(await cached_get_pack_map(EntryType.NPC)).get(id)
+                ??(await cached_get_pack_map(EntryType.MECH)).get(id)
+                ??(await cached_get_pack_map(EntryType.PILOT)).get(id)
+                ?? null);
+        // If we found it, then produce a reg as expected
+        if(comp_actor) {
+          reg = new FoundryReg({ for_actor: comp_actor, for_compendium: true });
+          break;
+        } else {
+          return null;
+        }
+      case "actor":
+        // Just try world forst, then comp
+        let tmp_found = (await this.switch_reg(`world_actor:${id}`)) ?? (await this.switch_reg(`comp_actor:${id}`));
+        if(tmp_found) {
+          reg = tmp_found as FoundryReg;
+          break;
+        } else {
+          return null;
+        }
+
       default:
         return null;
     }
 
     // Set cache and return
-    this.cached_regs.set(inventory_id, reg);
+    cached_regs.set(reg_id, reg);
     return reg;
   }
 
   // The associated actor, if any
-  public actor: Actor | null;
-  for_compendium: boolean;
+  private actor: Actor | null;
+  private for_compendium: boolean;
 
   // By default world scope. Can specify either that this is in a compendium, or is in an actor
-  constructor(
-    { for_compendium, for_actor }: { for_compendium?: boolean; for_actor?: Actor | null } = {
-      for_compendium: false,
-    }
-  ) {
+  constructor({ for_compendium, for_actor }: { for_compendium?: boolean; for_actor?: Actor | null } = { for_compendium: false, }) {
     super();
     this.for_compendium = for_compendium ?? false;
 
+    // Handle actor
     this.actor = for_actor ?? null;
-    let _actor = this.actor;
-    if (for_actor && for_compendium) {
-      console.warn(
-        "Editing items within a compendium actor isn't supported, as far as I can tell. You'll want to import it to another scope and make your changes there."
-      );
-    }
 
     // Quick function for generating an item/actor wrapper depending on if we have an actor / depending if the type is an actor type
+    let _actor = this.actor; // needed for scoping reasons
     function quick_wrapper<T extends EntryType>(for_type: T): EntityCollectionWrapper<T> {
-      if (for_compendium) {
-        return new CompendiumWrapper(for_type);
-      } else if (
-        [EntryType.MECH, EntryType.PILOT, EntryType.DEPLOYABLE, EntryType.NPC].includes(for_type)
-      ) {
-        // Make a wrapper to handle actors, pulling from game.actors
-        // @ts-ignore This is a case of typescripts enum discrimination not holding up in more complex cases.
-        return new WorldActorsWrapper(for_type);
-      } else if (for_actor) {
-        // Make a wrapper to handle an individual actor's inventory items
-        // @ts-ignore This is a case of typescripts enum discrimination not holding up in more complex cases.
-        return new ActorInventoryWrapper(for_type, _actor);
+      if(for_compendium) {
+        // Use same wrapper for in or out of compendium acttors. just need to supply an arg saying which we are. Also, actor types here are still "global"!
+        if(for_actor && !LancerActorTypes.includes(for_type as LancerActorType)) {
+          // @ts-ignore This is a case of typescripts enum discrimination not holding up in more complex cases.
+          return new ActorInventoryWrapper(for_type, _actor, true);
+        } else {
+          // Otherwise, all items and actors handled by the same wrapper
+          return new CompendiumWrapper(for_type);
+        }
       } else {
-        // Make a wrapper to handle items, pulling from game.items
-        // @ts-ignore This is a case of typescripts enum discrimination not holding up in more complex cases.
-        return new WorldItemsWrapper(for_type);
+        // Lookups for actor types are "global", regardless of if we are working with a wrapper or not, and are handled by a WorldActorsWrapper
+        if (LancerActorTypes.includes(for_type as LancerActorType)) {
+          // @ts-ignore ditto
+          return new WorldActorsWrapper(for_type);
+        // From here, we've narrowed it down to items either in or out of an actors inventory. Depends on if we were given an actor
+        } else if (for_actor) {
+          // @ts-ignore ditto
+          return new ActorInventoryWrapper(for_type, _actor, false);
+        } else {
+          // @ts-ignore ditto
+          return new WorldItemsWrapper(for_type);
+        }
       }
     }
 
@@ -441,7 +455,7 @@ export class FoundryRegCat<T extends EntryType> extends RegCat<T> {
     return Promise.all(revived);
   }
 
-  // Just create
+  // Just create using our handler
   async create_many_raw(...vals: RegEntryTypes<T>[]): Promise<RegRef<T>[]> {
     let created: Promise<GetResult<T>>[] = [];
 
@@ -453,8 +467,8 @@ export class FoundryRegCat<T extends EntryType> extends RegCat<T> {
     return Promise.all(created).then(created_results => {
       return created_results.map(g => ({
         id: g.id,
+        fallback_mmid: "",
         type: g.type,
-        is_unresolved_mmid: false,
         reg_name: this.parent.name(),
       }));
     });
