@@ -1,11 +1,11 @@
-import { LANCER, LancerActorType } from "../config";
+import { LANCER } from "../config";
 import { activate_general_controls, del_arr_key,  gentle_merge, is_ref, resolve_dotpath, safe_json_parse } from "../helpers/commons";
 import { enable_native_dropping_mm_wrap, enable_simple_ref_dragging, enable_simple_ref_dropping, NativeDrop, ResolvedNativeDrop, resolve_native_drop } from "../helpers/dragdrop";
 import { HANDLER_openRefOnClick } from "../helpers/refs";
 import { LancerActorSheetData, LancerStatMacroData } from "../interfaces";
 import { FoundryRegActorData } from "../mm-util/foundry-reg";
 import { mm_wrap_actor } from "../mm-util/helpers";
-import { LancerActor } from "./lancer-actor";
+import { LancerActor, LancerActorType } from "./lancer-actor";
 const lp = LANCER.log_prefix;
 
 /**
@@ -112,6 +112,7 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
       async (item, dest, evt) => {
         // Now, as far as whether it should really have any effect, that depends on the type
         let path = dest[0].dataset.path!;
+        console.log("Native drop box handling");
         if(path) {
           let data = await this.getDataLazy();
           gentle_merge(data, { [path]: item.ent });
@@ -124,6 +125,7 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
         // as doing so tends to require type resolution (an async op that we can't really afford to do here). 
         // But, so long as we have an ID and type, we should be able to resolve
         let pdata = safe_json_parse(data) as NativeDrop;
+        console.log("Native drop hovering");
         if(pdata?.id !== undefined && pdata?.type !== undefined) {
           return true;
         }

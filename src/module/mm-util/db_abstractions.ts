@@ -1,7 +1,7 @@
 import { EntryType, LiveEntryTypes, RegEntryTypes } from "machine-mind";
-import { AnyLancerActor, LancerActor } from "../actor/lancer-actor";
-import { FriendlyTypeName, LANCER, LancerActorType, LancerItemType } from "../config";
-import { AnyLancerItem, LancerItem } from "../item/lancer-item";
+import { is_actor_type, LancerActor, LancerActorType } from "../actor/lancer-actor";
+import { FriendlyTypeName, LANCER } from "../config";
+import { LancerItem, LancerItemType } from "../item/lancer-item";
 
 const lp = LANCER.log_prefix;
 
@@ -200,21 +200,87 @@ export class WorldActorsWrapper<T extends LancerActorType> extends EntityCollect
   }
 }
 
+// Handles accesses to the placeable tokens synthetic actor set
+export class TokensActorsWrapper<T extends LancerActorType> extends EntityCollectionWrapper<T> {
+  // Need this to filter results by type
+  type: T;
+  constructor(type: T) {
+    super();
+    this.type = type;
+  }
+
+  // Handles type checking
+  private subget(id: string): Token | null {
+    let fi: Token | undefined = canvas.tokens.get(id);
+    if (fi && fi.actor.data.type == this.type) {
+      return fi;
+    } else {
+      return null;
+    }
+  }
+
+  async create(data: RegEntryTypes<T>): Promise<GetResult<T>> {
+    // No
+    throw new Error("This is an ill advised way to create a token. Do better");
+  }
+
+  async update(id: string, item: RegEntryTypes<T>): Promise<void> {
+    let fi = this.subget(id);
+    if (fi) {
+      await fi.actor.update({ data: item }, {});
+    } else {
+      console.error(`Failed to update actor ${id} of type ${this.type} - actor not found`);
+    }
+  }
+
+  async get(id: string): Promise<GetResult<T> | null> {
+    let fi = this.subget(id);
+    if (fi) {
+      return {
+        item: fi.actor.data.data as RegEntryTypes<T>,
+        entity: fi.actor as EntFor<T>,
+        id,
+        type: this.type,
+      };
+    } else {
+      return null;
+    }
+  }
+
+  async destroy(id: string): Promise<RegEntryTypes<T> | null> {
+    // No
+    throw new Error("This is an ill advised way to destroy a token. Probably");
+  }
+
+  async enumerate(): Promise<GetResult<T>[]> {
+    return (canvas.tokens.placeables as Array<Token>)
+      .filter(e => e?.actor?.data?.type == this.type)
+      .map(e => ({
+        id: e.id,
+        item: e.actor.data.data as RegEntryTypes<T>,
+        entity: e.actor as EntFor<T>,
+        type: this.type,
+      }));
+  }
+}
 // Handles accesses to items owned by actor
 export class ActorInventoryWrapper<T extends LancerItemType> extends EntityCollectionWrapper<T> {
   // Need this to filter results by type
   type: T;
 
-  // Where we get the items from. Has to remain as a promise due to some annoying sync/async api issues that are totally my fault but that aren't worth changing
+  // Where we get the items from. 
   actor: Actor;
 
   // Is this a compendium actor?
   for_compendium: boolean;
-  constructor(type: T, actor: Actor, for_compendium: boolean) {
+  constructor(type: T, actor: Actor) {
     super();
+    if(!actor) {
+      throw new Error("Bad actor");
+    }
     this.type = type;
     this.actor = actor;
-    this.for_compendium = for_compendium;
+    this.for_compendium = !!actor.compendium;
   }
 
   // Handles type checking
@@ -288,6 +354,10 @@ export class ActorInventoryWrapper<T extends LancerItemType> extends EntityColle
   }
 
   async enumerate(): Promise<GetResult<T>[]> {
+    // let items = (this.actor.items as unknown) as LancerItem<T>[] | Collection<LancerItem<T>>; // Typings are wrong here. Entities and entries appear to have swapped type decls
+    // if(!Array.isArray(items)) {
+      // items = Array.from(items.values());
+    // }
     let items = (this.actor.items.entries as unknown) as LancerItem<T>[]; // Typings are wrong here. Entities and entries appear to have swapped type decls
     return items
       .filter(e => e.data.type == this.type)
@@ -299,6 +369,22 @@ export class ActorInventoryWrapper<T extends LancerItemType> extends EntityColle
       }));
   }
 }
+
+// Handles accesses to items owned by token. Luckily, synthetic token actors work just like normal actors, so we can just subclass
+export class TokenInventoryWrapper<T extends LancerItemType> extends ActorInventoryWrapper<T> {
+  // Where we get the items from.
+  token: Token;
+
+  constructor(type: T, token: Token) {
+    super(type, token.actor);
+    if(!token) {
+      throw new Error("Bad token");
+    }
+    this.token = token;
+  }
+}
+
+
 
 // Handles accesses to top level items/actors in compendiums
 export class CompendiumWrapper<T extends EntryType> extends EntityCollectionWrapper<T> {
@@ -431,7 +517,7 @@ export async function get_pack(type: LancerItemType | LancerActorType): Promise<
     console.log(`${lp} Creating new compendium: ${type}.`);
 
     // Create our metadata
-    const entity_type = LANCER.actor_types.includes(type as LancerActorType) ? "Actor" : "Item";
+    const entity_type = is_actor_type(type) ? "Actor" : "Item";
     const metadata: PackMetadata = {
       name: type,
       entity: entity_type,

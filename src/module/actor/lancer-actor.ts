@@ -1,11 +1,4 @@
-import {
-  LancerPilotActorData,
-  LancerNPCActorData,
-  LancerDeployableActorData,
-  LancerNPCData,
-  LancerMountData,
-} from "../interfaces";
-import { LANCER, LancerActorType } from "../config";
+import { LANCER } from "../config";
 import {
   EntryType,
   MountType,
@@ -21,6 +14,7 @@ import { FoundryRegActorData, FoundryRegItemData } from "../mm-util/foundry-reg"
 import { LancerHooks, LancerSubscription } from "../helpers/hooks";
 import { mm_wrap_actor } from "../mm-util/helpers";
 import { system_ready } from "../../lancer";
+import { LancerItemType } from "../item/lancer-item";
 const lp = LANCER.log_prefix;
 
 export function lancerActorInit(data: any) {
@@ -55,8 +49,8 @@ export function lancerActorInit(data: any) {
   mergeObject(data, {
     data: default_data,
     img: `systems/lancer/assets/icons/${data.type}.svg`,
-    "token.bar1": { attribute: "current_hp" }, // Default Bar 1 to HP
-    "token.bar2": { attribute: "current_heat" }, // Default Bar 2 to Heat
+    "token.bar1": { attribute: "derived.current_hp" }, // Default Bar 1 to HP
+    "token.bar2": { attribute: "derived.current_heat" }, // Default Bar 2 to Heat
     "token.displayName": display_mode,
     "token.displayBars": display_mode,
     "token.disposition": disposition,
@@ -223,6 +217,8 @@ export class LancerActor<T extends LancerActorType> extends Actor {
     this.subscriptions = [];
     this.setupLancerHooks();
 
+    console.log("Deriving data for:", this);
+
     // Init our derived data if necessary
     if (!this.data.data.derived) {
       // Prepare our derived stat data by first initializing an empty obj
@@ -256,7 +252,7 @@ export class LancerActor<T extends LancerActorType> extends Actor {
       configurable: true, // So we can overwrite it!
     });
 
-    // Begin the task of wrapping our actor. When done, it will setup our derived fields
+    // Begin the task of wrapping our actor. When done, it will setup our derived fields - namely, our max values
     // Need to wait for system ready to avoid having this break if prepareData called during init step (spoiler alert - it is)
     let mmec_promise = system_ready
       .then(() => mm_wrap_actor(this))
@@ -315,6 +311,15 @@ export class LancerActor<T extends LancerActorType> extends Actor {
           );
         }
 
+        // Now that data is set properly, force token to draw its bars
+        if(this.token) {
+          (this.token as any).drawBars();
+        } else {
+          for(let token of this.getActiveTokens()) {
+            (token as any).drawBars();
+          }
+        }
+
         return mmec;
       });
 
@@ -356,7 +361,12 @@ export type LancerDeployable = LancerActor<EntryType.DEPLOYABLE>;
 export type LancerDeployableData = FoundryRegActorData<EntryType.DEPLOYABLE>;
 
 export type AnyLancerActor = LancerActor<LancerActorType>;
+export type LancerActorType = EntryType.MECH | EntryType.DEPLOYABLE | EntryType.NPC | EntryType.PILOT;
 export const LancerActorTypes: LancerActorType[] = [EntryType.MECH, EntryType.DEPLOYABLE, EntryType.NPC, EntryType.PILOT];
+
+export function is_actor_type(type: LancerActorType | LancerItemType): type is LancerActorType {
+  return LancerActorTypes.includes(type as LancerActorType);
+}
 
 /* ------------------------------------ */
 /* Handlebars Helpers                    */

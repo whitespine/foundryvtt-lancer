@@ -1,10 +1,8 @@
 import { DamageData, NPCDamageData, RangeData, TagData } from "../interfaces";
-import { LANCER, LancerItemType, TypeIcon } from "../config";
-import {
-  EntryType,
-  NpcFeatureType,
-} from "machine-mind";
+import { LANCER, TypeIcon } from "../config";
+import { EntryType, NpcFeatureType } from "machine-mind";
 import { FoundryRegItemData } from "../mm-util/foundry-reg";
+import { LancerActorType } from "../actor/lancer-actor";
 
 const lp = LANCER.log_prefix;
 
@@ -229,3 +227,55 @@ export type LancerWeaponModData = FoundryRegItemData<EntryType.WEAPON_MOD>;
 export type LancerWeaponMod = LancerItem<EntryType.WEAPON_MOD>;
 
 export type AnyLancerItem = LancerItem<LancerItemType>;
+
+export type LancerItemType =  EntryType.CORE_BONUS
+  | EntryType.FACTION
+  | EntryType.FRAME
+  | EntryType.LICENSE
+  | EntryType.MECH_WEAPON
+  | EntryType.MECH_SYSTEM
+  | EntryType.NPC_CLASS
+  | EntryType.NPC_TEMPLATE
+  | EntryType.NPC_FEATURE
+  | EntryType.ORGANIZATION
+  | EntryType.PILOT_ARMOR
+  | EntryType.PILOT_WEAPON
+  | EntryType.PILOT_GEAR
+  | EntryType.RESERVE
+  | EntryType.SKILL
+  | EntryType.STATUS
+  | EntryType.TALENT
+  | EntryType.WEAPON_MOD
+  | EntryType.QUIRK
+  | EntryType.MANUFACTURER // hmmmm.... these falls into a similar role as tag. for the time being leaving it here, but it should really be more of a journal thing. Are there journal types?
+  | EntryType.SITREP
+  | EntryType.ENVIRONMENT
+  | EntryType.TAG;
+export const LancerItemTypes = [
+  EntryType.CORE_BONUS,
+  EntryType.FACTION,
+  EntryType.FRAME,
+  EntryType.LICENSE,
+  EntryType.MECH_WEAPON,
+  EntryType.MECH_SYSTEM,
+  EntryType.NPC_CLASS,
+  EntryType.NPC_TEMPLATE,
+  EntryType.NPC_FEATURE,
+  EntryType.ORGANIZATION,
+  EntryType.PILOT_ARMOR,
+  EntryType.PILOT_WEAPON,
+  EntryType.PILOT_GEAR,
+  EntryType.RESERVE,
+  EntryType.SKILL,
+  EntryType.STATUS,
+  EntryType.TALENT,
+  EntryType.WEAPON_MOD,
+  EntryType.QUIRK,
+  EntryType.MANUFACTURER,
+  EntryType.SITREP,
+  EntryType.ENVIRONMENT,
+  EntryType.TAG,
+];
+export function is_item_type(type: LancerActorType | LancerItemType): type is LancerItemType {
+  return LancerItemTypes.includes(type as LancerActorType);
+}

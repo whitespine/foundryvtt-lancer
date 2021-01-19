@@ -39,9 +39,9 @@ import {
   InsinuationRecord,
   InventoriedRegEntry,
 } from "machine-mind";
-import { LancerActor, LancerActorTypes } from "../actor/lancer-actor";
-import { LANCER, LancerActorType, LancerItemType } from "../config";
-import { LancerItem } from "../item/lancer-item";
+import { is_actor_type, LancerActor, LancerActorType, LancerActorTypes } from "../actor/lancer-actor";
+import { LANCER } from "../config";
+import { is_item_type, LancerItem, LancerItemType } from "../item/lancer-item";
 import {
   EntityCollectionWrapper,
   CompendiumWrapper,
@@ -51,40 +51,29 @@ import {
   EntFor,
   GetResult,
   cached_get_pack_map,
+  TokensActorsWrapper as TokenActorsWrapper,
+  TokenInventoryWrapper,
 } from "./db_abstractions";
 import { MMEntityContext } from "./helpers";
 
 // Pluck
 const defaults = funcs.defaults;
 
-/*
+// Standardizing these, the config values
+// Sources of unowned items
+const ITEMS_WORLD = "world";
+const ITEMS_COMP = "compendium";
 
-Things I'll need
+// Sources of inventory items
+const ITEMS_ACTOR_INV = "actor"; // This one is a bit odd. Used in config because we don't particularly care if an Actor is from world or compendium, as it is easily deduced from the actor
+const ITEMS_WORLD_INV = "world_inv";
+const ITEMS_COMP_INV = "compendium_inv";
+const ITEMS_TOKEN_INV = "token";
 
-
-  // For recomputing bonuses
-  For actors we will want to override
-  prepareDerivedData
-  which is by default empty-bodied
-
-  and for items, just override 
-  prepareData
- 
-
-  // For ensuring all child items are carried properly
-  _onDrop() ,
-
-  or rather _onDrop's 4 child functions
-  _onDropActiveEffect
-  _onDropItem
-  _onDropActor -- For mechs, set pilot. For pilots, own mechs and deployables
-  _onDropFolder -- do nothing
-
-  // To trigger prepareData, we can use an internal semaphore embeddedentity. When an item in a network changes, arbitrarily alter the semaphore in all of its child actors + items in order to trigger upload.
-  // May need some sort of flagging to prevent bouncing? probably best to do all computations from a singular outer function that is triggered and debounced/filtered to user events to prevent any fuckery
-  // logistics of this are !?!?! a bit messy, but once a framework is in place and sufficiently guarded on it should be fine
-
-*/
+// Sources of actors
+const ACTORS_COMP = "compendium"
+const ACTORS_WORLD = "world"
+const ACTORS_TOKEN = "token"
 
 ///////////////////////////////// UTILITY TYPES ///////////////////////////////////////
 // This is what an item-data for machine-mind compatible items looks like in foundry.
@@ -114,46 +103,90 @@ export interface FlagData<T extends EntryType> {
   orig_entity: EntFor<T>;
 }
 
+/**
+ * Possible configurations for our registry, depending on where we intend to lookup ids
+ */
+interface RegArgs {
+  item_source: [typeof ITEMS_WORLD, null] | [typeof ITEMS_COMP, null] | [typeof ITEMS_TOKEN_INV, Token] | [typeof ITEMS_ACTOR_INV, Actor]; // Default "world", null
+  actor_source: typeof ACTORS_WORLD | typeof ACTORS_COMP | typeof ACTORS_TOKEN; // Default "world"
+}
+
 ///////////////////////////////// REGISTRY IMPLEMENTATION ///////////////////////////////////////
 /**
- * Formats:
- * comp                     // The general compendium registry
- * comp_actor:{{actor_id}}  // The inventory of an actor in the compendium
+ * Format:
+ * <item_source>|<actor_source>
+ * 
+ * Where <item_source> is one of:
+ * compendium                     // The general compendium registry
+ * compendium_inv:{{actor_id}}    // The inventory of an actor in the compendium
+ * world                          // The general world registry
+ * world_inv:{{actor_id}}         // The inventory of an actor in the world
+ * token_inv:{{actor_id}}         // The inventory of an unlinked token in the token layer
+ *  -- token is not included because items cannot exist on the token layer
+ * 
+ * And <actor_source> is one of
+ * compendium               // The general compendium registry
  * world                    // The general world registry
- * world_actor:{{actor_id}} // The inventory of an actor in the world
- * actor:{{actor_id}}       // The inventory of an actor in the world/compendium (it is unknown)
+ * token                    // The token layer 
  */
 const cached_regs = new Map<string, FoundryReg>(); // Since regs are stateless, we can just do this
 export class FoundryReg extends Registry {
-  // This reduces the number of new registries we must create. Caches both RegEntry lookups and actor string lookups
-
   // Give a registry for the provided inventoried item
   async switch_reg_inv(for_inv_item: InventoriedRegEntry<EntryType>): Promise<Registry> {
-    // We don't generally know if its compendium or not, so we attempt with wildcard key
-    let key = `actor:${for_inv_item.RegistryID}`; 
+    // We can usually deduce which to use based on which registry we were recovered from
+    let reg = for_inv_item.Registry as FoundryReg;
+    let new_reg: Registry | null = null;
+    let id = for_inv_item.RegistryID;
 
-    // From here just use switch_reg, so as not to duplicate logic.
-    // It will automatically handle caching and all that, and if the actor doesn't exist, we'll just try the next
-    return (await this.switch_reg(key))!;
+    if(reg.config.actor_source == ACTORS_COMP) {
+      let comp_key = `${ITEMS_COMP_INV}:${id}|${ACTORS_COMP}`; 
+      new_reg = await this.switch_reg(comp_key);
+    } 
+    else if(reg.config.actor_source == ACTORS_TOKEN) {
+      let token_key = `${ITEMS_TOKEN_INV}:${id}|${ACTORS_TOKEN}`; 
+      new_reg = await this.switch_reg(token_key);
+    } 
+    else if(reg.config.actor_source == ACTORS_WORLD) {
+      let world_key = `${ITEMS_WORLD_INV}:${id}|${ACTORS_WORLD}`; 
+      new_reg = await this.switch_reg(world_key);
+    }
+
+    if(!new_reg) {
+      throw new Error("Failed to switch reg.... hmmmmmm");
+    } else {
+      return new_reg;
+    }
   }
 
   // Get a name descriptor of what region/set of items/whatever this registry represents/ provides access to
   // Sibling function to switch_reg. See comment above class def for explanation of naming convention
   name(): string {
-    // Depends on our actor and compendium flags
-    if (this.for_compendium) {
-      if (this.actor) {
-        return `comp_actor:${this.actor._id}`;
-      } else {
-        return "comp";
+    // First generate the item side, in accordance with our config
+    let items: string;
+    switch(this.config.item_source[0]) {
+      case ITEMS_COMP:
+        items = ITEMS_COMP; // Items from the compendium
+        break;
+      default:
+      case ITEMS_WORLD:
+        items = ITEMS_WORLD; // Items from the world
+        break;
+      case "token":
+        items = `${ITEMS_TOKEN_INV}:${this.config.item_source[1].id}`; // Inventory of a synthetic token actor
+        break;
+      case "actor":
+        let actor = this.config.item_source[1];
+        if(actor.compendium) {
+          items = `${ITEMS_COMP_INV}:${actor.id}`; // Inventory of a compendium actor
+        } else {
+          items = `${ITEMS_WORLD_INV}:${actor.id}`; // Inventory of a world actor
+        }
+        break;
       }
-    } else {
-      if (this.actor) {
-        return `world_actor:${this.actor._id}`;
-      } else {
-        return "world";
-      }
-    }
+
+      // Actor source is much simpler
+      let actors = this.config.actor_source;
+      return `${items}|${actors}`
   }
 
   async switch_reg(reg_id: string): Promise<Registry | null> {
@@ -163,103 +196,137 @@ export class FoundryReg extends Registry {
     }
 
     // Get subtype/id by splitting on colon. See comment above class def for explanation
-    let [subtype, id] = reg_id.split(":");
-    id = id ?? "";
+    let [raw_items, raw_actors] = reg_id.split("|");
+    let split_items = raw_items.split(":");
+    let item_src = split_items[0];
+    let item_src_id: string | null = split_items.length > 1 ? split_items[1] : null;
 
-    // Find a reg based on the subtype
+    // Quickly validate actors
+    if(![ACTORS_WORLD, ACTORS_COMP, ACTORS_TOKEN].includes(raw_actors)) {
+      console.error(`Invalid actor source "${raw_actors}" from "${reg_id}"`);
+      return null;
+    }
+    let actors = raw_actors as typeof ACTORS_WORLD | typeof ACTORS_COMP | typeof ACTORS_TOKEN;
+
+    // The only remaining task is to find the appropriate item/token if needed
     let reg: FoundryReg;
-    switch (subtype) {
-      case "comp":
-        // Generic compendium reg. Handles items/actors in the compendium (but not embedded within compendium actors)
-        reg = new FoundryReg({ for_compendium: true });
-        break;
-      case "world":
-        // Generic world reg. Handles items/actors in the world (but not embedded within world actors)
-        reg = new FoundryReg();
-        break;
-      case "world_actor":
-        // World actor inventory reg. Specifically allows access to items in that actor. Accessing actors within this reg just scopes back to world
-        let world_actor = game.actors.get(id);
-        if(world_actor) {
-          reg = new FoundryReg({ for_actor: world_actor });
-          break;
+    if(item_src_id) {
+      // Id is found, which means this is an inventory
+      if(item_src == ITEMS_TOKEN_INV) {
+        // Recover the token
+        let token: Token | null | undefined = canvas.tokens.get(item_src_id);
+        if(token) {
+          reg = new FoundryReg({
+            actor_source: actors,
+            item_source: [ITEMS_TOKEN_INV, token]
+          });
         } else {
+          console.error(`Unable to find token actor ${item_src_id}`);
           return null;
         }
-      case "comp_actor":
-        // Compendium actor inventory reg. Specifically allows access to items in that actor. Accessing actors within this reg just scopes back to compendium
+
+      } else if(item_src == ITEMS_WORLD_INV) {
+        // Recover the world actor
+        let world_actor = game.actors.get(item_src_id);
+        if(world_actor) {
+          reg = new FoundryReg({
+            actor_source: actors,
+            item_source: [ITEMS_ACTOR_INV, world_actor]
+          });
+        } else {
+          console.error(`Unable to find world actor ${item_src_id}`);
+          return null;
+        }
+
+      } else if(item_src == ITEMS_COMP_INV) {
+        // Recover the compendium actor
         // A bit kludgey, but we check all actor packs for a matching item. 
         // Caching makes this less onerous than it otherwise might be
         let comp_actor = (
-                  (await cached_get_pack_map(EntryType.DEPLOYABLE)).get(id)
-                ??(await cached_get_pack_map(EntryType.NPC)).get(id)
-                ??(await cached_get_pack_map(EntryType.MECH)).get(id)
-                ??(await cached_get_pack_map(EntryType.PILOT)).get(id)
+                  (await cached_get_pack_map(EntryType.DEPLOYABLE)).get(item_src_id)
+                ??(await cached_get_pack_map(EntryType.NPC)).get(item_src_id)
+                ??(await cached_get_pack_map(EntryType.MECH)).get(item_src_id)
+                ??(await cached_get_pack_map(EntryType.PILOT)).get(item_src_id)
                 ?? null);
-        // If we found it, then produce a reg as expected
         if(comp_actor) {
-          reg = new FoundryReg({ for_actor: comp_actor, for_compendium: true });
-          break;
+          reg = new FoundryReg({
+            actor_source: actors,
+            item_source: [ITEMS_ACTOR_INV, comp_actor]
+          });
         } else {
-          return null;
-        }
-      case "actor":
-        // Just try world forst, then comp
-        let tmp_found = (await this.switch_reg(`world_actor:${id}`)) ?? (await this.switch_reg(`comp_actor:${id}`));
-        if(tmp_found) {
-          reg = tmp_found as FoundryReg;
-          break;
-        } else {
+          console.error(`Unable to find compendium actor ${item_src_id}`);
           return null;
         }
 
-      default:
+      } else {
+        // We got an inventory id but we couldn't figure out what it was for
+        console.warn(`Invalid actor inventory type ${item_src}`);
         return null;
+      }
+
+    } else {
+      // No inventory ID - it's either a world or compendium item source. Either way, pretty simple
+      if(item_src == ITEMS_WORLD) { 
+        reg = new FoundryReg({
+          actor_source: actors,
+          item_source: [ITEMS_WORLD, null]
+        });
+      } else if(item_src == ITEMS_COMP) {
+        reg = new FoundryReg({
+          actor_source: actors,
+          item_source: [ITEMS_COMP, null]
+        });
+      } else {
+        // If it somehow wasn't either of those types, report back
+        console.error(`Invalid item source type ${item_src}`);
+        return null; 
+      }
     }
 
     // Set cache and return
     cached_regs.set(reg_id, reg);
-    return reg;
+    return reg;   
   }
 
-  // The associated actor, if any
-  private actor: Actor | null;
-  private for_compendium: boolean;
+  // The configuration we were provided
+  config: RegArgs;
 
   // By default world scope. Can specify either that this is in a compendium, or is in an actor
-  constructor({ for_compendium, for_actor }: { for_compendium?: boolean; for_actor?: Actor | null } = { for_compendium: false, }) {
+  constructor(config?: Partial<RegArgs>) {
     super();
-    this.for_compendium = for_compendium ?? false;
 
-    // Handle actor
-    this.actor = for_actor ?? null;
+    // Set defaults
+    config = config ? config : {};
+    config.actor_source = config.actor_source ?? "world";
+    config.item_source = config.item_source ?? ["world", null];
+
+    // All fields set, use this for convenience
+    let _config = config as Required<RegArgs>;
+    this.config = _config;
 
     // Quick function for generating an item/actor wrapper depending on if we have an actor / depending if the type is an actor type
-    let _actor = this.actor; // needed for scoping reasons
     function quick_wrapper<T extends EntryType>(for_type: T): EntityCollectionWrapper<T> {
-      if(for_compendium) {
-        // Use same wrapper for in or out of compendium acttors. just need to supply an arg saying which we are. Also, actor types here are still "global"!
-        if(for_actor && !LancerActorTypes.includes(for_type as LancerActorType)) {
-          // @ts-ignore This is a case of typescripts enum discrimination not holding up in more complex cases.
-          return new ActorInventoryWrapper(for_type, _actor, true);
+      if(is_actor_type(for_type)) {
+        // Use the actor source for this
+        if(_config.actor_source == ACTORS_WORLD) {
+          return new WorldActorsWrapper(for_type)
+        } else if(_config.actor_source == ACTORS_COMP) {
+          return new CompendiumWrapper(for_type)
         } else {
-          // Otherwise, all items and actors handled by the same wrapper
-          return new CompendiumWrapper(for_type);
+          return new TokenActorsWrapper(for_type)
         }
-      } else {
-        // Lookups for actor types are "global", regardless of if we are working with a wrapper or not, and are handled by a WorldActorsWrapper
-        if (LancerActorTypes.includes(for_type as LancerActorType)) {
-          // @ts-ignore ditto
-          return new WorldActorsWrapper(for_type);
-        // From here, we've narrowed it down to items either in or out of an actors inventory. Depends on if we were given an actor
-        } else if (for_actor) {
-          // @ts-ignore ditto
-          return new ActorInventoryWrapper(for_type, _actor, false);
-        } else {
-          // @ts-ignore ditto
+      } else if(is_item_type(for_type)) {
+        if(_config.item_source[0] == ITEMS_WORLD) {
           return new WorldItemsWrapper(for_type);
+        } else if(_config.item_source[0] == ITEMS_COMP) {
+          return new CompendiumWrapper(for_type);
+        } else if(_config.item_source[0] == ITEMS_ACTOR_INV) {
+          return new ActorInventoryWrapper(for_type, _config.item_source[1]);
+        } else if(_config.item_source[0] == ITEMS_TOKEN_INV) {
+          return new TokenInventoryWrapper(for_type, _config.item_source[1]);
         }
       }
+      throw new Error(`Unhandled item type: ${for_type}`);
     }
 
     // Our reviver function-maker
@@ -338,7 +405,7 @@ export class FoundryReg extends Registry {
     // Check if we have an original entity
     let orig = record.new_item.flags?.orig_entity;
     if (record.new_item.flags?.orig_entity) {
-      if (LANCER.actor_types.includes(orig.type)) {
+      if (is_actor_type(orig.type)) {
         // 'tis an actor
         let orig_entity = record.new_item.flags.orig_entity as LancerActor<T & LancerActorType>;
         let img = orig_entity.data?.img;

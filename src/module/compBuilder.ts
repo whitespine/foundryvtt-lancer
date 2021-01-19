@@ -166,8 +166,8 @@ export async function import_cp(cp: IContentPack, progress_callback?: (done: num
   let env = new RegEnv();
   let tmp_lcp_reg = new StaticReg(env);
 
-  // Name it compendium to make refs carry through properly. Id's will still be borked but fallback mmid's should handle that
-  tmp_lcp_reg.set_name("comp");
+  // Name it compendium so that refs will (mostly) carry through properly. Id's will still be borked but fallback mmid's should handle that
+  tmp_lcp_reg.set_name("compendium|compendium");
   await funcs.intake_pack(cp, tmp_lcp_reg);
 
   // Count the total items in the reg
@@ -227,7 +227,10 @@ class ImportUtilityReg extends FoundryReg {
   replacement_tag_templates: Map<string, TagTemplate> = new Map(); // Maps MMID -> Template
 
   constructor() {
-    super({for_compendium: true});
+    super({
+      actor_source: "compendium",
+      item_source: ["compendium", null]
+    });
   }
 
   // Initialize our indexes
