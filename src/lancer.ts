@@ -609,3 +609,24 @@ Hooks.on("modifyTokenAttribute", (_: any, data: any) => {
     }
   }
 })
+
+// Some temporary stuff for migration debugging
+Hooks.on("getItemDirectoryEntryContext", migrateItem);
+
+function migrateItem(html: JQuery, options: any[]) {
+
+  // For non-templated folders
+  options.push({
+    name: "Migrate Item",
+    icon: '<i class="fas fa-clipboard-list"></i>',
+    callback: (header: JQuery<HTMLElement>) =>{
+      let itemId = header[0].dataset["entityId"];
+      if (!itemId) {
+        console.log("No item")
+        return;
+      }
+      let item = game.items.get(itemId);
+      migrations.migrateItemData(item)
+    }
+  });
+}

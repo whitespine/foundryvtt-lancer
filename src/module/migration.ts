@@ -2,6 +2,9 @@
 // We do not care about this file being super rigorous
 
 import { LANCER } from "./config";
+import { TagData } from "./interfaces";
+import { LancerFrame, LancerMechSystem } from './item/lancer-item';
+import { PilotGear, TagInstance } from 'machine-mind';
 
 /**
  * Perform a system migration for the entire World, applying migrations for Actors, Items, and Compendium packs
@@ -141,6 +144,9 @@ export const migrateActorData = function (actor: Actor) {
   // Remove deprecated fields
   _migrateRemoveDeprecated(actor, updateData);
 
+  
+
+
   return updateData;
 };
 
@@ -181,9 +187,92 @@ export const migrateItemData = function (item: Item) {
   // Remove deprecated fields
   _migrateRemoveDeprecated(item, updateData);
 
+  // Object of template mapping, in format old: new
+  // Unfortunately we'll need to keep this flat in case we have nested mis-matches
+  // Can leave over non-migrations
+  let coreBonusMap = {}
+
+  let licenseMap = {
+    source: "manufacturer",
+    ranks: "unlocks",
+  }
+
+
+  let type = item.data.type
+
+  switch(type) {
+    case 'frame':
+      migrateFrame(item);
+      break;
+    case 'mech_system':
+      migrateSystem(item);
+      break;
+    case 'pilot_armor':
+      migratePilotArmor(item);
+      break;
+    case 'pilot_gear':
+      migratePilotGear(item);
+      break;
+    case 'pilot_weapon':
+      migratePilotWeapon(item);
+      break;
+  }
+
   // Return the migrated update data
   return updateData;
 };
+
+function migratePilotWeapon(item: PilotWeapon) {
+  item.update({"data.tags": migrateTags(item.data.data.tags)})
+}
+
+function migratePilotGear(item: PilotGear) {
+  item.update({"data.tags": migrateTags(item.data.data.tags)})
+}
+
+function migratePilotArmor(item: PilotArmor) {
+  item.update({"data.tags": migrateTags(item.data.data.tags)})
+}
+
+function migrateSystem(item: LancerMechSystem) {
+  item.update({"data.tags": migrateTags(item.data.data.tags)})
+}
+
+function migrateFrame(item: LancerFrame) {
+
+  let frameMap = {
+    note: "",
+    item_type:"",
+    flavor_name: "",
+    flavor_description: "",
+    license: ""
+  }
+
+  item.update({"data.source": null})
+
+  let core_tags = item.data.data.core_system.tags
+  item.update({"data.core_system.tags": migrateTags(core_tags)})
+}
+
+// Do we have correct datatypes for tags? I can't find one... 
+function migrateTags(tags: Array<any>): Array<TagInstance> {
+  let fixedArr = []
+  for(let i = 0;i < tags.length;i++) {
+    let newTag: TagInstance = {
+      tag: {
+        fallback_mmid: tags[i].id,
+        reg_name: "compendium|compendium",
+        type: "tag"
+      },
+      val: ""
+    }
+
+    fixedArr.push(newTag)
+  }
+
+  return fixedArr
+}
+
 
 /* -------------------------------------------- */
 
