@@ -1,10 +1,10 @@
-<div class="card clipped-bot" style="margin: 0px;">
+<div class="card clipped-bot" data-item-id="{{item_id}}" data-actor-id="{{actor_id}}" style="margin: 0px;">
   <div class="lancer-weapon-header medium">
     <i class="cci cci-weapon i--m i--light"> </i>
     <span>WEAPON :: {{ title }}</span>
   </div>
   <div class="card clipped">
-    <div class="lancer-header">// ATTACK //</div>
+    <div class="lancer-stat-header clipped-top">// ATTACK //</div>
     <div class="dice-roll lancer-dice-roll">
       <div class="dice-result">
         <div class="dice-formula lancer-dice-formula flexrow">
@@ -20,7 +20,7 @@
   </div>
   {{#if damages}}
   <div class="card clipped">
-    <div class="lancer-header">// DAMAGE //</div>
+    <div class="lancer-stat-header clipped-top">// DAMAGE //</div>
     {{#each damages as |damage key|}}
       <div class="dice-roll lancer-dice-roll">
         <div class="dice-result">
@@ -36,24 +36,24 @@
       </div>
     {{/each}}
     {{#if overkill_heat}}
-      <div class="lancer-dice-total flexrow">
+      <div class="lancer-dice-total flexrow" style="">
         <span style="text-align: left; margin-left: 5px;">OVERKILL!</span>
-        {{!-- <span class="dice-total lancer-dice-total major">{{ overkill_heat }}</span> --}}
+        <span class="dice-total lancer-dice-total major">{{ overkill_heat }}</span>
         <i class="cci cci-heat i--m damage--heat"> </i>
-        <button class="overkill-reroll"><i class="fas fa-redo"></i> +d6</button>
+        {{!-- <button class="overkill-reroll"><i class="fas fa-redo"></i> +d6</button>  --}}
       </div>
     {{/if}}
   </div>
   {{/if}}
   {{#if on_hit}}
     <div class="card clipped">
-      <div class="lancer-header">// ON HIT //</div>
+      <div class="lancer-stat-header clipped-top">// ON HIT //</div>
       <span class="effect-text">{{{on_hit}}}</span>
     </div>
   {{/if}}
   {{#if effect}}
     <div class="card clipped">
-      <div class="lancer-header">// EFFECT //</div>
+      <div class="lancer-stat-header clipped-top">// EFFECT //</div>
       {{#if effect.effect_type}}
         {{{eff-preview effect}}}
       {{/if}}
@@ -62,4 +62,3 @@
   {{/if}}
   {{> tag-list tags=tags}}
 </div>
-
