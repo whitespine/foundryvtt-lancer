@@ -15,6 +15,7 @@ import { LancerHooks, LancerSubscription } from "../helpers/hooks";
 import { mm_wrap_actor } from "../mm-util/helpers";
 import { system_ready } from "../../lancer";
 import { LancerItemType } from "../item/lancer-item";
+import { renderMacro } from "../macros";
 const lp = LANCER.log_prefix;
 
 export function lancerActorInit(data: any) {
@@ -352,3 +353,212 @@ export const LancerActorTypes: LancerActorType[] = [
 export function is_actor_type(type: LancerActorType | LancerItemType): type is LancerActorType {
   return LancerActorTypes.includes(type as LancerActorType);
 }
+
+/**
+ * Performs structure on the mech
+ * For now, just rolls on table. Eventually we can include configuration to do automation
+ */
+export async function structure_mech(mech: Mech | Npc) {
+  // Table of descriptions
+  function structTableD(roll: number, remStruct: number) {
+    switch (roll) {
+      // Used for multiple ones
+      case 0:
+        return "Your mech is damaged beyond repair – it is destroyed. You may still exit it as normal.";
+      case 1:
+        switch (remStruct) {
+          case 2:
+            // Choosing not to auto-roll the checks to keep the suspense up
+            return "Roll a HULL check. On a success, your mech is STUNNED until the end of your next turn. On a failure, your mech is destroyed.";
+          case 1:
+            return "Your mech is destroyed.";
+          default:
+            return "Your mech is STUNNED until the end of your next turn.";
+        }
+      case 2:
+      case 3:
+      case 4:
+        // Idk, should this auto-roll?
+        return "Parts of your mech are torn off by the damage. Roll 1d6. On a 1–3, all weapons on one mount of your choice are destroyed; on a 4–6, a system of your choice is destroyed. LIMITED systems and weapons that are out of charges are not valid choices. If there are no valid choices remaining, it becomes the other result. If there are no valid systems or weapons remaining, this result becomes a DIRECT HIT instead.";
+      case 5:
+      case 6:
+        return "Emergency systems kick in and stabilize your mech, but it’s IMPAIRED until the end of your next turn.";
+    }
+  }
+
+  // Table of titles
+  let structTableT = [
+    "Crushing Hit",
+    "Direct Hit",
+    "System Trauma",
+    "System Trauma",
+    "System Trauma",
+    "Glancing Blow",
+    "Glancing Blow",
+  ];
+
+  if (
+    game.settings.get(LANCER.sys_name, LANCER.setting_automation) &&
+    game.settings.get(LANCER.sys_name, LANCER.setting_auto_structure)
+  ) {
+    while (mech.CurrentHP <= 0 && mech.CurrentStructure > 0) {
+      mech.CurrentHP += mech.MaxHP;
+      mech.CurrentStructure -= 1;
+    }
+  }
+  if (mech.CurrentStructure == mech.MaxStructure) {
+    ui.notifications.info("The mech is at full Structure, no structure check to roll.");
+    return;
+  }
+  await mech.writeback();
+  let templateData = {};
+
+  // If we're already at 0 just kill em
+  if (mech.CurrentStructure > 0) {
+    let damage = mech.MaxStructure - mech.CurrentStructure;
+
+    let roll = new Roll(`${damage}d6kl1`).roll();
+    let result = roll.total;
+
+    let tt = await roll.getTooltip();
+    let title = structTableT[result];
+    let text = structTableD(result, mech.CurrentStructure);
+    let total = roll.total.toString();
+
+    // Crushing hits
+    // This is fine
+    //@ts-ignore
+    let one_count = roll.terms[0].results.filter(v => v.result === 1).length;
+    if (one_count > 1) {
+      text = structTableD(result, 1);
+      title = structTableT[0];
+      total = "Multiple Ones";
+    }
+    templateData = {
+      val: mech.CurrentStructure,
+      max: mech.MaxStructure,
+      tt: tt,
+      title: title,
+      total: total,
+      text: text,
+      roll: roll,
+    };
+  } else {
+    // You ded
+    let title = structTableT[0];
+    let text = structTableD(0, 0);
+    templateData = {
+      val: mech.CurrentStructure,
+      max: mech.MaxStructure,
+      title: title,
+      text: text,
+    };
+  }
+  const template = `systems/lancer/templates/chat/structure-card.html`;
+  const actor: Actor = game.actors.get(ChatMessage.getSpeaker().actor);
+  return renderMacro(actor, template, templateData);
+}
+
+export async function overheat_mech(mech: Mech | Npc) {
+    // Table of descriptions
+    function stressTableD(roll: number, remStress: number) {
+      switch (roll) {
+        // Used for multiple ones
+        case 0:
+          return "The reactor goes critical – your mech suffers a reactor meltdown at the end of your next turn.";
+        case 1:
+          switch (remStress) {
+            case 2:
+              // Choosing not to auto-roll the checks to keep the suspense up
+              return "Roll an ENGINEERING check. On a success, your mech is EXPOSED; on a failure, it suffers a reactor meltdown after 1d6 of your turns (rolled by the GM). A reactor meltdown can be prevented by retrying the ENGINEERING check as a free action.";
+            case 1:
+              return "Your mech suffers a reactor meltdown at the end of your next turn.";
+            default:
+              return "Your mech becomes Exposed.";
+          }
+        case 2:
+        case 3:
+        case 4:
+          return "The power plant becomes unstable, beginning to eject jets of plasma. Your mech becomes EXPOSED, taking double kinetic, explosive and electric damage until the status is cleared.";
+        case 5:
+        case 6:
+          return "Your mech’s cooling systems manage to contain the increasing heat; however, your mech becomes IMPAIRED until the end of your next turn.";
+      }
+    }
+
+    // Table of titles
+    let stressTableT = [
+      "Irreversible Meltdown",
+      "Meltdown",
+      "Destabilized Power Plant",
+      "Destabilized Power Plant",
+      "Destabilized Power Plant",
+      "Emergency Shunt",
+      "Emergency Shunt",
+    ];
+
+    if (
+      game.settings.get(LANCER.sys_name, LANCER.setting_automation) &&
+      game.settings.get(LANCER.sys_name, LANCER.setting_auto_structure)
+    ) {
+      if (mech.CurrentHeat > mech.HeatCapacity) {
+        // https://discord.com/channels/426286410496999425/760966283545673730/789297842228297748
+        mech.CurrentHeat -= mech.HeatCapacity;
+        mech.CurrentStress -= 1;
+      }
+    }
+    if (mech.CurrentStress === mech.MaxStress) {
+      ui.notifications.info("The mech is at full Stress, no overheating check to roll.");
+      return;
+    }
+
+    // await this.update(this.data);
+    let templateData = {};
+
+    // If we're already at 0 just kill em
+    if (mech.CurrentStress > 0) {
+      let damage = mech.MaxStress - mech.CurrentStress;
+
+      let roll = new Roll(`${damage}d6kl1`).roll();
+      let result = roll.total;
+
+      let tt = await roll.getTooltip();
+      let title = stressTableT[result];
+      let text = stressTableD(result, mech.CurrentStress);
+      let total = roll.total.toString();
+
+      // Critical
+      // This is fine
+      //@ts-ignore
+      let one_count = roll.terms[0].results.reduce((a, v) => {
+        return v.result === 1 ? a + 1 : a;
+      }, 0);
+      if (one_count > 1) {
+        text = stressTableD(result, 1);
+        title = stressTableT[0];
+        total = "Multiple Ones";
+      }
+      templateData = {
+        val: mech.CurrentStress,
+        max: mech.MaxStress,
+        tt: tt,
+        title: title,
+        total: total,
+        text: text,
+        roll: roll,
+      };
+    } else {
+      // You ded
+      let title = stressTableT[0];
+      let text = stressTableD(0, 0);
+      templateData = {
+        val: mech.CurrentStress,
+        max: mech.MaxStress,
+        title: title,
+        text: text,
+      };
+    }
+    const template = `systems/lancer/templates/chat/overheat-card.html`;
+    const actor: Actor = game.actors.get(ChatMessage.getSpeaker().actor);
+    return renderMacro(actor, template, templateData);
+  }

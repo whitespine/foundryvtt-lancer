@@ -1,6 +1,5 @@
-import { HelperOptions } from "handlebars";
 import { EntryType, TagInstance, typed_lancer_data } from "machine-mind";
-import { array_path_edit, resolve_dotpath, resolve_helper_dotpath } from "./commons";
+import { array_path_edit, HelperData, inc_if, resolve_dotpath, resolve_helper_dotpath } from "./commons";
 import { LancerActorSheetData, LancerItemSheetData } from "../interfaces";
 import { enable_native_dropping, enable_native_dropping_mm_wrap, enable_simple_ref_dropping } from "./dragdrop";
 import { ref_params } from "./refs";
@@ -109,7 +108,14 @@ export function compact_tag(tag_path: string, tag: TagInstance): string {
 }
 
 // The above, but on an array, filtering out hidden as appropriate
-export function compact_tag_list(tag_array_path: string, tags: TagInstance[], allow_drop: boolean): string {
+// `editable` hash option controls if can drop new items. Default false
+export function compact_tag_list(tag_array_path: string, helper: HelperData): string {
+  // Get tags from path
+  let tags = resolve_helper_dotpath(helper, tag_array_path, [] as TagInstance[]);
+
+  // Can we drop?
+  let allow_drop = helper.hash.editable ?? false;
+
   // Collect all of the tags, formatting them using `compact_tag`
   let processed_tags: string[] = [];
   for (let i = 0; i < tags.length; i++) {
@@ -133,6 +139,24 @@ export function compact_tag_list(tag_array_path: string, tags: TagInstance[], al
   } else {
     return "";
   }
+}
+
+/** The above, but as a card that will be consistent across sheets
+ * - tag_array_path=<string path to the bonuses array>,  ex: ="ent.mm.Tags"
+ * Displays a list of bonuses, and allow dropping if edit == true
+ */
+export function tag_list_display(tag_array_path: string, helper: HelperData): string {
+  let tags_array = resolve_helper_dotpath<TagInstance[]>(helper, tag_array_path);
+  if(!tags_array) return "err";
+
+  // Render each tag
+  return `
+    <div class="card tag-list">
+      <div class="lancer-header">
+        <span class="left">// Tags</span>
+      </div>
+      ${compact_tag_list(tag_array_path, helper)}
+    </div>`;
 }
 
 // Allows user to remove tags or edit their value via right click
@@ -212,7 +236,7 @@ export function HANDLER_activate_tag_context_menus<
 
 // Renders a tag, with description and a delete button. Takes by path so it can properly splice the tag instance out
 /*
-export function chunky_tag(tag_path: string, helper: HelperOptions): string {
+export function chunky_tag(tag_path: string, helper: HelperData): string {
   let tag_instance = resolve_helper_dotpath(helper, tag_path) as TagInstance;
   return `<div class="tag flexrow">
     <div class="tag-label">

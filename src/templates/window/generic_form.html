@@ -1,6 +1,6 @@
 <form class="{{cssClass}} lancer-sheet" onsubmit="event.preventDefault();">
     <div class="card flexcol">
-        {{{edit-bonus path bonus}}}
+        {{{edit-action path action}}}
 
         <div class="dialog-buttons flexrow">
             {{#each buttons as |button id|}}
@@ -12,3 +12,6 @@
         </div>
     </div>
 </form>
+
+
+<!-- Note: this isn't actually necessary I don't think -->

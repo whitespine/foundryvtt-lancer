@@ -8,7 +8,7 @@
  */
 
 // Import TypeScript modules
-import { LANCER, STATUSES, WELCOME } from "./module/config";
+import { LANCER, STATUSES, TypeIcon, WELCOME } from "./module/config";
 import { LancerGame } from "./module/lancer-game";
 import {
   LancerActor,
@@ -32,7 +32,7 @@ import { LancerFrameSheet } from "./module/item/frame-sheet";
 import { preloadTemplates } from "./module/preloadTemplates";
 import { registerSettings } from "./module/settings";
 import {
-  compact_tag_list
+  compact_tag_list, tag_list_display
 } from "./module/helpers/tags";
 import * as migrations from "./module/migration";
 import { addLCPManager } from "./module/apps/lcpManager";
@@ -52,6 +52,8 @@ import {
   std_string_input,
   std_num_input,
   std_checkbox,
+  HelperData,
+  effect_box,
 } from "./module/helpers/commons";
 import { is_loading } from "machine-mind/dist/classes/mech/EquipUtil";
 import {
@@ -64,20 +66,19 @@ import {
   system_type_selector,
   npc_feature_preview,
   damage_editor,
-  bonuses_display,
   pilot_armor_slot,
   pilot_weapon_refview,
   pilot_gear_refview,
   license_ref,
   manufacturer_ref,
   uses_control,
-  single_bonus_editor,
 } from "./module/helpers/item";
 import { clicker_num_input, clicker_stat_card, compact_stat_edit, compact_stat_view, deployer_slot, npc_clicker_stat_card, npc_tier_selector, overcharge_button, stat_edit_card, stat_edit_card_max, stat_view_card, } from "./module/helpers/actor";
-import { HelperOptions } from "handlebars";
 import { editable_mm_ref_list_item, simple_mm_ref, mm_ref_portrait, mm_ref_list_append_slot, editable_mm_ref_list_item_native } from "./module/helpers/refs";
 import { mech_loadout, pilot_slot } from "./module/helpers/loadout";
 import { LancerNPCSheet } from "./module/actor/npc-sheet";
+import { bonus_list_display, single_bonus_editor } from "./module/helpers/bonuses";
+import { action_list_display, single_action_editor } from "./module/helpers/actions";
 
 const lp = LANCER.log_prefix;
 
@@ -100,11 +101,10 @@ Hooks.once("init", async function () {
       LancerActor,
       LancerItem,
     },
-    prepareItemMacro: macros.prepareItemMacro,
+    prepareItemMacro: macros.prepareMacro,
     prepareStatMacro: macros.prepareStatMacro,
     prepareTextMacro: macros.prepareTextMacro,
-    prepareCoreActiveMacro: macros.prepareCoreActiveMacro,
-    prepareCorePassiveMacro: macros.prepareCorePassiveMacro,
+    prepareFrameMacro: macros.prepareFrameMacro,
     migrations: migrations,
 
     // For whitespines testing /('o')/
@@ -193,12 +193,12 @@ Hooks.once("init", async function () {
 
   // rp, to resolve path values strs. Helps use effectively half as many arguments for many helpers/partials
   // Using this, {{{rp path}}} {{path}} would show the value at path, and path, respectively. No need to pass both!
-  Handlebars.registerHelper("rp", function(path: string, options: HelperOptions) {
+  Handlebars.registerHelper("rp", function(path: string, options: HelperData) {
     return resolve_helper_dotpath(options, path);
   });
 
   // get-set, to resolve situations wherein we read and write to the same path via "value" and "name" element properties
-  Handlebars.registerHelper("getset", function(path: string, options: HelperOptions) {
+  Handlebars.registerHelper("getset", function(path: string, options: HelperData) {
     let value = resolve_helper_dotpath(options, path);
     return ` name="${path}" value="${value}" `;
   });
@@ -283,6 +283,7 @@ Hooks.once("init", async function () {
   });
 
   Handlebars.registerHelper("textarea-card", large_textbox_card);
+  Handlebars.registerHelper("popout-editor-button", popout_editor_button);
 
 
   // ------------------------------------------------------------------------
@@ -317,11 +318,8 @@ Hooks.once("init", async function () {
 
   // ------------------------------------------------------------------------
   // Tags
-  // Handlebars.registerHelper("compact-tag", renderCompactTag);
-  // Handlebars.registerPartial("tag-list", compactTagList);
   Handlebars.registerHelper("mm-tag-list", compact_tag_list);
-  // Handlebars.registerHelper("chunky-tag", renderChunkyTag);
-  // Handlebars.registerHelper("full-tag", renderFullTag);
+  Handlebars.registerHelper("tags-view", tag_list_display);
 
   // ------------------------------------------------------------------------
   // License data
@@ -329,12 +327,13 @@ Hooks.once("init", async function () {
   Handlebars.registerHelper("ref-license", license_ref);
 
   // ------------------------------------------------------------------------
+  // Actions
+  Handlebars.registerHelper("actions-view", action_list_display);
+  Handlebars.registerHelper("effect-box", effect_box);
+
+  // ------------------------------------------------------------------------
   // Bonuses
-  Handlebars.registerHelper("edit-bonuses-view", (bonuses_path: string, bonuses_array: Bonus[]) => bonuses_display(bonuses_path, bonuses_array, true));
-  Handlebars.registerHelper("read-bonuses-view", (bonuses_path: string, bonuses_array: Bonus[]) => bonuses_display(bonuses_path, bonuses_array, false));
-  Handlebars.registerHelper("bonuses-view", bonuses_display); // Takes a third arg
-  Handlebars.registerHelper("edit-bonus", single_bonus_editor);
-  Handlebars.registerHelper("popout-editor-button", popout_editor_button);
+  Handlebars.registerHelper("bonuses-view", bonus_list_display);
 
   // ------------------------------------------------------------------------
   // Weapons
@@ -498,36 +497,17 @@ Hooks.on("renderChatMessage", async (cm: ChatMessage, html: any, data: any) => {
   }
 });
 
-Hooks.on("hotbarDrop", (_bar: any, data: any, slot: number) => {
+Hooks.on("hotbarDrop", (_bar: any, data: macros.AnyMacroCtx, slot: number) => {
   // We set an associated command & title based off the type
   // Everything else gets handled elsewhere
 
-  let command = "";
+  let command = `game.lancer.prepareMacro(a, "${JSON.stringify(data)}");`;
   let title = "";
   let img = "systems/lancer/assets/icons/macro-icons/d20-framed.svg";
 
   console.log(`${lp} Data dropped on hotbar:`, data);
-
-  // TODO: Figure out if I am really going down this route and, if so, switch to a switch
-  if (data.type === "actor") {
-    command = `
-      const a = game.actors.get('${data.actorId}');
-      if (a) {
-        game.lancer.prepareStatMacro(a, "${data.dataPath}");
-      } else {
-        ui.notifications.error("Error rolling macro");
-      }`;
-    title = data.title;
-  } else if (data.type === "Item") {
-    command = `game.lancer.prepareItemMacro("${data.actorId}", "${data.data._id}");`;
-    // Talent are the only ones (I think??) that we need to name specially
-    if (data.data.type === EntryType.TALENT) {
-      command = `game.lancer.prepareItemMacro("${data.actorId}", "${data.itemId}", {rank: ${data.rank}});`;
-      title = data.title;
+  switch(data.
       img = `systems/lancer/assets/icons/macro-icons/talent.svg`;
-    } else {
-      title = data.data.name;
-    }
     // Pick the image for the hotbar
     switch (data.data.type) {
       case EntryType.SKILL:
@@ -570,15 +550,9 @@ Hooks.on("hotbarDrop", (_bar: any, data: any, slot: number) => {
         break;
     }
   } else if (data.type === "Text") {
-    title = data.title;
-    command = `game.lancer.prepareTextMacro("${data.actorId}", "${data.title}", {rank: ${data.description}})`;
   } else if (data.type === "Core-Active") {
-    title = data.title;
-    command = `game.lancer.prepareCoreActiveMacro("${data.actorId}")`;
     img = `systems/lancer/assets/icons/macro-icons/corebonus.svg`;
   } else if (data.type === "Core-Passive") {
-    title = data.title;
-    command = `game.lancer.prepareCorePassiveMacro("${data.actorId}")`;
     img = `systems/lancer/assets/icons/macro-icons/corebonus.svg`;
   } else {
     // Let's not error or anything, since it's possible to accidentally drop stuff pretty easily

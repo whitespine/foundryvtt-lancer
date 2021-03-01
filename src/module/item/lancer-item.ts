@@ -1,7 +1,7 @@
 import { LANCER, TypeIcon } from "../config";
 import { EntryType, License, NpcFeatureType, OpCtx, RegRef } from "machine-mind";
 import { FoundryRegActorData, FoundryRegItemData } from "../mm-util/foundry-reg";
-import { LancerActor, LancerActorType } from "../actor/lancer-actor";
+import { LancerActor, LancerActorType, LancerMech, LancerPilot } from "../actor/lancer-actor";
 import { system_ready } from "../../lancer";
 import { find_license_for, MMEntityContext, mm_wrap_item } from "../mm-util/helpers";
 
@@ -97,7 +97,7 @@ export class LancerItem<T extends LancerItemType> extends Item {
           // Additionally we would like to find a matching license. Re-use ctx, try both a world and global reg, actor as well if it exists
           let found_license: RegRef<EntryType.LICENSE> | null;
           if(this.actor?.data.type == EntryType.PILOT || this.actor?.data.type == EntryType.MECH) {
-             found_license = await find_license_for(mmec, this.actor! as LancerActor<EntryType.MECH | EntryType.PILOT>);
+             found_license = await find_license_for(mmec, this.actor! as LancerMech | LancerPilot);
            } else {
              found_license = await find_license_for(mmec);
            }

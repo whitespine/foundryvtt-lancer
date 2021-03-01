@@ -1,8 +1,8 @@
-import { LancerStatMacroData } from "../interfaces";
+import { LancerActorSheetData } from "../interfaces";
 import { LANCER } from "../config";
 import { LancerActorSheet } from "./lancer-actor-sheet";
-import { prepareItemMacro } from "../macros";
-import { EntryType, OpCtx } from "machine-mind";
+import { prepareMacro } from "../macros";
+import { EntryType, NpcClass, OpCtx } from "machine-mind";
 import {
   LancerNpcFeature,
 } from "../item/lancer-item";
@@ -34,6 +34,19 @@ export class LancerNPCSheet extends LancerActorSheet<EntryType.NPC> {
     });
   }
 
+  // Want to explicitly have npc class, for convenience
+  async getData(): Promise<LancerActorSheetData<EntryType.NPC> & {class: NpcClass | null}> {
+    let pre = await super.getData();
+    let class_: NpcClass | null = null;
+    if(pre.mm.ent.Classes.length) {
+      class_ =  pre.mm.ent.Classes[0];
+    } 
+    return {
+      class: class_,
+      ...pre
+    }
+  }
+
   /* -------------------------------------------- */
 
   /**
@@ -55,7 +68,7 @@ export class LancerNPCSheet extends LancerActorSheet<EntryType.NPC> {
 
         const el = $(ev.currentTarget).closest(".item")[0] as HTMLElement;
 
-        prepareItemMacro(this.actor._id, <string>el.getAttribute("data-item-id")).then();
+        prepareMacro(this.actor._id, <string>el.getAttribute("data-item-id")).then();
       });
 
       // Stat rollers
@@ -77,9 +90,6 @@ export class LancerNPCSheet extends LancerActorSheet<EntryType.NPC> {
         console.log(`${lp} Rolling ${mData.title} check, bonus: ${mData.bonus}`);
         game.lancer.prepareStatMacro(this.actor, this.getStatPath(ev)!);
       });
-
-      // Trigger rollers
-      this.activateTriggerListeners(html);
 
       // Weapon rollers
       let weaponMacro = html.find(".roll-attack");

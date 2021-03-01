@@ -2,7 +2,6 @@
 /* Handlebars Helpers                    */
 /* ------------------------------------ */
 
-import { HelperOptions } from "handlebars";
 import {
   WeaponSize,
   WeaponType,
@@ -28,17 +27,16 @@ import {
   Action,
 } from "machine-mind";
 import { MechWeapon } from "machine-mind";
-import { BonusEditDialog } from "../apps/bonus-editor";
 import { TypeIcon } from "../config";
 import { npc_reaction_effect_preview, npc_system_effect_preview, npc_tech_effect_preview, npc_trait_effect_preview, npc_weapon_effect_preview } from "./npc";
 import { compact_tag_list } from "./tags";
-import { effect_box, ext_helper_hash, IconFactory, inc_if, resolve_dotpath, resolve_helper_dotpath, selected, std_checkbox, std_enum_select, std_num_input, std_string_input, std_x_of_y } from "./commons";
+import { effect_box, ext_helper_hash, HelperData, inc_if, resolve_dotpath, resolve_helper_dotpath, selected, std_checkbox, std_enum_select, std_num_input, std_string_input, std_x_of_y } from "./commons";
 import { ref_commons, ref_params  } from "./refs";
 
 /**
  * Handlebars helper for weapon size selector
  */
-export function weapon_size_selector(path: string, helper: HelperOptions) {
+export function weapon_size_selector(path: string, helper: HelperData) {
   if(!helper.hash["default"]) {
     helper.hash["default"] = WeaponSize.Main;
   }
@@ -48,7 +46,7 @@ export function weapon_size_selector(path: string, helper: HelperOptions) {
 /**
  * Handlebars helper for weapon type selector. First parameter is the existing selection.
  */
-export function weapon_type_selector(path: string, helper: HelperOptions) {
+export function weapon_type_selector(path: string, helper: HelperData) {
   if(!helper.hash["default"]) {
     helper.hash["default"] = WeaponType.Rifle;
   }
@@ -59,7 +57,7 @@ export function weapon_type_selector(path: string, helper: HelperOptions) {
  * Handlebars helper for range type/value editing
  * Supply with path to Range, and any args that you'd like passed down to the standard input editors, as well as
  */
-export function range_editor(path: string, options: HelperOptions) {
+export function range_editor(path: string, options: HelperData) {
   // Lookup the range so we can draw icon. 
   let range: Range = resolve_helper_dotpath(options, path);
 
@@ -90,7 +88,7 @@ export function range_editor(path: string, options: HelperOptions) {
  * Handlebars helper for weapon damage type/value editing.
  * Supply with path to Damage, and any args that you'd like passed down to the standard input editors
  */
-export function damage_editor(path: string, options: HelperOptions) {
+export function damage_editor(path: string, options: HelperData) {
   // Lookup the damage so we can draw icon. 
   let damage: Damage = resolve_helper_dotpath(options, path);
 
@@ -115,7 +113,7 @@ export function damage_editor(path: string, options: HelperOptions) {
  * Supply with the array of Damage[], as well as:
  * - classes: Any additional classes to put on the div holding them
  */
-export function show_damage_array(damages: Damage[], options: HelperOptions): string {
+export function show_damage_array(damages: Damage[], options: HelperData): string {
   // Get the classes
   let classes = options.hash["classes"] || "";
   let results: string[] = [];
@@ -129,7 +127,7 @@ export function show_damage_array(damages: Damage[], options: HelperOptions): st
 /**
  * Handlebars helper for showing range values
  */
-export function show_range_array(ranges: Range[], options: HelperOptions): string {
+export function show_range_array(ranges: Range[], options: HelperData): string {
   // Get the classes
   let classes = options.hash["classes"] || "";
 
@@ -180,7 +178,7 @@ export function npc_accuracy_preview(acc: number) {
 /**
  * Handlebars partial for weapon type selector
  */
-export function system_type_selector(path: string, options: HelperOptions) {
+export function system_type_selector(path: string, options: HelperData) {
   return std_enum_select(path, SystemType, ext_helper_hash(options, {}, {default: SystemType.System}));
 }
 
@@ -188,7 +186,7 @@ export function system_type_selector(path: string, options: HelperOptions) {
  * Handlebars partial for limited uses remaining
  * TODO: make look more like compcon
  */
-export function uses_control(uses_path: string, max_uses: number, helper: HelperOptions) {
+export function uses_control(uses_path: string, max_uses: number, helper: HelperData) {
   const curr_uses = resolve_helper_dotpath(helper, uses_path, 0);
   return `
     <div class="card clipped">
@@ -235,11 +233,11 @@ export const mech_system_preview = `<li class="card clipped mech-system-compact 
     {{> generic-eff-preview effect=effect}}
   {{/if}}
 {{/with}}
-{{> tag-list tags=system.data.tags}}
+{{{ tag-list .sddata.tags}}
 </li>`;
 */
 
-export function npc_feature_preview(npc_feature_path: string, helper: HelperOptions) {
+export function npc_feature_preview(npc_feature_path: string, helper: HelperData) {
   let feature: NpcFeature = resolve_helper_dotpath(helper, npc_feature_path);
 
   switch (feature.FeatureType) {
@@ -258,139 +256,10 @@ export function npc_feature_preview(npc_feature_path: string, helper: HelperOpti
   }
 }
 
-/** Expected arguments:
- * - bonus_path=<string path to the individual bonus item>,  ex: ="ent.mm.Bonuses.3"
- * - bonus=<bonus object to pre-populate with>
- */
-export function single_bonus_editor(bonus_path: string, bonus: Bonus, options: HelperOptions) {
-  // Our main two inputs
-  let id_input = std_string_input(`${bonus_path}.ID`, ext_helper_hash(options, {label: "ID"}));
-  let val_input = std_string_input(`${bonus_path}.Value`, ext_helper_hash(options, {label: "Value"}));
 
-  // Icon factory
-  let iconer = new IconFactory({
-    size: "m",
-  });
-
-  // Our type options
-  let damage_checkboxes: string[] = [];
-  for (let dt of Object.values(DamageType)) {
-    damage_checkboxes.push(std_checkbox(`${bonus_path}.DamageTypes.${dt}`, ext_helper_hash(options, {label: iconer.r(Damage.icon_for(dt))})));
-  }
-
-  let range_checkboxes: string[] = [];
-  for (let rt of Object.values(RangeType)) {
-    range_checkboxes.push(std_checkbox(`${bonus_path}.RangeTypes.${rt}`, ext_helper_hash(options, {label: iconer.r(Range.icon_for(rt))})));
-  }
-
-  let type_checkboxes: string[] = [];
-  for (let wt of Object.values(WeaponType)) {
-    type_checkboxes.push(std_checkbox(`${bonus_path}.WeaponTypes.${wt}`, ext_helper_hash(options, {label: wt})));
-  }
-
-  let size_checkboxes: string[] = [];
-  for (let st of Object.values(WeaponSize)) {
-    size_checkboxes.push(std_checkbox(`${bonus_path}.WeaponSizes.${st}`, ext_helper_hash(options, {label: st})));
-  }
-
-  // Consolidate them into rows
-  return `
-    <div class="flexcol">
-      <span class="lancer-header">INFO</span>
-      ${id_input}
-      ${val_input}
-
-      <div class="wraprow double">
-        <div class="flexcol">
-          <span class="lancer-header">DAMAGE TYPES</span>
-          ${damage_checkboxes.join(" ")}
-        </div>
-        <div class="flexcol">
-          <span class="lancer-header">RANGES TYPES</span>
-          ${range_checkboxes.join(" ")}
-        </div>
-
-        <div class="flexcol">
-          <span class="lancer-header">WEAPON TYPES</span>
-          ${type_checkboxes.join(" ")}
-        </div>
-        <div class="flexcol">
-          <span class="lancer-header">WEAPON SIZES</span>
-          ${size_checkboxes.join(" ")}
-        </div>
-      </div>
-    </div>
-    `;
-}
-
-/** Expected arguments:
- * - bonuses_path=<string path to the bonuses array>,  ex: ="ent.mm.Bonuses"
- * - bonuses=<bonus array to pre-populate with>.
- * Displays a list of bonuses, with buttons to add/delete (if edit true)
- */
-export function bonuses_display(bonuses_path: string, bonuses_array: Bonus[], edit: boolean) {
-  let items: string[] = [];
-
-  // Render each bonus
-  for(let i=0; i<bonuses_array.length; i++) {
-    let bonus = bonuses_array[i];
-    let delete_button = `<a class="gen-control" data-action="splice" data-path="${bonuses_path}.${i}"><i class="fas fa-trash"></i></a>`;
-    let title = `<span class="grow">${bonus.Title}</span> ${inc_if(delete_button, edit)}`;
-    let boxed = `
-      <div class="bonus ${inc_if("editable", edit)}" data-path="${bonuses_path}.${i}">
-        ${effect_box(title, ""+bonus.Detail)}
-      </div>
-    `;
-    items.push(boxed); 
-  }
-
-  return `
-    <div class="card bonus-list">
-      <div class="lancer-header">
-        <span class="left">// Bonuses</span>
-        ${inc_if(`<a class="gen-control fas fa-plus" data-action="append" data-path="${bonuses_path}" data-action-value="(struct)bonus"></a>`, edit)}
-      </div>
-      ${items.join("\n")}
-    </div>
-    `;
-}
-
-// Allows right clicking bonuses to edit them
-export function HANDLER_activate_edit_bonus<T>(
-  html: JQuery,
-  data_getter: () => Promise<T> | T,
-  commit_func: (data: T) => void | Promise<void>
-) {
-  let bonuses = html.find(".editable.bonus");
-  bonuses.on("click", async (event) => {
-    // Find the bonus
-    let bonus_path = event.currentTarget.dataset.path;
-    if(!bonus_path) return;
-    let data = await data_getter();
-    return BonusEditDialog.edit_bonus(data, bonus_path, commit_func).catch(e => console.error("Dialog failed", e));
-  });
-}
-
-/** Expected arguments:
- * - bonus_path=<string path to the individual bonus item>,  ex: ="ent.mm.Bonuses.3"
- * - bonus=<bonus object to pre-populate with>
- */
-export function single_action_editor(path: string, options: HelperOptions) {
-  // Make inputs for each important field
-  let id_input = std_string_input(`${path}.ID`, ext_helper_hash(options, {label: "ID"}));
-  let name_input = std_string_input(`${path}.Name`, ext_helper_hash(options, {label: "Name"}));
-
-
-  // Consolidate them into rows
-  return `<div class="card" style="align-content: flex-start">
-      ${id_input}
-      ${name_input}
-     
-    </div>`;
-}
 
 // Helper for showing a piece of armor, or a slot to hold it (if path is provided)
-export function pilot_armor_slot(armor_path: string, helper: HelperOptions): string {
+export function pilot_armor_slot(armor_path: string, helper: HelperData): string {
   // Fetch the item
   let armor_: PilotArmor | null = resolve_helper_dotpath(helper, armor_path);
 
@@ -448,14 +317,14 @@ export function pilot_armor_slot(armor_path: string, helper: HelperOptions): str
             <div class="effect-text" style=" padding: 5px">
               ${armor.Description}
             </div>
-            ${compact_tag_list(armor_path + ".Tags", armor.Tags, false)}
+            ${compact_tag_list(armor_path + ".Tags", helper)}
           </div>`;
 }
 
 
 
 // Helper for showing a pilot weapon, or a slot to hold it (if path is provided)
-export function pilot_weapon_refview(weapon_path: string, helper: HelperOptions): string {
+export function pilot_weapon_refview(weapon_path: string, helper: HelperData): string {
   // Fetch the item
   let weapon_: PilotWeapon | null = resolve_helper_dotpath(helper, weapon_path);
 
@@ -490,13 +359,13 @@ export function pilot_weapon_refview(weapon_path: string, helper: HelperOptions)
         ${show_damage_array(weapon.Damage, helper)}
       </div>
 
-      ${compact_tag_list(weapon_path + ".Tags", weapon.Tags, false)}
+      ${compact_tag_list(weapon_path + ".Tags", helper)}
     </div>
   </div>`;
 }
 
 // Helper for showing a pilot gear, or a slot to hold it (if path is provided)
-export function pilot_gear_refview(gear_path: string, helper: HelperOptions): string {
+export function pilot_gear_refview(gear_path: string, helper: HelperData): string {
   // Fetch the item
   let gear_: PilotGear | null = resolve_dotpath(helper.data?.root, gear_path);
 
@@ -544,7 +413,7 @@ export function pilot_gear_refview(gear_path: string, helper: HelperOptions): st
         ${gear.Description}
       </div>
 
-      ${compact_tag_list(gear_path + ".Tags", gear.Tags, false)}
+      ${compact_tag_list(gear_path + ".Tags", helper)}
     </div>
   </div>`;
 }
@@ -552,10 +421,10 @@ export function pilot_gear_refview(gear_path: string, helper: HelperOptions): st
 /**
  * Handlebars helper for a mech weapon preview card. Doubles as a slot. Mech path needed for bonuses
  */
-export function mech_weapon_refview(weapon_path: string, mech_path: string | "", options: HelperOptions, size?: FittingSize): string { 
+export function mech_weapon_refview(weapon_path: string, mech_path: string | "", helper: HelperData, size?: FittingSize): string { 
   // Fetch the item(s)
-  let weapon_: MechWeapon | null = resolve_helper_dotpath(options, weapon_path);
-  let mech_: Mech | null = resolve_helper_dotpath(options, mech_path);
+  let weapon_: MechWeapon | null = resolve_helper_dotpath(helper, weapon_path);
+  let mech_: Mech | null = resolve_helper_dotpath(helper, mech_path);
 
   // Generate commons
   let cd = ref_commons(weapon_);
@@ -595,10 +464,10 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
   }
 
   // Generate effects
-  let effect = profile.Effect ? effect_box("Effect", profile.Effect) : "";
-  let on_attack = profile.OnAttack ? effect_box("On Attack", profile.OnAttack) : "";
-  let on_hit = profile.OnHit ? effect_box("On Hit", profile.OnHit) : "";
-  let on_crit = profile.OnCrit ? effect_box("On Crit", profile.OnCrit) : "";
+  let effect = profile.Effect ? effect_box("Effect", profile.Effect, helper) : "";
+  let on_attack = profile.OnAttack ? effect_box("On Attack", profile.OnAttack, helper) : "";
+  let on_hit = profile.OnHit ? effect_box("On Hit", profile.OnHit, helper) : "";
+  let on_crit = profile.OnCrit ? effect_box("On Crit", profile.OnCrit, helper) : "";
 
   return `
   <div class="valid ${EntryType.MECH_WEAPON} ref drop-settable flexcol clipped lancer-weapon-container macroable item"
@@ -613,9 +482,9 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
       <div class="flexrow" style="text-align: left; white-space: nowrap;">
         <a class="roll-attack"><i class="fas fa-dice-d20 i--m i--dark"></i></a>
         <hr class="vsep">
-        ${show_range_array(ranges, options)}
+        ${show_range_array(ranges, helper)}
         <hr class="vsep">
-        ${show_damage_array(weapon.SelectedProfile.BaseDamage, options)}
+        ${show_damage_array(weapon.SelectedProfile.BaseDamage, helper)}
 
         <!-- Loading toggle, if we are loading-->
         ${inc_if(`<hr class="vsep"> ${loading}`, loading)}
@@ -627,20 +496,20 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
         ${on_attack}
         ${on_hit}
         ${on_crit}
-        ${compact_tag_list(profile_path + ".Tags", profile.Tags, false)}
+        ${compact_tag_list(profile_path + ".Tags", helper)}
       </div>
     </div>
   </div>`
 };
 
 // A specific MM ref helper focused on displaying manufacturer info.
-export function manufacturer_ref(source_path: string, helper: HelperOptions): string {
+export function manufacturer_ref(source_path: string, helper: HelperData): string {
   let source_: Manufacturer | null = resolve_helper_dotpath(helper, source_path);
   let cd = ref_commons(source_);
   // TODO? maybe do a little bit more here, aesthetically speaking
   if (cd) {
     let source = source_!;
-    return `<div class="valid ${EntryType.MANUFACTURER} ref ref-card drop-settable" ${ref_params(cd.ref, source_path)}> 
+    return `<div class="valid ${EntryType.MANUFACTURER} ref list-card drop-settable" ${ref_params(cd.ref, source_path)}> 
               <h3 class="mfr-name" style="color: ${source!.GetColor(false)};">
                 <i class="i--m cci ${source.Logo}"></i>
                 ${source!.ID}
@@ -649,7 +518,7 @@ export function manufacturer_ref(source_path: string, helper: HelperOptions): st
             </div>
         `;
   } else {
-    return `<div class="ref ref-card drop-settable ${EntryType.MANUFACTURER}">
+    return `<div class="ref list-card drop-settable ${EntryType.MANUFACTURER}">
               <h3 class="mfr-name">No source specified</h3>
             </div>
         `;
@@ -662,12 +531,12 @@ export function license_ref(license: License | null, level: number): string {
   let cd = ref_commons(license);
   // TODO? maybe do a little bit more here, aesthetically speaking
   if (cd) {
-    return `<div class="valid ${EntryType.LICENSE} ref ref-card" ${ref_params(cd.ref)}> 
+    return `<div class="valid ${EntryType.LICENSE} ref list-card" ${ref_params(cd.ref)}> 
               <h3 class="license-name">${license!.Name} ${level}</h3>
             </div>
         `;
   } else {
-    return `<div class="ref ref-card">
+    return `<div class="ref list-card">
               <h3 class="license-name">No license specified</h3>
             </div>
         `;

@@ -9,7 +9,7 @@
       <h3 class="origin_name"><input class="header-field" name="mm.ent.Origin.name" type="text" value="{{mm.ent.Origin.name}}" placeholder="Origin Name"/></h3>
       <h3 class="origin_type"><input class="header-field" name="mm.ent.Origin.type" type="text" value="{{mm.ent.Origin.type}}" placeholder="Origin Type"/></h3>
       <h3 class="origin_type">
-        <select class="header-field" name="mm.ent.FeatureType" data-type="String">
+        <select class="header-field" name="mm.ent.FeatureType" data-dtype="String">
           {{#select mm.ent.FeatureType}}
           <option class="i--dark" value="Reaction">REACTION</option>
           <option class="i--dark" value="System">SYSTEM</option>
@@ -58,7 +58,7 @@
     <div class="wraprow triple">
       <div>
         <span class="medium">TECH</span>
-        <select name="mm.ent.TechType" data-type="String" style="align-self: center;">
+        <select name="mm.ent.TechType" data-dtype="String" style="align-self: center;">
           {{#select mm.ent.TechType}}
           <option value="Quick">QUICK</option>
           <option value="Full">FULL</option>
@@ -119,10 +119,6 @@
     </div>
     {{/if}}
 
-    {{!-- Tags --}}
-    <div class="card full">
-      <span class="lancer-header major ">TAGS</span>
-      {{{mm-tag-list "mm.ent.Tags" mm.ent.Tags editable}}}
-    </div>
+    {{{tags-view "mm.ent.Tags" editable=editable}}}
   </section>
 </form>

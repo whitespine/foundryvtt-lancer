@@ -1,7 +1,6 @@
-import { HelperOptions } from "handlebars";
 import { EntryType, Mech, MechLoadout, SystemMount, Pilot, Frame  } from "machine-mind";
 import { WeaponMount } from "machine-mind";
-import { inc_if, resolve_helper_dotpath } from "./commons";
+import { HelperData, inc_if, resolve_helper_dotpath } from "./commons";
 import { mech_weapon_refview } from "./item";
 import { simple_mm_ref } from "./refs";
 
@@ -9,7 +8,7 @@ import { simple_mm_ref } from "./refs";
 function system_mount(
   mech_path: string,
   mount_path: string,
-  helper: HelperOptions
+  helper: HelperData
 ): string {
   let mount = resolve_helper_dotpath(helper, mount_path) as SystemMount;
   let slot = simple_mm_ref(EntryType.MECH_SYSTEM, mount.System, "No System", `${mount_path}.System`);
@@ -31,7 +30,7 @@ function system_mount(
 function weapon_mount(
   mech_path: string,
   mount_path: string,
-  helper: HelperOptions
+  helper: HelperData
 ): string {
   let mount = resolve_helper_dotpath(helper, mount_path) as WeaponMount
   // let mech = resolve_helper_dotpath(helper, mech_path, EntryType.MECH);
@@ -55,7 +54,7 @@ function weapon_mount(
 }
 
 // Helper to display all weapon mounts on a mech loadout
-function all_weapon_mount_view(mech_path: string, loadout_path: string, helper: HelperOptions) {
+function all_weapon_mount_view(mech_path: string, loadout_path: string, helper: HelperData) {
   let loadout = resolve_helper_dotpath(helper, loadout_path) as MechLoadout;
   const weapon_mounts = loadout.WepMounts.map((wep, index) => weapon_mount(mech_path, `${loadout_path}.WepMounts.${index}`, helper));
 
@@ -72,7 +71,7 @@ function all_weapon_mount_view(mech_path: string, loadout_path: string, helper: 
 }
 
 // Helper to display all system mounts on a mech loadout
-function all_system_mount_view(mech_path: string, loadout_path: string, helper: HelperOptions) {
+function all_system_mount_view(mech_path: string, loadout_path: string, helper: HelperData) {
   let loadout = resolve_helper_dotpath(helper, loadout_path) as MechLoadout;
   const system_slots = loadout.SysMounts.map((sys, index) => system_mount(mech_path, `${loadout_path}.SysMounts.${index}`, helper));
 
@@ -94,7 +93,7 @@ function all_system_mount_view(mech_path: string, loadout_path: string, helper: 
  * - .... system mods :)
  * - Ref validation (you shouldn't be able to equip another mechs items, etc)
  */
-export function mech_loadout(mech_path: string, helper: HelperOptions): string {
+export function mech_loadout(mech_path: string, helper: HelperData): string {
   const mech: Mech = resolve_helper_dotpath(helper, mech_path);
   if(!mech) {return "err";}
   const loadout_path = `${mech_path}.Loadout`;
@@ -107,14 +106,14 @@ export function mech_loadout(mech_path: string, helper: HelperOptions): string {
 }
 
 // Create a div with flags for dropping native pilots
-export function pilot_slot(data_path: string, options: HelperOptions): string {
+export function pilot_slot(data_path: string, options: HelperData): string {
   // get the existing
   let existing = resolve_helper_dotpath<Pilot | null>(options, data_path, null);
   return simple_mm_ref(EntryType.PILOT, existing, "No Pilot", data_path, true);
 }
 
 // A drag-drop slot for a frame. TODO: fancify, giving basic stats or something???
-export function frame_refview(frame_path: string, helper: HelperOptions): string {
+export function frame_refview(frame_path: string, helper: HelperData): string {
   let frame = resolve_helper_dotpath<Frame | null>(helper, frame_path, null);
   return `<div class="lancer-header loadout-category submajor">
             <span>CURRENT FRAME</span>

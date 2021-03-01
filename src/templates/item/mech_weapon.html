@@ -80,10 +80,7 @@
           {{{textarea-card "DESCRIPTION" (concat "mm.ent.Profiles." prof_index ".Description") }}}
 
           {{!-- Tags --}}
-          <div class="card full">
-            <span class="lancer-header submajor">TAGS</span>
-            {{{mm-tag-list (concat "mm.ent.Profiles." prof_index ".Tags") profile.Tags ../editable}}}
-          </div>
+          {{{tags-view (concat "mm.ent.Profiles." prof_index ".Tags") editable=../editable}}}
         </div>
       </div>
       {{/each}}

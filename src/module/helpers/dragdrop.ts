@@ -4,8 +4,8 @@ import {
   RegEntry,
   RegRef,
 } from "machine-mind";
-import { is_actor_type, LancerActor, LancerActorType } from "../actor/lancer-actor";
-import { is_item_type, LancerItem, LancerItemType } from "../item/lancer-item";
+import { AnyLancerActor, is_actor_type, LancerActor, LancerActorType } from "../actor/lancer-actor";
+import { AnyLancerItem, is_item_type, LancerItem, LancerItemType } from "../item/lancer-item";
 import { FoundryReg } from "../mm-util/foundry-reg";
 import { MMEntityContext, mm_wrap_actor, mm_wrap_item } from "../mm-util/helpers";
 import { gentle_merge, is_ref, safe_json_parse } from "./commons";
@@ -188,10 +188,10 @@ export type NativeDrop = {
 // Result of resolving a native drop to its corresponding entity
 export type ResolvedNativeDrop = {
   type: "Item",
-  entity: LancerItem<LancerItemType>
+  entity: AnyLancerItem
 } | {
   type: "Actor",
-  entity: LancerActor<LancerActorType>
+  entity: AnyLancerActor
 } | {
   type: "JournalEntry",
   entity: JournalEntry
@@ -205,7 +205,7 @@ export async function resolve_native_drop(event_data: string): Promise<ResolvedN
 
     // NOTE: these cases are copied almost verbatim from ActorSheet._onDrop
     if(data.type == "Item") {
-      let item: LancerItem<LancerItemType> | null = null;
+      let item: AnyLancerItem | null = null;
       // Case 1 - Item is from a Compendium pack
       if (data.pack) {
         item = (await game.packs.get(data.pack)!.getEntity(data.id)) as LancerItem<any>;
@@ -226,7 +226,7 @@ export async function resolve_native_drop(event_data: string): Promise<ResolvedN
       }
     } else if(data.type == "Actor") {
       // Same deal
-      let actor: LancerActor<LancerActorType> | null = null;
+      let actor: AnyLancerActor | null = null;
 
       // Case 1 - Actor is from a Compendium pack
       if (data.pack) {
@@ -378,7 +378,7 @@ export function enable_simple_ref_dragging(items: string | JQuery, start_stop?: 
 // Adds a drop handler for native drops, e.x. drag item from the sidebar to a sheet
 export function enable_native_dropping(
   items: string | JQuery,
-  on_drop: (entity: LancerActor<LancerActorType> | LancerItem<LancerItemType> | JournalEntry, dest: JQuery, evt: JQuery.DropEvent) => void,
+  on_drop: (entity: AnyLancerActor | AnyLancerItem | JournalEntry, dest: JQuery, evt: JQuery.DropEvent) => void,
   allowed_types?: (EntryType | "journal")[] | null, // null implies wildcard. `data-type` always takes precedence
   hover_handler?: HoverHandlerFunc
 ) {

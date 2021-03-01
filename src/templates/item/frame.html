@@ -40,7 +40,7 @@
     <div class="flexrow">
       {{#each mm.ent.Mounts as |mount key|}}
       <div class="flexrow mount arrayed-item">
-        <select class="mount-selector" name="mm.ent.Mounts.{{key}}" data-type="String" index="{{key}}">
+        <select class="mount-selector" name="mm.ent.Mounts.{{key}}" data-dtype="String" index="{{key}}">
           {{#select mount}}
           <option value="Aux/Aux">AUX/AUX</option>
           <option value="Main">MAIN</option>
@@ -74,7 +74,7 @@
           </a>
         </div>
         <div class="desc-text">{{{safe-html trait.Description }}}</div>
-        {{{bonuses-view (concat "mm.ent.Traits." trait_index ".Bonuses") trait.Bonuses ../editable}}}
+        {{{bonuses-view (concat "mm.ent.Traits." trait_index ".Bonuses") editable=../editable}}}
       </div>
     {{/each}}
   </div>
@@ -107,7 +107,7 @@
         {{{popout-editor-button "mm.ent.CoreSystem.PassiveEffect" }}}
       </div>
       <div class="desc-text">{{{safe-html mm.ent.CoreSystem.PassiveEffect }}}</div>
-      {{{bonuses-view "mm.ent.CoreSystem.PassiveBonuses" mm.ent.CoreSystem.PassiveBonuses editable}}}
+      {{{bonuses-view "mm.ent.CoreSystem.PassiveBonuses" editable=ditable}}}
     </div>
 
     {{!-- Active Description + Bonuses --}}
@@ -119,13 +119,10 @@
         {{{popout-editor-button "mm.ent.CoreSystem.ActiveEffect" }}}
       </div>
       <div class="desc-text">{{{safe-html mm.ent.CoreSystem.ActiveEffect }}}</div>
-      {{{bonuses-view "mm.ent.CoreSystem.ActiveBonuses" mm.ent.CoreSystem.ActiveBonuses editable}}}
-    </div>
-    <div class="tags-container" style="margin: 10px;">
-      <div class="flexcol lancer-title">
-        <span class="major">TAGS</span>
-        {{{mm-tag-list "mm.ent.CoreSystem.Tags" mm.ent.CoreSystem.Tags editable}}}
-      </div>
+
+      {{{tags-view "mm.ent.CoreSystem.Tags" editable=editable}}}
+
+      {{{bonuses-view "mm.ent.CoreSystem.ActiveBonuses" editable=editable}}}
     </div>
   </div>
 </form>

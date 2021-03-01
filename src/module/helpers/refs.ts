@@ -1,4 +1,3 @@
-import { HelperOptions } from "handlebars";
 import {
   EntryType,
   OpCtx,
@@ -12,7 +11,7 @@ import { is_actor_type, LancerActor } from "../actor/lancer-actor";
 import { GENERIC_ITEM_ICON, LANCER, TypeIcon } from "../config";
 import { is_item_type, LancerItem, LancerItemType } from "../item/lancer-item";
 import { FlagData, FoundryReg } from "../mm-util/foundry-reg";
-import { gentle_merge, resolve_dotpath, resolve_helper_dotpath } from "./commons";
+import { gentle_merge, HelperData, resolve_dotpath, resolve_helper_dotpath } from "./commons";
 import { convert_ref_to_native, enable_dragging, enable_simple_ref_dragging, enable_simple_ref_dropping } from "./dragdrop";
 
 // We use these for virtually every ref function
@@ -101,7 +100,7 @@ export function simple_mm_ref<T extends EntryType>(
     let icons = types.map(t => `<img class="ref-icon" src="${TypeIcon(t)}"></img>`);
 
     // Make an empty ref. Note that it still has path stuff if we are going to be dropping things here
-    return `<div class="ref ref-card ${native_drop_snippet} ${settable_snippet} ${flat_types}" 
+    return `<div class="ref list-card ${native_drop_snippet} ${settable_snippet} ${flat_types}" 
                         data-path="${slot_path}" 
                         data-type="${flat_types}">
           ${icons.join(" ")}
@@ -110,7 +109,7 @@ export function simple_mm_ref<T extends EntryType>(
   }
 
   // The data-type
-  return `<div class="valid ${cd.ref.type} ref ref-card ${native_drop_snippet} ${settable_snippet}" 
+  return `<div class="valid ${cd.ref.type} ref list-card ${native_drop_snippet} ${settable_snippet}" 
                 ${ref_params(cd.ref)}
                 data-path="${slot_path}" >
          <img class="ref-icon" src="${cd.img}"></img>
@@ -206,7 +205,7 @@ export function mm_ref_portrait<T extends EntryType>(
   img: string,
   img_path: string,
   item: RegEntry<T>,
-  helper: HelperOptions
+  helper: HelperData
 ) {
   // Fetch the image
   return `<img class="profile-img ref valid ${item.Type}" src="${img}" data-edit="${img_path}" ${ref_params(item.as_ref())} width="100" height="100" />`;
@@ -219,7 +218,7 @@ export function mm_ref_portrait<T extends EntryType>(
 export function editable_mm_ref_list_item<T extends LancerItemType>(
   item_path: string,
   trash_action: "delete" | "splice" | "null",
-  helper: HelperOptions
+  helper: HelperData
 ) {
   // Fetch the item
   let item_: RegEntry<T> | null = resolve_helper_dotpath(helper, item_path);
@@ -237,10 +236,10 @@ export function editable_mm_ref_list_item<T extends LancerItemType>(
 
   // Basically the same as the simple ref card, but with control assed
   return `
-    <div class="valid ${cd.ref.type} ref ref-card" 
+    <div class="valid ${cd.ref.type} ref list-card" 
             ${ref_params(cd.ref)}>
       <img class="ref-icon" src="${cd.img}"></img>
-      <span class="major">${cd.name}</span>
+      <span>${cd.name}</span>
       <hr class="vsep"> 
       <div class="ref-list-controls">
         <a class="gen-control i--dark" data-action="${trash_action}" data-path="${item_path}"><i class="fas fa-trash"></i></a>
@@ -249,8 +248,8 @@ export function editable_mm_ref_list_item<T extends LancerItemType>(
 }
 
 // Exactly as above, but drags as a native when appropriate handlers called
-export function editable_mm_ref_list_item_native<T extends LancerItemType>(item_path: string, trash_action: "delete" | "splice" | "null", helper: HelperOptions) {
-  return editable_mm_ref_list_item(item_path, trash_action, helper).replace("ref ref-card", "ref ref-card native-drag");
+export function editable_mm_ref_list_item_native<T extends LancerItemType>(item_path: string, trash_action: "delete" | "splice" | "null", helper: HelperData) {
+  return editable_mm_ref_list_item(item_path, trash_action, helper).replace("ref list-card", "ref list-card native-drag");
 }
 
 // Put this at the end of ref lists to have a place to drop things. Supports both native and non-native drops
@@ -258,10 +257,10 @@ export function editable_mm_ref_list_item_native<T extends LancerItemType>(item_
 export function mm_ref_list_append_slot(
   item_array_path: string,
   allowed_types: string,
-  helper: HelperOptions
+  helper: HelperData
 ) {
   return `
-    <div class="ref ref-card ref-list-append ${allowed_types}" 
+    <div class="ref list-card ref-list-append ${allowed_types}" 
             data-path="${item_array_path}" 
             data-type="${allowed_types}">
       <span class="major">Add an item</span>

@@ -113,7 +113,7 @@ interface RegArgs {
 
 ///////////////////////////////// REGISTRY IMPLEMENTATION ///////////////////////////////////////
 /**
- * Format:
+ * Format of registry names:
  * <item_source>|<actor_source>
  * 
  * Where <item_source> is one of:
@@ -334,7 +334,7 @@ export class FoundryReg extends Registry {
       throw new Error(`Unhandled item type: ${for_type}`);
     }
 
-    // Our reviver function-maker
+    // Our reviver function-maker. Revivers are responsible for converting reg entry data into full fledged objects, and managing OpCtx state
     function quick_reviver<T extends EntryType>(
       for_type: T,
       clazz: EntryConstructor<T>
@@ -426,6 +426,38 @@ export class FoundryReg extends Registry {
         await orig_entity.update({ img, name }, {});
       }
     }
+  }
+
+  // Mirror implementation of the same function on the base reg, but don't actually make entities.
+  async resolve_to_foundry_doc<T extends EntryType>(ref: RegRef<T>): Promise<EntFor<T> | null> {
+    // Switch pass
+    if(ref.reg_name != this.name()) {
+      return ((await this.switch_reg(ref.reg_name)) as FoundryReg).resolve_to_foundry_doc(ref);
+    }
+
+    // If we have a type, simple. Otherwise must iterate
+    if(ref.type) {
+      let cat = this.get_cat(ref.type) as FoundryRegCat<T>;
+      return cat.get_foundry_entity(ref.id) ?? cat.get_foundry_entity_by_name_or_mmid(ref.fallback_mmid) ?? null;
+    } else {
+      // First look for by id
+      for(let type of Object.values(EntryType)) {
+        let cat = this.get_cat(type) as FoundryRegCat<EntryType>;
+        let by_id = await cat.get_foundry_entity(ref.id);
+        if(by_id) return by_id as EntFor<T>;
+      }
+
+      // Then by fallback
+      for(let type of Object.values(EntryType)) {
+        let cat = this.get_cat(type) as FoundryRegCat<EntryType>;
+        let by_id = await cat.get_foundry_entity_by_name_or_mmid(ref.fallback_mmid);
+        if(by_id) return by_id as EntFor<T>;
+      }
+      
+      // I yield
+      return null;
+    }
+
   }
 }
 
@@ -555,5 +587,34 @@ export class FoundryRegCat<T extends EntryType> extends RegCat<T> {
   // Just delegate above
   async create_default(ctx: OpCtx): Promise<LiveEntryTypes<T>> {
     return this.create_many_live(ctx, this.defaulter()).then(a => a[0]);
+  }  
+  
+  // For if we just want to get the entity by its id
+  async get_foundry_entity(id: string): Promise<EntFor<T> | null> {
+    return (await this.handler.get(id))?.entity ?? null;
+  }  
+  
+  // Look through all entries, picking first by mmid and, failing that, by name
+  async get_foundry_entity_by_name_or_mmid(id: string): Promise<EntFor<T> | null> {
+    let all = await this.handler.enumerate();
+
+    // Look for mmid
+    for (let gotten of all) {
+      let mmid = (gotten.item as any).id;
+      if(id == mmid) {
+        return gotten.entity;
+      }
+    }
+
+    // Look for name
+    for (let gotten of all) {
+      let name = gotten.entity.name;
+      if(id == name) {
+        return gotten.entity;
+      }
+    }
+
+    // Oh well
+    return null;
   }
 }

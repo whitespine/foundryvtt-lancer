@@ -30,6 +30,7 @@ import {
   RegNpcData,
   RegPilotData,
   RegSkillData,
+  TagInstance,
 } from "machine-mind";
 import { FoundryRegActorData, FoundryRegItemData } from "./mm-util/foundry-reg";
 import { MMEntityContext, abracadabra } from "./mm-util/helpers";
@@ -75,52 +76,3 @@ export type LancerActorSheetData<T extends LancerActorType> = {
   // reg ctx
   mm: MMEntityContext<T>;
 };
-
-// -------- Macro data -------------------------------------
-declare interface LancerStatMacroData {
-  title: string;
-  bonus: string | number;
-  effect?: EffectData | string;
-}
-
-declare interface LancerAttackMacroData {
-  title: string;
-  grit: number;
-  acc: number;
-  damage: DamageData[];
-  overkill: boolean;
-  effect: EffectData | string;
-  on_hit?: string; // For NPC weapons - to be removed once they use EffectData
-  tags: TagDataShort[];
-}
-
-declare interface LancerTechMacroData {
-  title: string;
-  t_atk: number;
-  acc: number;
-  effect: string;
-  tags: TagDataShort[];
-}
-
-declare interface LancerTalentMacroData {
-  talent: LancerTalentData;
-  rank: number;
-}
-
-declare interface LancerGenericMacroData {
-  title: string;
-  effect: EffectData | string;
-}
-
-declare interface LancerReactionMacroData {
-  title: string;
-  trigger: string;
-  effect: string;
-  tags?: TagDataShort[];
-}
-
-declare interface LancerTextMacroData {
-  title: string;
-  description: string;
-  tags?: TagDataShort[];
-}

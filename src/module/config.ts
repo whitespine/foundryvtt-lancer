@@ -110,6 +110,21 @@ export const STATUSES = [
     label: "Shut Down",
     icon: "systems/lancer/assets/icons/white/status_shutdown.svg",
   },
+  {
+    id: "npc_tier_1",
+    label: "Tier 1",
+    icon: "systems/lancer/assets/icons/white/npc_tier_1.svg",
+  },
+  {
+    id: "npc_tier_2",
+    label: "Tier 2",
+    icon: "systems/lancer/assets/icons/white/npc_tier_2.svg",
+  },
+  {
+    id: "npc_tier_3",
+    label: "Tier 3",
+    icon: "systems/lancer/assets/icons/white/npc_tier_3.svg",
+  },
 ];
 
 export const WELCOME = `<div style="margin: 10px 5px">
@@ -149,6 +164,11 @@ export const LANCER = {
   setting_lcps: "installedLCPs",
   setting_stock_icons: "keepStockIcons",
   setting_welcome: "hideWelcome",
+  setting_automation: "automationSwitch",
+  setting_pilot_oc_heat: "autoOCHeat",
+  setting_overkill_heat: "autoOKillHeat",
+  setting_auto_structure: "autoCalcStructure",
+  setting_120: "warningFor120",
   mech_items,
   pilot_items,
   weapon_items,

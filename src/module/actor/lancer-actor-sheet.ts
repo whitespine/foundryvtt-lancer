@@ -2,7 +2,7 @@ import { LANCER } from "../config";
 import { HANDLER_activate_general_controls,  gentle_merge, is_ref, resolve_dotpath, safe_json_parse, HANDLER_activate_popout_text_editor } from "../helpers/commons";
 import { enable_native_dropping_mm_wrap, enable_simple_ref_dragging, enable_simple_ref_dropping, NativeDrop, ResolvedNativeDrop, resolve_native_drop } from "../helpers/dragdrop";
 import { HANDLER_activate_ref_dragging, HANDLER_activate_ref_drop_clearing, HANDLER_activate_ref_drop_setting, HANDLER_openRefOnClick as HANDLER_activate_ref_clicking } from "../helpers/refs";
-import { LancerActorSheetData, LancerStatMacroData } from "../interfaces";
+import { LancerActorSheetData } from "../interfaces";
 import { LancerActor, LancerActorType } from "./lancer-actor";
 const lp = LANCER.log_prefix;
 
@@ -107,6 +107,7 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
    * Activate event listeners for trigger macros using the prepared sheet HTML
    * @param html {JQuery}   The prepared HTML object ready to be rendered into the DOM
    */
+  /*
   activateTriggerListeners(html: JQuery) {
     // Trigger rollers
     let triggerMacro = html.find(".roll-trigger");
@@ -122,7 +123,7 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
       console.log(`${lp} Rolling '${mData.title}' trigger (d20 + ${mData.bonus})`);
       game.lancer.rollStatMacro(this.actor, mData);
     });
-  }
+  }*/
 
   /**
    * Converts the data from a DragEvent event into an Item (or actor/journal/whatever) to add to the Actor.
@@ -147,17 +148,6 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
     let raw_drop_data = event.dataTransfer.getData("text/plain") ?? "";
     let native_drop = await resolve_native_drop(raw_drop_data);
     return native_drop;
-  }
-
-  async _addOwnedItem(item: Item) {
-    const actor = this.actor as LancerActor<any>;
-    console.log(`${lp} Copying ${item.name} to ${actor.name}.`);
-    const dupData = duplicate(item.data);
-    const newItem = await actor.createOwnedItem(dupData);
-    // Make sure the new item includes all of the data from the original.
-    (dupData as any)._id = newItem._id;
-    await actor.updateOwnedItem(dupData);
-    return Promise.resolve(true);
   }
 
   _propagateMMData(formData: any): boolean {

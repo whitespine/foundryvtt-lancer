@@ -4,12 +4,12 @@ import {
 } from "../item/lancer-item";
 import { LANCER } from "../config";
 import { LancerActorSheet } from "./lancer-actor-sheet";
-import { prepareCoreActiveMacro, prepareCorePassiveMacro } from "../macros";
 import { EntryType, MountType, OpCtx } from "machine-mind";
 import { FlagData, FoundryReg } from "../mm-util/foundry-reg";
 import { MMEntityContext, mm_wrap_item } from "../mm-util/helpers";
 import { funcs } from "machine-mind";
 import { ResolvedNativeDrop } from "../helpers/dragdrop";
+import { prepareFrameMacro } from "../macros";
 
 const lp = LANCER.log_prefix;
 
@@ -46,10 +46,13 @@ export class LancerPilotSheet extends LancerActorSheet<EntryType.PILOT> {
    * Activate event listeners using the prepared sheet HTML
    * @param html {JQuery}   The prepared HTML object ready to be rendered into the DOM
    */
-  activateListeners(html: JQuery) {
+  async activateListeners(html: JQuery) {
     super.activateListeners(html);
 
     if (this.actor.owner) {
+      // Need to know ourself to activate some macros
+      let data = this._currData!; // We actually know this must be valid right now
+
       // Macro triggers
       // Stat rollers
       let statMacro = html.find(".roll-stat");
@@ -93,19 +96,21 @@ export class LancerPilotSheet extends LancerActorSheet<EntryType.PILOT> {
       let CAMacro = html.find(".core-active-macro");
       CAMacro.on("click", (ev: any) => {
         ev.stopPropagation(); // Avoids triggering parent event handlers
-
-        // let target = <HTMLElement>ev.currentTarget;
-
-        prepareCoreActiveMacro(this.actor._id);
+        prepareFrameMacro({
+          type: "frame",
+          subtype: "active",
+          actor: data.mm.ent.as_ref()
+        });
       });
 
       let CPMacro = html.find(".core-passive-macro");
       CPMacro.on("click", (ev: any) => {
         ev.stopPropagation(); // Avoids triggering parent event handlers
-
-        // let target = <HTMLElement>ev.currentTarget;
-
-        prepareCorePassiveMacro(this.actor._id);
+        prepareFrameMacro({
+          type: "frame",
+          subtype: "passive",
+          actor: data.mm.ent.as_ref()
+        });
       });
 
       // Weapon rollers

@@ -26,6 +26,28 @@
   <section class="sheet-body">
 
     <div class="flexcol">
+      {{!-- Class/Tier --}}
+       <div class="wraprow double">
+        <div class="flexcol card clipped">
+          <span class="lancer-header major clipped-top">TIER</span>
+          {{{tier-selector data.tier}}}
+        </div>
+        <div class="flexcol card clipped">
+          <span class="lancer-header major clipped-top">
+            CLASS
+          </span>
+          <span class="lancer-text-field major">
+            {{#if class}}
+              {{{ref-mm-controllable-item "class" "delete" }}}
+              <a class="i--m" style="float: right;">
+                <i class="cci cci-npc-class" ></i>
+              </a>
+            {{else}}
+            NO CLASS FOUND
+            {{/if}}</span>
+        </div>
+      </div>
+
       {{!-- Stats et all --}}
       <div class="wraprow quintuple">
         {{{clicker-stat-card   "TIER"       (concat "cci cci-npc-tier-" mm.ent.Tier)            "mm.ent.Tier" }}}
@@ -53,15 +75,6 @@
       </div>
 
       {{!-- Equipment et all --}}
-      <div class="card clipped">
-        <span class="lancer-header submajor ">CLASSES (LIMIT 1)</span>
-        <div class="flexcol">
-          {{#each mm.ent.Classes as |class index|}}
-            {{{ref-mm-controllable-item (concat "mm.ent.Classes." index) "delete" }}}
-          {{/each}}
-        </div>
-      </div>
-
       <div class="card clipped">
         <span class="lancer-header submajor ">TEMPLATES</span>
         <div class="wraprow double">

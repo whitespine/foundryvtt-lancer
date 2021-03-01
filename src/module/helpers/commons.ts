@@ -1,7 +1,5 @@
 import { HelperOptions } from "handlebars";
 import {
-  EntryType,
-  LiveEntryTypes,
   RegEntry,
   Range,
   Damage,
@@ -12,14 +10,13 @@ import {
   DamageType,
   SystemMount,
   WeaponMount,
-  WeaponSize,
-  FittingSize,
   MechWeaponProfile,
   FrameTrait,
   Bonus,
-  SerUtil
+  SerUtil,
+  Action,
+  ActivationType
 } from "machine-mind";
-import { defaults } from "machine-mind/dist/funcs";
 import { HTMLEditDialog } from "../apps/text-editor";
 import { LancerActorSheetData, LancerItemSheetData } from "../interfaces";
 import { MMEntityContext } from "../mm-util/helpers";
@@ -113,55 +110,10 @@ export function array_path_edit(target: any, flat_path: string, value: any, mode
   }
 }
 
-/** Makes many icons in the same format with ease an icon */
-export class IconFactory {
-  // Applied to each icon
-  private classes: string[] = [];
-  private icon_prefix: string = "";
-
-  constructor(args: {
-    light?: boolean, // Force icon white
-    dark?: boolean, // Force icon black
-    size?: "xs" | "s" | "sm" | "m" | "l" | "xl",
-    /*
-    This arg a bit fancy. 
-    - Can be left unset, in which case you'll invoke r with a fairly conventional r("cci cci-heat"), for example.
-    - Can be set with the icon grouping, e.x. "cci", in which case one would only have to supply r("cci-heat")
-    - Can be set with icon grouping and glyph prefix, e.x. "cci,cci" in which case it will automatically prefix any params to arg with the prefix. So, can do r("heat")
-    */
-    icon_set?: string 
-  }) {
-    // Turn options into classes
-    if(args.light) {
-      this.classes.push("i--light");
-    }
-    if(args.dark) {
-      this.classes.push("i--dark");
-    }
-
-    this.classes.push(`i--${args.size ?? "m"}`); // Default medium
-
-    if(args.icon_set) {
-      let split = args.icon_set.split(",");
-      if(split.length > 1) {
-        // Advanced prefixing mode
-        this.classes.push(split[0]);
-        this.icon_prefix = split[1].trim() + "-";
-      } else {
-        // Simpler mode
-        this.classes.push(args.icon_set);
-      }
-    }
-  }
-
-  // Produces an icon with the given glyph using configured classes
-  r(icon: string): string {
-    return `<i class="${this.classes.join(" ")} ${this.icon_prefix}${icon}"> </i>`;
-  }
-}
-
 // Common to many feature/weapon/system previews. Auto-omits on empty body
-export function effect_box(title: string, text: string, add_classes:string = ""): string {
+// Supply `add_classes` to augment the effect box
+export function effect_box(title: string, text: string, helper: HelperData): string {
+  let add_classes:string = helper.hash.add_classes ?? "";
   if (text) {
     return `
       <div class="effect-box ${add_classes}">
@@ -191,7 +143,7 @@ export function is_ref(v: any): v is RegRef<any> {
 
 // Check that a parsed result is probably an item
 // export function is_item(v: any): v is RegRef<any> {
-  // let vt = v as LancerItem<LancerItemType> | null; // Better type
+  // let vt = v as AnyLancerItem | null; // Better type
   // return vt?._id !== undefined && vt?.type !== undefined && LancerItemTypes
 // }
 // Helper function to format a dotpath to not have any square brackets, instead using pure dot notation
@@ -208,42 +160,41 @@ export function resolve_dotpath(object: any, path: string, default_: any = null)
     .reduce((o, k) => o?.[k], object) ?? default_;
 }
 
-// Helper function to get arbitrarily deep array references, specifically in a helperoptions, and with better types for that matter
-export function resolve_helper_dotpath<T>(helper: HelperOptions, path: string): T
-export function resolve_helper_dotpath<T>(helper: HelperOptions, path: string, default_: T): T
-export function resolve_helper_dotpath<T>(helper: HelperOptions, path: string, default_: T, try_parent: boolean): T
-export function resolve_helper_dotpath(helper: HelperOptions, path: string, default_: any = null, try_parent: boolean = false): any {
-  if(try_parent) {
-    const false_fail = "MaybeWecanTryagian"; // A temporary default value. Distinguish this from like, a "real" null/default/whatever
-    let data = helper.data;
+/** Oftentimes we don't need a full helper - just its hash/data
+ * in cases such as these, we use this type 
+ * to allow calls to it to be made more easily 
+ */
+export type HelperData = Pick<HelperOptions, "hash" | "data">;
 
-    // Loop until no _parent
-    while(data) {
-      let resolved = resolve_dotpath(data?.root, path, false_fail);
-      if(resolved != false_fail) {
-        // Looks like we found something!
-        return resolved;
-      }
-      data = data._parent;
+// Helper function to get arbitrarily deep array references, specifically in a HelperData, and with better types for that matter
+export function resolve_helper_dotpath<T>(helper: HelperData, path: string): T
+export function resolve_helper_dotpath<T>(helper: HelperData, path: string, default_: T): T
+export function resolve_helper_dotpath(helper: HelperData, path: string, default_: any = null): any {
+  // We're gonna look until we've checked everywhere (including parents) and haven't found
+  const false_fail = "MaybeWecanTryagian"; // A temporary default value. Distinguish this from like, a "real" null/default/whatever
+  let data = helper.data;
+
+  // Loop until no _parent
+  while(data) {
+    let resolved = resolve_dotpath(data?.root, path, false_fail);
+    if(resolved != false_fail) {
+      // Looks like we found something!
+      return resolved;
     }
-
-    // We've found nothing. Sad
-    return default_;
-  } else {
-    // Trivial wrapper.
-    return resolve_dotpath(helper.data?.root, path, default_);
+    data = data._parent;
   }
-}
 
+  // We've found nothing even after checking parents. Sad
+  return default_;
+}
 /**
  * Use this when invoking a helper from another helper, and you want to augment the hash args in some way
  * @argument defaults These properties will be inserted iff the hash doesn't already have that value.
  * @argument overrides These properties will be inserted regardless of pre-existing value
 */
-export function ext_helper_hash(orig_helper: HelperOptions, overrides: HelperOptions["hash"], defaults: HelperOptions["hash"] = {}): HelperOptions {
+export function ext_helper_hash<T extends HelperData>(orig_helper: T, overrides: T["hash"], defaults: T["hash"] = {}): T {
   return {
-    fn: orig_helper.fn,
-    inverse: orig_helper.inverse,
+    ...orig_helper,
     hash: {
       ...defaults,
       ...orig_helper.hash,
@@ -383,6 +334,12 @@ async function control_structs(key: string, ctx: MMEntityContext<any>): Promise<
       return [true, await trait.ready()];
     case "bonus":
       return [true, new Bonus(funcs.defaults.BONUS())];
+    case "action":
+      return [true, new Action({ // TODO: use funcs.defaults.ACTION()
+        activation: ActivationType.None,
+        detail: "",
+        name: "new Action",
+      })];
     case "mount_type":
       return [true, MountType.Main];
     case "range":
@@ -423,7 +380,7 @@ async function control_structs(key: string, ctx: MMEntityContext<any>): Promise<
  * - `label_classes`: Additional classes to put on the label, if one exists.
  * - `default`: If resolved value is undefined, use this
  */
-function std_input(path: string, type: string, options: HelperOptions) {
+function std_input(path: string, type: string, options: HelperData) {
   // Get other info
   let input_classes: string = options.hash["classes"] || "";
   let label: string = options.hash["label"] || "";
@@ -449,11 +406,11 @@ function std_input(path: string, type: string, options: HelperOptions) {
   }
 }
 
-export function std_string_input(path: string, options: HelperOptions) {
+export function std_string_input(path: string, options: HelperData) {
   return std_input(path, "String", options);
 }
 
-export function std_num_input(path: string, options: HelperOptions) {
+export function std_num_input(path: string, options: HelperData) {
   return std_input(path, "Number", options);
 }
 
@@ -476,7 +433,7 @@ export function std_x_of_y(x_path: string, x: number, y: number, add_classes: st
  * - `label_classes`: Additional classes to put on the label, if it exists
  * - `default`: Change the default value if resolution fails. Otherwise, we just use the first one in the enum.
  */
-export function std_checkbox(path: string, options: HelperOptions) {
+export function std_checkbox(path: string, options: HelperData) {
   // Get hash args
   let input_classes: string = options.hash["classes"] || "";
   let label: string = options.hash["label"] || "";
@@ -512,7 +469,7 @@ export function std_checkbox(path: string, options: HelperOptions) {
  * - `classes`: Additional classes to put on the select.
  * - `default`: Change the default value if resolution fails. Otherwise, we just use the first one in the enum.
  */
-export function std_enum_select<T extends string>(path: string, enum_: {[key: string]: T}, options: HelperOptions) {
+export function std_enum_select<T extends string>(path: string, enum_: {[key: string]: T}, options: HelperData) {
   // Get the classes to add
   let select_classes: string = options.hash["classes"] || "";
 
@@ -538,7 +495,7 @@ export function std_enum_select<T extends string>(path: string, enum_: {[key: st
   }
 
   let select = `
-      <select name="${path}" class="${select_classes}" data-type="String" style="height: 2em; align-self: center;" >
+      <select name="${path}" class="${select_classes}" data-dtype="String" style="height: 2em; align-self: center;" >
         ${choices.join("")}
       </select>`;
   return select;
@@ -581,7 +538,7 @@ export function safe_html_helper(orig: string) {
 }
 
 // These typically are the exact same so we made a helper for 'em
-export function large_textbox_card(title: string, text_path: string, helper: HelperOptions) {
+export function large_textbox_card(title: string, text_path: string, helper: HelperData) {
   let resolved = resolve_helper_dotpath(helper, text_path, "");
   return `
   <div class="card full clipped">
@@ -594,4 +551,13 @@ export function large_textbox_card(title: string, text_path: string, helper: Hel
     </div>
   </div>
   `;
+}
+
+
+// Reads the specified form to a JSON object, including unchecked inputs
+// Wraps the build in foundry method
+export function read_form(form_element: HTMLFormElement): {[key: string]: string | number | boolean} {
+  // @ts-ignore The typings don't yet include this utility class
+  let form_data = new FormDataExtended(form_element);
+  return form_data.toObject();
 }

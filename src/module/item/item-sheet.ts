@@ -5,8 +5,10 @@ import { HANDLER_activate_general_controls, gentle_merge, resolve_dotpath, HANDL
 import { HANDLER_activate_native_ref_dragging, HANDLER_activate_ref_dragging, HANDLER_activate_ref_drop_clearing, HANDLER_activate_ref_drop_setting, HANDLER_add_ref_to_list_on_drop, HANDLER_openRefOnClick } from "../helpers/refs";
 import { EntryType } from "machine-mind";
 import { get_pack } from "../mm-util/db_abstractions";
-import { HANDLER_activate_edit_bonus } from "../helpers/item";
 import { HANDLER_activate_tag_context_menus, HANDLER_activate_tag_dropping } from "../helpers/tags";
+import { HANDLER_activate_edit_bonus } from "../helpers/bonuses";
+import { HANDLER_activate_edit_action } from "../helpers/actions";
+import { CollapseHandler, HANDLER_activate_collapsibles } from "../helpers/collapse";
 
 const lp = LANCER.log_prefix;
 
@@ -15,6 +17,9 @@ const lp = LANCER.log_prefix;
  * @extends {ItemSheet}
  */
 export class LancerItemSheet<T extends LancerItemType> extends ItemSheet {
+  // Tracks collapse state between renders
+  private collapse_handler = new CollapseHandler();
+
   /**
    * @override
    * Extend and override the default options used by the Item Sheet
@@ -108,14 +113,18 @@ export class LancerItemSheet<T extends LancerItemType> extends ItemSheet {
     HANDLER_activate_ref_drop_setting(html, getfunc, commitfunc);
     HANDLER_activate_ref_drop_clearing(html, getfunc, commitfunc);
 
-    // Enable bonus editors
+    // Enable bonus/action editors
     HANDLER_activate_edit_bonus(html, getfunc, commitfunc);
+    HANDLER_activate_edit_action(html, getfunc, commitfunc);
 
     // Enable tag editing
     HANDLER_activate_tag_context_menus(html, getfunc, commitfunc);
 
     // Enable popout editors
     HANDLER_activate_popout_text_editor(html, getfunc, commitfunc);
+
+    // Enable collapses
+    HANDLER_activate_collapsibles(html, this.collapse_handler);
 
     // Enable general controls, so items can be deleted and such
     HANDLER_activate_general_controls(html, getfunc, commitfunc);

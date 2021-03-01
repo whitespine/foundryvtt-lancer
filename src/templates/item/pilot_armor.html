@@ -56,12 +56,8 @@
   {{!-- Description --}}
   {{{textarea-card "DESCRIPTION" "mm.ent.Description"}}}
 
-  {{!-- Tags --}}
-  <div class="card">
-    <span class="lancer-header major">TAGS</span>
-    {{{mm-tag-list "mm.ent.Tags" mm.ent.Tags editable}}}
-  </div>
+  {{{tags-view "mm.ent.Tags" editable=editable}}}
 
   {{!-- Bonuses --}} 
-  {{{bonuses-view "mm.ent.Bonuses" mm.ent.Bonuses editable}}}
+  {{{bonuses-view "mm.ent.Bonuses" editable=editable}}}
 </form>
