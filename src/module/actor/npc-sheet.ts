@@ -1,7 +1,7 @@
 import { LancerActorSheetData } from "../interfaces";
 import { LANCER } from "../config";
 import { LancerActorSheet } from "./lancer-actor-sheet";
-import { EntryType, NpcClass, OpCtx } from "machine-mind";
+import { EntryType, funcs, NpcClass, OpCtx } from "machine-mind";
 import { ResolvedNativeDrop } from "../helpers/dragdrop";
 import { MMEntityContext, mm_wrap_item } from "../mm-util/helpers";
 const lp = LANCER.log_prefix;
@@ -28,6 +28,12 @@ export class LancerNPCSheet extends LancerActorSheet<EntryType.NPC> {
         },
       ],
     });
+  }
+
+  // Just bound some values
+  async _updateObject(event: Event | JQuery.Event, formData: any): Promise<any> {
+    formData["mm.ent.Tier"] = funcs.bound_int(formData["mm.ent.Tier"], 1, 3); // Tier is 1-3
+
   }
 
   // Want to explicitly have npc class, for convenience

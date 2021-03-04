@@ -345,7 +345,7 @@ export function pilot_weapon_refview(weapon_path: string, helper: HelperData): s
   return `<div class="valid ${EntryType.PILOT_WEAPON} ref drop-settable card clipped pilot-weapon-compact item macroable"
                 ${ref_params(cd.ref, weapon_path)} >
     <div class="lancer-header">
-      <i class="cci cci-weapon i--m i--light"> </i>
+      <i class="cci cci-weapon i--m"> </i>
       <span class="minor">${weapon.Name}</span>
       <a class="gen-control i--light" data-action="null" data-path="${weapon_path}"><i class="fas fa-trash"></i></a>
     </div>
@@ -474,7 +474,7 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
                 ${ref_params(cd.ref, weapon_path)}
                 style="max-height: fit-content;">
     <div class="lancer-header">
-      <i class="cci cci-weapon i--m i--light"> </i>
+      <i class="cci cci-weapon i--m"> </i>
       <span class="minor">${weapon.Name} // ${weapon.Size.toUpperCase()} ${weapon.SelectedProfile.WepType.toUpperCase()}</span>
       <a class="gen-control i--light" data-action="null" data-path="${weapon_path}"><i class="fas fa-trash"></i></a>
     </div> 

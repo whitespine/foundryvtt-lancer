@@ -540,6 +540,7 @@ Hooks.on("hotbarDrop", async (_bar: any, data: macros.DraggedMacro, slot: number
     }
   }
 
+  //@ts-ignore Typescript doesn't like this stringify function all that much, for some reason
   let command = `game.lancer.prepareMacro(${stringify(data.macro)});`;
   let img = macro.icon ?? `systems/lancer/assets/icons/macro-icons/d20-framed.svg`;
 
