@@ -1,8 +1,9 @@
 import { LANCER } from "../config";
-import { HANDLER_activate_general_controls,  gentle_merge, is_ref, resolve_dotpath, safe_json_parse, HANDLER_activate_popout_text_editor } from "../helpers/commons";
-import { enable_native_dropping_mm_wrap, enable_simple_ref_dragging, enable_simple_ref_dropping, NativeDrop, ResolvedNativeDrop, resolve_native_drop } from "../helpers/dragdrop";
+import { HANDLER_activate_general_controls,  gentle_merge, HANDLER_activate_popout_text_editor } from "../helpers/commons";
+import { enable_dragging, enable_native_dropping_mm_wrap, ResolvedNativeDrop, resolve_native_drop } from "../helpers/dragdrop";
 import { HANDLER_activate_ref_dragging, HANDLER_activate_ref_drop_clearing, HANDLER_activate_ref_drop_setting, HANDLER_openRefOnClick as HANDLER_activate_ref_clicking } from "../helpers/refs";
 import { LancerActorSheetData } from "../interfaces";
+import { HANDLER_activate_macros } from "../macros";
 import { LancerActor, LancerActorType } from "./lancer-actor";
 const lp = LANCER.log_prefix;
 
@@ -47,6 +48,9 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
 
     // Enable popout editors
     HANDLER_activate_popout_text_editor(html, getfunc, commitfunc);
+
+    // Enable macros
+    HANDLER_activate_macros(html);
   }
 
   _activatePlusMinusButtons(html: any) {
@@ -213,8 +217,10 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
         }
       }
       // await this.actor.update(top_update, {});
+      console.log("Do top", top_update);
       await this.actor.update(top_update);
     } else {
+      console.log("Do mm", formData);
       gentle_merge(ct, formData);
       await this._commitCurrMM();
     }

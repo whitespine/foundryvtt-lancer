@@ -228,11 +228,13 @@ export class LancerActor<T extends LancerActorType> extends Actor {
         this.prior_max_hp = dr.current_hp.max;
 
         // Now that data is set properly, force token to draw its bars
-        if (this.token) {
+        if (this.token && (this.token as any).bars) {
           (this.token as any).drawBars();
         } else {
           for (let token of this.getActiveTokens()) {
-            (token as any).drawBars();
+            if((token as any).bars) {
+              (token as any).drawBars();
+            }
           }
         }
 

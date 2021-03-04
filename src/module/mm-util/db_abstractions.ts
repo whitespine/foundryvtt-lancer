@@ -378,7 +378,7 @@ export class TokenInventoryWrapper<T extends LancerItemType> extends ActorInvent
 
   constructor(type: T, token: Token) {
     super(type, token.actor);
-    if(!token) {
+    if(!token || !token.actor) {
       throw new Error("Bad token");
     }
     this.token = token;

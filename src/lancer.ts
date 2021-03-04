@@ -10,7 +10,9 @@
 // Import TypeScript modules
 import { LANCER, STATUSES, TypeIcon, WELCOME } from "./module/config";
 import { LancerGame } from "./module/lancer-game";
+import stringify  = require("json-stringify-pretty-compact");
 import {
+  AnyLancerActor,
   LancerActor,
   lancerActorInit,
 } from "./module/actor/lancer-actor";
@@ -55,7 +57,6 @@ import {
   HelperData,
   effect_box,
 } from "./module/helpers/commons";
-import { is_loading } from "machine-mind/dist/classes/mech/EquipUtil";
 import {
   weapon_size_selector,
   weapon_type_selector,
@@ -79,6 +80,8 @@ import { mech_loadout, pilot_slot } from "./module/helpers/loadout";
 import { LancerNPCSheet } from "./module/actor/npc-sheet";
 import { bonus_list_display, single_bonus_editor } from "./module/helpers/bonuses";
 import { action_list_display, single_action_editor } from "./module/helpers/actions";
+import { NativeDrop, resolve_native_drop } from "./module/helpers/dragdrop";
+import { funcs } from "machine-mind";
 
 const lp = LANCER.log_prefix;
 
@@ -101,6 +104,11 @@ Hooks.once("init", async function () {
       LancerActor,
       LancerItem,
     },
+    prepareMacro: macros.prepareMacro,
+    prepareTechMacro: macros.prepareTechMacro,
+    prepareStructureMacro: macros.prepareStructureMacro,
+    prepareOverchargeMacro: macros.prepareOverchargeMacro,
+    prepareOverheatMacro: macros.prepareOverheatMacro,
     prepareItemMacro: macros.prepareMacro,
     prepareStatMacro: macros.prepareStatMacro,
     prepareTextMacro: macros.prepareTextMacro,
@@ -337,7 +345,7 @@ Hooks.once("init", async function () {
 
   // ------------------------------------------------------------------------
   // Weapons
-  Handlebars.registerHelper("is-loading", is_loading);
+  Handlebars.registerHelper("is-loading", funcs.tag_util.is_loading);
   Handlebars.registerHelper("wpn-size-sel", weapon_size_selector);
   Handlebars.registerHelper("wpn-type-sel", weapon_type_selector);
   Handlebars.registerHelper("wpn-range-sel", range_editor);
@@ -497,86 +505,62 @@ Hooks.on("renderChatMessage", async (cm: ChatMessage, html: any, data: any) => {
   }
 });
 
-Hooks.on("hotbarDrop", (_bar: any, data: macros.AnyMacroCtx, slot: number) => {
-  // We set an associated command & title based off the type
-  // Everything else gets handled elsewhere
-
-  let command = `game.lancer.prepareMacro(a, "${JSON.stringify(data)}");`;
-  let title = "";
-  let img = "systems/lancer/assets/icons/macro-icons/d20-framed.svg";
-
+Hooks.on("hotbarDrop", async (_bar: any, data: macros.DraggedMacro, slot: number) => {
+  let macro: macros.AnyMacroCtx = data.macro;
   console.log(`${lp} Data dropped on hotbar:`, data);
-  switch(data.
-      img = `systems/lancer/assets/icons/macro-icons/talent.svg`;
-    // Pick the image for the hotbar
-    switch (data.data.type) {
-      case EntryType.SKILL:
-        img = `systems/lancer/assets/icons/macro-icons/skill.svg`;
-        break;
-      case EntryType.TALENT:
-        img = `systems/lancer/assets/icons/macro-icons/talent.svg`;
-        break;
-      case EntryType.CORE_BONUS:
-        img = `systems/lancer/assets/icons/macro-icons/corebonus.svg`;
-        break;
-      case EntryType.PILOT_GEAR:
-        img = `systems/lancer/assets/icons/macro-icons/generic_item.svg`;
-        break;
-      case EntryType.PILOT_WEAPON:
-      case EntryType.MECH_WEAPON:
-        img = `systems/lancer/assets/icons/macro-icons/mech_weapon.svg`;
-        break;
-      case EntryType.MECH_SYSTEM:
-        img = `systems/lancer/assets/icons/macro-icons/mech_system.svg`;
-        break;
-      case EntryType.NPC_FEATURE:
-        switch (data.data.data.feature_type) {
-          case NpcFeatureType.Reaction:
-            img = `systems/lancer/assets/icons/macro-icons/reaction.svg`;
-            break;
-          case NpcFeatureType.System:
-            img = `systems/lancer/assets/icons/macro-icons/mech_system.svg`;
-            break;
-          case NpcFeatureType.Trait:
-            img = `systems/lancer/assets/icons/macro-icons/trait.svg`;
-            break;
-          case NpcFeatureType.Tech:
-            img = `systems/lancer/assets/icons/macro-icons/tech_quick.svg`;
-            break;
-          case NpcFeatureType.Weapon:
-            img = `systems/lancer/assets/icons/macro-icons/mech_weapon.svg`;
-            break;
-        }
-        break;
+  if(data.shibboleth != "yep") {
+    // Ah shoot - it's a world item, probably. Coerce into an item macro
+    let messy_drop = (data as unknown as NativeDrop)!;
+
+    // Attempt to resolve it
+    let resolved = await resolve_native_drop(messy_drop);
+
+    // No dice
+    if(!resolved) {
+      console.error("Couldn't make macro for data: ", data);
+      return;
     }
-  } else if (data.type === "Text") {
-  } else if (data.type === "Core-Active") {
-    img = `systems/lancer/assets/icons/macro-icons/corebonus.svg`;
-  } else if (data.type === "Core-Passive") {
-    img = `systems/lancer/assets/icons/macro-icons/corebonus.svg`;
-  } else {
-    // Let's not error or anything, since it's possible to accidentally drop stuff pretty easily
-    return;
+
+    // Ok, we can make this.
+    if(resolved.type == "Item" && resolved.entity.isOwned) {
+      let as_mm = await resolved.entity.data.data.derived.mmec_promise;
+      let ala = resolved.entity.actor as AnyLancerActor;
+      let actor_as_mm = await ala.data.data.derived.mmec_promise;
+      let new_macro: macros.ItemMacroCtx = {
+        name: as_mm.ent.Name,
+        type: "generic_item",
+        icon: TypeIcon(as_mm.ent.Type),
+        item: as_mm.ent.as_ref(),
+        actor: actor_as_mm.ent.as_ref()
+      }
+      macro = new_macro
+    } else {
+      // No idea what do do here - it's an actor or something weird, lol. Just ignore
+      return;
+    }
   }
 
-  // Until we properly register commands as something macros can have...
+  let command = `game.lancer.prepareMacro(${stringify(data.macro)});`;
+  let img = macro.icon ?? `systems/lancer/assets/icons/macro-icons/d20-framed.svg`;
+
+  // Attempt to not reproduce the exact same macro
   // @ts-ignore
-  let macro = game.macros.entities.find(
-    (m: Macro) => m.name === title && (m.data as any).command === command
-  );
-  if (!macro) {
-    Macro.create(
-      {
-        command,
-        name: title,
-        type: "script",
-        img: img,
-      },
-      { displaySheet: false }
-    ).then(macro => game.user.assignHotbarMacro(macro as Macro, slot));
-  } else {
-    game.user.assignHotbarMacro(macro, slot).then();
-  }
+  // let macro = game.macros.entities.find(
+    // (m: Macro) => m.name === title && (m.data as any).command === command
+  // );
+  // if (!macro) {
+  Macro.create(
+    {
+      command,
+      name: macro.name,
+      type: "script",
+      img: img,
+    },
+    { displaySheet: false }
+  ).then(macro => game.user.assignHotbarMacro(macro as Macro, slot));
+  // }  else {
+   //  game.user.assignHotbarMacro(macro, slot).then();
+  // }
 });
 
 // Make derived fields properly update their intended origin target

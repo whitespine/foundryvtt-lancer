@@ -62,39 +62,6 @@ function prepareTag(tag: TagData | null): TagData {
   }
   return tag;
 }
-
-/**
- * Handlebars helper to generate compact read-only tag template.
- * @param tag {TagData | null} an object containing the tag's ID and value.
- * @returns {string} The html template for the tag.
- */
-/*
-export function renderCompactTag(tag: TagData | null): string {
-  let template: string = "";
-  tag = prepareTag(tag);
-
-  // Don't render hidden tags
-  if (tag["hidden"]) return template;
-
-  // Generate the Handlebars partial. This will always be the read-only
-  template = `<div class="compact-tag flexrow">
-  <i class="mdi mdi-label i--s i--light"></i>
-  <span style="margin: 3px;">${tag.name}</span>
-  </div>`;
-
-  return template;
-}
-*/
-
-/**
- * Handlebars partial to generate a list of tags for weapon/system previews.
- */
-/*
-export const compactTagList = `<div class="compact-tag-row">
-  {{#each tags as |tag tkey|}}
-  {{{compact-tag tag}}}
-  {{/each}}
-</div>`;
 */
 
 // A small tag display containing just the label and value

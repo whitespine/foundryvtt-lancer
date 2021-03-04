@@ -53,14 +53,6 @@ export class LancerPilotSheet extends LancerActorSheet<EntryType.PILOT> {
       // Need to know ourself to activate some macros
       let data = this._currData!; // We actually know this must be valid right now
 
-      // Macro triggers
-      // Stat rollers
-      let statMacro = html.find(".roll-stat");
-      statMacro.on("click", (ev) => {
-        ev.stopPropagation(); // Avoids triggering parent event handlers
-        game.lancer.prepareStatMacro(this.actor, this.getStatPath(ev)!);
-      });
-
       // Talent rollers
       let talentMacro = html.find(".talent-macro");
       talentMacro.on("click", (ev) => {
@@ -74,24 +66,6 @@ export class LancerPilotSheet extends LancerActorSheet<EntryType.PILOT> {
         });
       });
 
-      // TODO: This should really just be a single item-macro class
-      // Trigger rollers
-      let itemMacros = html
-        .find(".skill-macro")
-        // System rollers
-        .add(html.find(".system-macro"))
-        // Gear rollers
-        .add(html.find(".gear-macro"))
-        // Core bonus
-        .add(html.find(".cb-macro"));
-      itemMacros.on("click", (ev: any) => {
-        ev.stopPropagation(); // Avoids triggering parent event handlers
-
-        const el = $(ev.currentTarget).closest(".item")[0] as HTMLElement;
-
-        game.lancer.prepareItemMacro(this.actor, el.getAttribute("data-item-id")!);
-      });
-
       // Core active & passive text rollers
       let CAMacro = html.find(".core-active-macro");
       CAMacro.on("click", (ev: any) => {
@@ -99,7 +73,8 @@ export class LancerPilotSheet extends LancerActorSheet<EntryType.PILOT> {
         prepareFrameMacro({
           type: "frame",
           subtype: "active",
-          actor: data.mm.ent.as_ref()
+          actor: data.mm.ent.as_ref(),
+          name: "Core Active"
         });
       });
 
@@ -109,27 +84,9 @@ export class LancerPilotSheet extends LancerActorSheet<EntryType.PILOT> {
         prepareFrameMacro({
           type: "frame",
           subtype: "passive",
-          actor: data.mm.ent.as_ref()
+          actor: data.mm.ent.as_ref(),
+          name: "Core Passive"
         });
-      });
-
-      // Weapon rollers
-      let weaponMacro = html.find(".roll-attack");
-      weaponMacro.on("click", (ev) => {
-        if (!ev.currentTarget) return; // No target, let other handlers take care of it.
-        ev.stopPropagation();
-
-        const weaponElement = $(ev.currentTarget).closest(".weapon")[0] as HTMLElement;
-        const weaponId = weaponElement.getAttribute("data-item-id");
-        if (!weaponId) return ui.notifications.warn(`Error rolling macro: No weapon ID!`);
-        const item = this.actor.getOwnedItem(weaponId);
-        if (!item)
-          return ui.notifications.warn(
-            `Error rolling macro: Couldn't find weapon with ID ${weaponId}.`
-          );
-
-        const weapon = item as LancerPilotWeapon | LancerMechWeapon;
-        game.lancer.prepareItemMacro(this.actor._id, weapon._id);
       });
     }
 

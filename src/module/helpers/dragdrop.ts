@@ -8,7 +8,7 @@ import { AnyLancerActor, is_actor_type, LancerActor, LancerActorType } from "../
 import { AnyLancerItem, is_item_type, LancerItem, LancerItemType } from "../item/lancer-item";
 import { FoundryReg } from "../mm-util/foundry-reg";
 import { MMEntityContext, mm_wrap_actor, mm_wrap_item } from "../mm-util/helpers";
-import { gentle_merge, is_ref, safe_json_parse } from "./commons";
+import { is_ref, safe_json_parse } from "./commons";
 import { recreate_ref_from_element } from "./refs";
 
 
@@ -170,11 +170,17 @@ export function enable_dragging(
   });
 }
 
-// "Everything" that foundry will natively drop. Scenes are not yet implemented
+// "Everything" that foundry will natively drop. Token actors and scenes are not yet implemented
 export type NativeDrop = {
   type: "Item",
   id: string,
-  pack?: string
+  pack?: string,
+
+  // Only present for owned items
+  actorId?: string | null, // Will be set for any owned item
+  data?: any, // Will be set for any owned item
+  sceneId?: string | null, // Will be set only for unlinked token owned items
+  tokenId?: string | null // Will be set only for unlinked token owned items
 } | {
   type: "Actor",
   id: string,
@@ -197,10 +203,10 @@ export type ResolvedNativeDrop = {
   entity: JournalEntry
 } | null;
 
-// Resolves a native foundry actor/item drop event datatransfer to the actual contained item
-export async function resolve_native_drop(event_data: string): Promise<ResolvedNativeDrop> {
+// Resolves a native foundry actor/item drop event datatransfer to the actual contained item. Can be given as the raw string payload, or an already parsed object
+export async function resolve_native_drop(event_data: string | object): Promise<ResolvedNativeDrop> {
     // Get dropped data
-    let data = safe_json_parse(event_data) as NativeDrop;
+    let data = (typeof event_data == "string" ? safe_json_parse(event_data) : event_data) as NativeDrop;
     if(!data) return null;
 
     // NOTE: these cases are copied almost verbatim from ActorSheet._onDrop
@@ -210,11 +216,22 @@ export async function resolve_native_drop(event_data: string): Promise<ResolvedN
       if (data.pack) {
         item = (await game.packs.get(data.pack)!.getEntity(data.id)) as LancerItem<any>;
         console.log(`Item native dropped from compendium: `, item);
-      }
-
-      // Case 2 - Item is a World entity
-      else {
-        item = game.items.get(data.id) as LancerItem<any>;
+      } else if(data.actorId) {
+        // Case 2 - Item is an owned entity (blech). Further distinguish if token or actor. We don't bother with owned compendium items, because like, just don't
+        if(data.tokenId) {
+          // Look it up in the token synthetic actor. Barring exceptional circumstances, the token from this drag event is likely still in the current scene
+          //@ts-ignore The id here doesn't need to be a number. 
+          let token: Token = canvas.tokens.get(data.tokenId);
+          if(token) {
+            item = canvas.tokens.get(token.actor.items.get(data.id));
+          }
+        } else {
+          // Look it up in the actor
+          item = game.actors.get(data.actorId)?.items?.get(data.id) as AnyLancerItem;
+        }
+      } else {
+        // Case 3 - Item is a World entity
+        item = game.items.get(data.id) as AnyLancerItem;
         console.log(`Item native dropped from world: `, item);
       }
 

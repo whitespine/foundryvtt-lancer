@@ -1,11 +1,7 @@
 import { LancerActorSheetData } from "../interfaces";
 import { LANCER } from "../config";
 import { LancerActorSheet } from "./lancer-actor-sheet";
-import { prepareMacro } from "../macros";
 import { EntryType, NpcClass, OpCtx } from "machine-mind";
-import {
-  LancerNpcFeature,
-} from "../item/lancer-item";
 import { ResolvedNativeDrop } from "../helpers/dragdrop";
 import { MMEntityContext, mm_wrap_item } from "../mm-util/helpers";
 const lp = LANCER.log_prefix;
@@ -45,134 +41,6 @@ export class LancerNPCSheet extends LancerActorSheet<EntryType.NPC> {
       class: class_,
       ...pre
     }
-  }
-
-  /* -------------------------------------------- */
-
-  /**
-   * Activate event listeners using the prepared sheet HTML
-   * @param html {HTMLElement}   The prepared HTML object ready to be rendered into the DOM
-   */
-  activateListeners(html: JQuery) {
-    super.activateListeners(html);
-
-    // Everything below here is only needed if the sheet is editable
-    if (!this.options.editable) return;
-
-    // Macro triggers
-    if (this.actor.owner) {
-      // Macros that can be handled via the generic item interface
-      let itemMacros = html.find(".item-macro");
-      itemMacros.on("click", (ev: any) => {
-        ev.stopPropagation(); // Avoids triggering parent event handlers
-
-        const el = $(ev.currentTarget).closest(".item")[0] as HTMLElement;
-
-        prepareMacro(this.actor._id, <string>el.getAttribute("data-item-id")).then();
-      });
-
-      // Stat rollers
-      let statMacro = html.find(".roll-stat");
-      statMacro.on("click", (ev: Event) => {
-        if (!ev.currentTarget) return; // No target, let other handlers take care of it.
-        ev.stopPropagation(); // Avoids triggering parent event handlers
-
-        // Find the stat input to get the stat's key to pass to the macro function
-        const statInput: HTMLInputElement = $(ev.currentTarget)
-          .closest(".stat-container")
-          .find(".lancer-stat")[0] as HTMLInputElement;
-        let tSplit = statInput.name.split(".");
-        let mData: LancerStatMacroData = {
-          title: tSplit[tSplit.length - 1].toUpperCase(),
-          bonus: statInput.value,
-        };
-
-        console.log(`${lp} Rolling ${mData.title} check, bonus: ${mData.bonus}`);
-        game.lancer.prepareStatMacro(this.actor, this.getStatPath(ev)!);
-      });
-
-      // Weapon rollers
-      let weaponMacro = html.find(".roll-attack");
-      weaponMacro.on("click", (ev: Event) => {
-        if (!ev.currentTarget) return; // No target, let other handlers take care of it.
-        ev.stopPropagation(); // Avoids triggering parent event handlers
-
-        const weaponElement = $(ev.currentTarget).closest(".weapon")[0] as HTMLElement;
-        // console.log(weaponElement);
-        const weaponId = weaponElement.getAttribute("data-item-id");
-        if (!weaponId) return ui.notifications.warn(`Error rolling macro: No weapon ID!`);
-        const item = this.actor.getOwnedItem(weaponId);
-        if (!item)
-          return ui.notifications.warn(
-            `Error rolling macro: Couldn't find weapon with ID ${weaponId}.`
-          );
-
-        const weapon = item as LancerNpcFeature;
-        game.lancer.prepareItemMacro(this.actor._id, weapon._id);
-      });
-
-      // Tech rollers
-      let techMacro = html.find(".roll-tech");
-      techMacro.on("click", (ev: Event) => {
-        if (!ev.currentTarget) return; // No target, let other handlers take care of it.
-        ev.stopPropagation();
-        const techElement = $(ev.currentTarget).closest(".tech")[0] as HTMLElement;
-        let techId = techElement.getAttribute("data-item-id");
-        game.lancer.prepareItemMacro(this.actor._id, techId!);
-      });
-    }
-    if (this.actor.owner) {
-      // Item/Macroable Dragging
-      const haseMacroHandler = (e: DragEvent) => this._onDragMacroableStart(e);
-      html
-        .find('li[class*="item"]')
-        .add('span[class*="item"]')
-        .add('[class*="macroable"]')
-        .each((i: number, item: any) => {
-          if (item.classList.contains("inventory-header")) return;
-          if (item.classList.contains("roll-stat"))
-            item.addEventListener("dragstart", haseMacroHandler, false);
-          if (item.classList.contains("item"))
-            item.addEventListener("dragstart", (ev: DragEvent) => this._onDragStart(ev), false);
-          item.setAttribute("draggable", "true");
-        });
-
-      // Change tier
-      /*
-      let tier_selector = html.find('select.tier-control[data-action*="update"]');
-      tier_selector.on("change", async (ev: Event) => {
-        if (!ev.currentTarget) return; // No target, let other handlers take care of it.
-        ev.stopPropagation();
-        let tier = (ev.currentTarget as HTMLSelectElement).selectedOptions[0].value;
-        await this.actor.update({ "data.tier": tier });
-        // Set Values for
-        let actor = this.actor;
-        let NPCClassStats: any;
-        NPCClassStats = (actor.items.find((i: Item) => i.type === EntryType.NPC_CLASS) as any).data
-          .data.stats;
-        console.log(`${lp} TIER Swap with ${tier} and ${NPCClassStats}`);
-        console.log(`disabled!!!`);
-        // await actor.swapNPCClassOrTier(NPCClassStats, false, tier);
-      });
-      */
-    }
-  }
-
-  _onDragMacroableStart(event: DragEvent) {
-    // For roll-stat macros
-    event.stopPropagation(); // Avoids triggering parent event handlers
-    let statInput = getStatInput(event);
-    if (!statInput) return ui.notifications.error("Error finding stat input for macro.");
-
-    let tSplit = statInput.id.split(".");
-    let data = {
-      title: tSplit[tSplit.length - 1].toUpperCase(),
-      dataPath: statInput.id,
-      type: "actor",
-      actorId: this.actor._id,
-    };
-
-    event.dataTransfer?.setData("text/plain", JSON.stringify(data));
   }
 
   /* -------------------------------------------- */
@@ -221,12 +89,4 @@ export class LancerNPCSheet extends LancerActorSheet<EntryType.NPC> {
     new_live_this.CurrentStructure = new_live_this.MaxStructure;
     await new_live_this.writeback();
   }
-}
-
-function getStatInput(event: Event): HTMLInputElement | HTMLDataElement | null {
-  if (!event.currentTarget) return null;
-  // Find the stat input to get the stat's key to pass to the macro function
-  return $(event.currentTarget).closest(".stat-container").find(".lancer-stat")[0] as
-    | HTMLInputElement
-    | HTMLDataElement;
 }

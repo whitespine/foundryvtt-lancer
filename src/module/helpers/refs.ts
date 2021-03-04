@@ -104,7 +104,7 @@ export function simple_mm_ref<T extends EntryType>(
                         data-path="${slot_path}" 
                         data-type="${flat_types}">
           ${icons.join(" ")}
-          <span class="major">${fallback}</span>
+          <span class="submajor">${fallback}</span>
       </div>`;
   }
 
@@ -113,7 +113,7 @@ export function simple_mm_ref<T extends EntryType>(
                 ${ref_params(cd.ref)}
                 data-path="${slot_path}" >
          <img class="ref-icon" src="${cd.img}"></img>
-         <span class="major">${cd.name}</span>
+         <span class="submajor">${cd.name}</span>
      </div>`;
 }
 
@@ -208,7 +208,7 @@ export function mm_ref_portrait<T extends EntryType>(
   helper: HelperData
 ) {
   // Fetch the image
-  return `<img class="profile-img ref valid ${item.Type}" src="${img}" data-edit="${img_path}" ${ref_params(item.as_ref())} width="100" height="100" />`;
+  return `<img class="profile-img ref valid ${item.Type}" src="${img}" data-edit="${img_path}" ${ref_params(item.as_ref())} width="100" height="100"></img>`;
 }
 
 // Use this slot callback to add items of certain kind(s) to a list.
@@ -351,7 +351,7 @@ export function HANDLER_activate_ref_drop_clearing<T>(
 ) {
   html.find(".ref.drop-settable").on("contextmenu", async (event) => {
     let data = await data_getter();
-    let path = event.target.dataset.path;
+    let path = event.currentTarget.dataset.path;
     if(path) {
       // Check there's anything there before doing anything
       if(!resolve_dotpath(data, path)) return;

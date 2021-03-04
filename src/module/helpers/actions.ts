@@ -1,9 +1,9 @@
 import { Action, ActivationType, RegEntry, RegRef } from "machine-mind";
 import { LancerActorType } from "../actor/lancer-actor";
 import { GenericEditDialogue } from "../apps/generic-editor";
-import { LancerItem, LancerItemType } from "../item/lancer-item";
+import { LancerItemType } from "../item/lancer-item";
 import { ActionMacroCtx, macro_elt_params } from "../macros";
-import { effect_box, ext_helper_hash, HelperData, inc_if, resolve_helper_dotpath, std_checkbox, std_enum_select, std_num_input, std_string_input } from "./commons";
+import { ext_helper_hash, HelperData, inc_if, resolve_helper_dotpath, std_checkbox, std_enum_select, std_num_input, std_string_input } from "./commons";
 
 /** Full on editor. Pretty ugly. 
  */
@@ -67,6 +67,9 @@ export function single_action_preview(actor_path: string, item_path: string, act
     let action = resolve_helper_dotpath<Action | null>(options, action_path, null);
     let editable = options.hash.editable ?? false; // Decides if we should a delete button, and allow open edit dialogue
 
+    // Override icon if needed
+    let icon = options.hash.icon ?? undefined;
+
     // Make sure we have all of our requirements
     if(!action) {
         return `err: action missing when drawing action`;
@@ -84,7 +87,9 @@ export function single_action_preview(actor_path: string, item_path: string, act
             type: "action",
             action_id: action.ID || MISSING_ACTION_ID,
             actor: actor?.as_ref(),
-            item: item?.as_ref() ?? null
+            item: item?.as_ref() ?? null,
+            name: action.Name,
+            icon
         }
     }
     let macro_button = ctx ? `<a class="i--m fas fa-dice-d20 roll-action" ${macro_elt_params(ctx)}> </a>` : "";

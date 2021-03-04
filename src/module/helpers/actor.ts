@@ -1,18 +1,21 @@
-import { EntryType,funcs, Mech, Npc, Pilot, RegEntry  } from "machine-mind";
-import { LancerItemType } from "../item/lancer-item";
+import { EntryType,funcs, Mech, Npc, Pilot  } from "machine-mind";
+import { LancerActorType } from "../actor/lancer-actor";
+import { macro_elt_params, StatMacroCtx } from "../macros";
+import { MMEntityContext } from "../mm-util/helpers";
 import { ext_helper_hash, HelperData, inc_if, resolve_helper_dotpath, selected, std_num_input, std_x_of_y } from "./commons";
-import { ref_commons, simple_mm_ref } from "./refs";
+import { simple_mm_ref } from "./refs";
 // ---------------------------------------
 // Some simple stat editing thingies
 
 // Shows an X / MAX clipped card
-export function stat_edit_card_max(title: string, icon: string, data_path: string, max_path: string, options: HelperData): string {
-  let data_val = resolve_helper_dotpath(options, data_path, 0);
-  let max_val = resolve_helper_dotpath(options, max_path, 0);
+export function stat_edit_card_max(title: string, data_path: string, max_path: string, helper: HelperData): string {
+  let data_val = resolve_helper_dotpath(helper, data_path, 0);
+  let max_val = resolve_helper_dotpath(helper, max_path, 0);
+  let icon = helper.hash["icon"] ?? "";
   return `
     <div class="card clipped">
-      <div class="lancer-header ">
-        <i class="${icon} i--m header-icon"> </i>
+      <div class="lancer-header">
+        ${inc_if(`<i class="${icon} i--m header-icon"> </i>`, icon)}
         <span class="major">${title}</span>
       </div>
       ${std_x_of_y(data_path, data_val, max_val, "lancer-stat")}
@@ -21,28 +24,55 @@ export function stat_edit_card_max(title: string, icon: string, data_path: strin
 }
 
 // Shows an X clipped card
-export function stat_edit_card(title: string, icon: string, data_path: string, options: HelperData): string {
+export function stat_edit_card(title: string, data_path: string, helper: HelperData): string {
+  let icon = helper.hash["icon"] ?? "";
   return `
     <div class="card clipped">
-      <div class="lancer-header ">
-        <i class="${icon} i--m header-icon"> </i>
+      <div class="lancer-header">
+        ${inc_if(`<i class="${icon} i--m header-icon"> </i>`, icon)}
         <span class="major">${title}</span>
       </div>
-      ${std_num_input(data_path, ext_helper_hash(options, {classes: "lancer-stat lancer-invisible-input"}))}
+      ${std_num_input(data_path, ext_helper_hash(helper, {classes: "lancer-stat lancer-invisible-input"}))}
     </div>
     `;
 }
 
-// Shows a readonly value clipped card
-export function stat_view_card(title: string, icon: string, data_path: string, options: HelperData): string {
-  let data_val = resolve_helper_dotpath(options, data_path);
+// 
+/**
+ * Shows a readonly value clipped card with a number inside
+ * If "icon" is provided, that icon will be shown to the left of the title.
+ * If "macro-actor" is provided (as an MMEntityContext for the actor), a die icon will function as a macro for this stat on that actor
+ */
+export function stat_view_card(title: string, data_path: string, helper: HelperData): string {
+  // Get basic display info
+  let icon = helper.hash["icon"] ?? "";
+  let data_val = resolve_helper_dotpath(helper, data_path);
+
+  // Inject a macro if need be
+  let macro_txt = "";
+  if(helper.hash["macro-actor"]) {
+    let actor = helper.hash["macro-actor"] as MMEntityContext<LancerActorType>;
+    let macro: StatMacroCtx = {
+      actor: actor.ent.as_ref(),
+      stat_path: data_path,
+      title,
+      type: "stat",
+      name: title,
+      icon: icon || undefined
+    }
+    macro_txt = `<a class="lancer-macro i--s fas fa-dice-d20" ${macro_elt_params(macro)}></a>`;
+  }
+
   return `
     <div class="card clipped">
-      <div class="lancer-header ">
-        ${inc_if(`<i class="${icon} i--m i--light header-icon"> </i>`, icon)}
+      <div class="lancer-header">
+        ${inc_if(`<i class="${icon} i--m header-icon"> </i>`, icon)}
         <span class="major">${title}</span>
       </div>
-      <span class="lancer-stat major">${data_val}</span>
+      <div class="flexrow">
+        ${macro_txt}
+        <span class="lancer-stat major">${data_val}</span>
+      </div>
     </div>
     `;
 }
@@ -81,22 +111,26 @@ export function clicker_num_input(data_path: string, options: HelperData) {
     </div>`;
 }
 
-// The above, in card form
-export function clicker_stat_card(title: string, icon: string, data_path: string, options: HelperData): string {
+/** Produces a card with the specified header, with +/- buttons for editing the number at the specified path
+ * If 'icon' is supplied, will be placed to left of title
+ */
+export function clicker_stat_card(title: string, data_path: string, helper: HelperData): string {
+  let icon = helper.hash["icon"] ?? "";
   return `<div class="card clipped">
-      <div class="lancer-header ">
-        <i class="${icon} i--m i--light header-icon"> </i>
-        <span class="major">${title}</span>
+      <div class="lancer-header major">
+        ${inc_if(`<i class="${icon} i--m header-icon"> </i>`, icon)}
+        <span>${title}</span>
       </div>
-      ${clicker_num_input(data_path, options)}
+      ${clicker_num_input(data_path, helper)}
     </div>
   `;
 }
 
-export function npc_clicker_stat_card(title: string, data_path: string, options: HelperData): string {
-  let data_val_arr: number[] = resolve_helper_dotpath(options, data_path) ?? [];
+export function npc_clicker_stat_card(title: string, data_path: string, helper: HelperData): string {
+  let data_val_arr: number[] = resolve_helper_dotpath(helper, data_path) ?? [];
   let tier_clickers: string[] = [];
   let tier = 1;
+  let icon = helper.hash["icon"] ?? "";
 
   // Reset button
 
@@ -105,13 +139,14 @@ export function npc_clicker_stat_card(title: string, data_path: string, options:
     tier_clickers.push(`
       <div class="flexrow stat-container" style="align-self: center;">
         <i class="cci cci-npc-tier-${tier} i--m i--dark"></i>
-        ${clicker_num_input(`${data_path}.${tier-1}`, options)}
+        ${clicker_num_input(`${data_path}.${tier-1}`, helper)}
       </div>`);
       tier++;
   }
   return `
     <div class="card clipped">
       <div class="flexrow lancer-header major">
+        ${inc_if(`<i class="${icon} i--m header-icon"> </i>`, icon)}
         <span class="lancer-header major ">${title}</span>
         <a class="gen-control" data-path="${data_path}" data-action="set" data-action-value="(struct)npc_stat_array"><i class="fas fa-redo"></i></a>
       </div>

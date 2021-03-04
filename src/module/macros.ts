@@ -2,20 +2,17 @@
 import { LANCER } from "./config";
 import {
   AnyLancerItem,
-  LancerCoreBonus,
-  LancerItem,
   LancerItemType,
   LancerMechSystem,
   LancerMechWeapon,
   LancerNpcFeature,
-  LancerPilotGear,
   LancerPilotWeapon,
+  LancerSkill,
+  LancerTalent,
 } from "./item/lancer-item";
 import {
   AnyLancerActor,
-  LancerActor,
   LancerActorType,
-  LancerMech,
   LancerNpc,
   overheat_mech,
   structure_mech,
@@ -25,11 +22,9 @@ import {
   BaseActionsMap,
   Action,
   ActivationType,
-  AnyRegNpcFeatureData,
   Damage,
   DamageType,
   EntryType,
-  LiveEntryTypes,
   Mech,
   MechSystem,
   MechWeapon,
@@ -37,20 +32,18 @@ import {
   Npc,
   NpcFeature,
   NpcFeatureType,
-  OpCtx,
   Pilot,
   PilotWeapon,
   RegDamageData,
   RegRef,
-  Skill,
   TagInstance,
-  Talent,
   RegNpcData,
   funcs,
 } from "machine-mind";
 import { FoundryReg, FoundryRegCat } from "./mm-util/foundry-reg";
 import { resolve_dotpath } from "./helpers/commons";
 import { OVERCHARGE_SEQUENCE } from "./helpers/actor";
+import { enable_dragging } from "./helpers/dragdrop";
 
 const lp = LANCER.log_prefix;
 
@@ -59,8 +52,11 @@ interface MacroCtx {
   // If not supplied, default to the current speaker (in most cases this will be the selected token). 
   // When drag-generated, will by default be specific to the sheet actor, but not to the sheet token. 
   // If clicked, however, it will be of the sheet token synthetic actor if possible, as we assume in that case maximum specificity is desired
+  name: string; // The name the macro itself should have.
   actor?: RegRef<LancerActorType>; 
   type: string;
+  icon?: string; // What it should show up as when drawn. Controls both the in-sheet icon and the hotbar appearance
+  skip_acc_prompt?: boolean; // Should we disable showing the acc prompt?
 }
 
 interface MacroRollMods {
@@ -92,12 +88,25 @@ export interface WeaponMacroCtx extends MacroCtx, MacroRollMods {
   profile?: number; // The profile index, if applicable
 }
 
-// Provides all information needed for other miscellaneous items. If a weapon or system are provided, will just fire with current profile / use the first available action.
-// Attempts to use more specific functions when possible
+// Provides all information needed to "roll" an item. If a weapon or system are provided, will just fire with current profile / use the first available action.
+// Attempts to use more specific types when possible
+
 export interface ItemMacroCtx extends MacroCtx {
-  type: "item";
-  item: RegRef<LancerItemType>; // Some actions are item-based such as specific skirmishes etc
-  rank?: number; // Specifically for skills and talents, which aren't otherwise interesting enough to warrant their own macro types
+  type: "generic_item";
+  item: RegRef<LancerItemType>; 
+}
+
+// Unique only for the fact that we deduce a rank on it
+export interface SkillMacroCtx extends MacroCtx {
+  type: "skill";
+  item: RegRef<EntryType.SKILL>; 
+}
+
+// Rank parameter necessary so we know which to show
+export interface TalentMacroCtx extends MacroCtx {
+  type: "talent";
+  item: RegRef<EntryType.TALENT>; 
+  rank: number; 
 }
 
 // Just text
@@ -109,8 +118,11 @@ export interface TextMacroCtx extends MacroCtx {
 }
 
 // For rolling struct and stress
-export interface StructStressMacroCtx extends MacroCtx {
-  type: "struct-stress";
+export interface StructMacroCtx extends MacroCtx {
+  type: "struct";
+}
+export interface StressMacroCtx extends MacroCtx {
+  type: "stress";
 }
 
 export interface OverchargeMacroCtx extends MacroCtx {
@@ -132,20 +144,24 @@ export interface FrameMacroCtx extends MacroCtx {
   trait_index?: number;
 }
 
-// Any of the above
+// Any of the above. All might be packed into an element's params
 export type AnyMacroCtx =
   | ActionMacroCtx
   | ItemMacroCtx
   | TextMacroCtx
-  | StructStressMacroCtx
+  | StructMacroCtx
+  | StressMacroCtx
+  | SkillMacroCtx
+  | TalentMacroCtx
   | OverchargeMacroCtx
   | WeaponMacroCtx
   | TechMacroCtx
   | StatMacroCtx
   | FrameMacroCtx;
 
-// What we pack into element params, in base36. Can both be used for click-to-roll (in which case sheet-actor will be used), as well as dragging to hotbar.
-export interface MacroInfo {
+// What we prefer to yield on drag. 
+export interface DraggedMacro {
+  shibboleth: "yep",
   macro: AnyMacroCtx;
 }
 
@@ -156,30 +172,46 @@ export interface Lancer20Roll {
   flat_bonus?: number; // For grit, deaths head, NPC ram bonus, etc
   title: string; // Title bar of card
   body: string; // Body of card. Effect, etc
+  skip?: boolean; // If acc/diff mod should be skipped, just using the provided value or 0
 }
 
 /**
  * Generic macro preparer for any macro ctx.
  */
-export async function prepareMacro(macro: AnyMacroCtx) {
+export async function prepareMacro(any_macro: AnyMacroCtx) {
+  console.log("PREPARING MACRO: ", any_macro);
   // Attempt to use more specific options
-  if(macro.type == "action") {
-    return prepareActionMacro(macro);
-  } else if(macro.type == "frame") {
-    return prepareFrameMacro(macro);
-  } else if(macro.type == "stat") {
-    return prepareStatMacro(macro);
-  } else if(macro.type == "tech") {
-    return prepareTechMacro(macro);
-  } else if(macro.type == "text") {
-    return prepareTextMacro(macro);
-  } else if(macro.type == "weapon") {
-    return prepareWeaponMacro(macro);
+  if(any_macro.type == "action") {
+    return prepareActionMacro(any_macro);
+  } else if(any_macro.type == "frame") {
+    return prepareFrameMacro(any_macro);
+  } else if(any_macro.type == "stat") {
+    return prepareStatMacro(any_macro);
+  } else if(any_macro.type == "tech") {
+    return prepareTechMacro(any_macro);
+  } else if(any_macro.type == "text") {
+    return prepareTextMacro(any_macro);
+  } else if(any_macro.type == "weapon") {
+    return prepareWeaponMacro(any_macro);
+  } else if(any_macro.type == "overcharge") {
+    return prepareOverchargeMacro(any_macro);
+  } else if(any_macro.type == "struct") {
+    return prepareStructureMacro(any_macro);
+  } else if(any_macro.type == "stress") {
+    return prepareOverheatMacro(any_macro);
+  } else if(any_macro.type == "skill") {
+    return prepareTriggerMacro(any_macro);
+  } else if(any_macro.type != "generic_item") {
+    // abandon hope
+    ui.notifications.error("Invalid macro type " + (any_macro as any).type);
+    return;
   }
 
+  let macro = any_macro as ItemMacroCtx;
+
   // Determine which Actor to speak as
-  let actor = await get_macro_speaker(macro.actor);
-  let raw_item = await get_macro_item(macro, true);
+  let actor = await get_macro_speaker(any_macro.actor);
+  let raw_item = await get_macro_item(any_macro, true);
 
   // Get its mm
   let mmec = await raw_item.data.data.derived.mmec_promise;
@@ -188,7 +220,11 @@ export async function prepareMacro(macro: AnyMacroCtx) {
   switch (item.Type) {
     // Skills
     case EntryType.SKILL:
-      await rollTriggerMacro(actor, item);
+      await prepareTriggerMacro({
+        ...any_macro,
+        item: any_macro.item as RegRef<EntryType.SKILL>,
+        type: "skill"
+      });
       break;
     // Pilot OR Mech weapon. We prefer direct invocation of prepareAttackMacro, but this is fine
     case "mech_weapon":
@@ -212,7 +248,7 @@ export async function prepareMacro(macro: AnyMacroCtx) {
         await prepareActionMacro(action_data);
       } else {
         // Just do a text macro
-        prepareTextMacro({
+        await prepareTextMacro({
           ...macro,
           body: item.Description,
           title: item.Name,
@@ -222,7 +258,12 @@ export async function prepareMacro(macro: AnyMacroCtx) {
       break;
     // Talents
     case "talent":
-      await rollTalentMacro(actor, item, macro.rank || item.CurrentRank);
+      await prepareTalentMacro({
+        ...any_macro,
+        item: any_macro.item as RegRef<EntryType.TALENT>,
+        type: "talent",
+        rank: 1
+      });
       break;
     // Gear
     case "pilot_gear":
@@ -332,11 +373,11 @@ Foundry will do its best to use the selected token whenever that token is an ins
 
   // Sanity check - don't allow macro invocation of unlinked actors if not resolved as token
   //@ts-ignore actorLink isn't documented
-  if (result.data?.token?.actorLink && !was_actor_supplied) {
-    ui.notifications.error(
-      `Macros for an unlinked actor must be invoked with a specific token selected. If this is undesired, link the actor's token prototype.`
-    );
-  }
+  // if (result.data?.token?.actorLink && !was_actor_supplied) {
+    // ui.notifications.error(
+      // `Macros for an unlinked actor must be invoked with a specific token selected. If this is undesired, link the actor's token prototype.`
+    // );
+  // }
 
   return result;
 }
@@ -388,10 +429,11 @@ export async function renderMacro(actor: Actor, template: string, templateData: 
 async function buildAttackRollString(
   title: string,
   acc: number,
-  bonus: string
+  bonus: string,
+  skip_acc_diff?: boolean
 ): Promise<string | null> {
   let abort: boolean = false;
-  await promptAccDiffModifier(acc, title).then(
+  await promptAccDiffModifier(acc, skip_acc_diff, title).then(
     resolve => (acc = resolve),
     reject => (abort = reject)
   );
@@ -407,7 +449,7 @@ export async function prepareStatMacro(macro: StatMacroCtx) {
   // Determine which Actor to speak as
   let actor = await get_macro_speaker(macro.actor);
   let ent = await actor.data.data.derived.mmec_promise;
-  let stat = resolve_dotpath(ent, macro.stat_path);
+  let stat = resolve_dotpath({mm: ent}, macro.stat_path);
 
   await rollStatMacro(actor, {
     ...macro,
@@ -427,13 +469,17 @@ async function prepareActionMacro(macro: ActionMacroCtx) {
   // return renderMacro(actor, template, templateData);
 }
 
-// Rollers
-async function rollTriggerMacro(actor: Actor, skill: Skill) {
+async function prepareTriggerMacro(macro: SkillMacroCtx) {
+  // Determine which Actor to speak as
+  let actor = await get_macro_speaker(macro.actor);
+  let skill = (await get_macro_item(macro, true)) as LancerSkill;
+  let mm_skill = await skill.data.data.derived.mmec_promise;
+
   return await rollStatMacro(actor, {
     acc_diff: 0,
-    body: skill.Description,
-    title: skill.Name,
-    flat_bonus: skill.CurrentRank * 2,
+    body: mm_skill.ent.Description,
+    title: mm_skill.ent.Name,
+    flat_bonus: mm_skill.ent.CurrentRank * 2,
   });
 }
 
@@ -444,7 +490,7 @@ async function rollStatMacro(actor: Actor, data: Lancer20Roll) {
   // Get accuracy/difficulty with a prompt
   let acc: number = 0;
   let abort: boolean = false;
-  await promptAccDiffModifier(acc).then(
+  await promptAccDiffModifier(acc, data.skip).then(
     resolve => (acc = resolve),
     () => (abort = true)
   );
@@ -467,12 +513,18 @@ async function rollStatMacro(actor: Actor, data: Lancer20Roll) {
   return renderMacro(actor, template, templateData);
 }
 
-async function rollTalentMacro(actor: Actor, talent: Talent, rank: number) {
+// async function prepareTalentMacro(actor: Actor, talent: Talent, rank: number) {
+async function prepareTalentMacro(macro: TalentMacroCtx) {
+  // Determine which Actor to speak as
+  let actor = await get_macro_speaker(macro.actor);
+  let talent = (await get_macro_item(macro, true)) as LancerTalent
+  let mm_talent = await talent.data.data.derived.mmec_promise;
+
   // Construct the template
   const templateData = {
-    title: talent.Name,
-    rank: talent.Rank(rank),
-    lvl: talent.CurrentRank,
+    title: mm_talent.ent.Name,
+    rank: mm_talent.ent.Rank(macro.rank),
+    lvl: mm_talent.ent.CurrentRank,
   };
   const template = `systems/lancer/templates/chat/talent-card.html`;
   return renderMacro(actor, template, templateData);
@@ -493,6 +545,7 @@ async function prepareWeaponMacro(macro: WeaponMacroCtx) {
   let item = (await raw_item.data.data.derived.mmec_promise).ent;
   let actor = (await raw_actor.data.data.derived.mmec_promise).ent;
 
+  // Align all weapon types to accomodate Profiles making certain accesses annoying
   let corrected: PilotWeapon | MechWeaponProfile | NpcFeature; // Align them so we can get tags
   if (item instanceof MechWeapon) {
     corrected = macro.profile ? item.Profiles[macro.profile] : item.SelectedProfile;
@@ -520,7 +573,7 @@ async function prepareWeaponMacro(macro: WeaponMacroCtx) {
   let tier = 0;
   if (actor instanceof Npc) {
     let feature = item as NpcFeature;
-    tier = feature.TierOverride || actor.Tier;
+    tier = funcs.bound_int(feature.TierOverride || actor.Tier, 1, 3) - 1;
     let on_hit = (item as NpcFeature).OnHit;
     if(on_hit) {
       effects.push({
@@ -591,6 +644,7 @@ async function prepareWeaponMacro(macro: WeaponMacroCtx) {
     overkill,
     tags,
     title,
+    skip: macro.skip_acc_prompt
   }).then();
 }
 
@@ -604,6 +658,7 @@ async function rollAttackMacro({
   damage,
   tags,
   overkill,
+  skip
 }: {
   actor: AnyLancerActor;
   title: string;
@@ -613,8 +668,9 @@ async function rollAttackMacro({
   damage: Damage[];
   tags: TagInstance[];
   overkill: boolean;
+  skip?: boolean;
 }) {
-  let atk_str = await buildAttackRollString(title, acc, flat_bonus);
+  let atk_str = await buildAttackRollString(title, acc, flat_bonus, skip);
   if (!atk_str) return;
   let attack_roll = new Roll(atk_str).roll();
   const attack_tt = await attack_roll.getTooltip();
@@ -706,7 +762,6 @@ async function rollAttackMacro({
 /**
  * Rolls an NPC reaction macro when given the proper data
  * @param actor {Actor} Actor to roll as. Assumes properly prepared item.
- * @param data {LancerReactionMacroData} Reaction macro data to render.
  */
 function rollReactionMacro(actor: Actor, reaction: NpcFeature, tier: number) {
   const template = `systems/lancer/templates/chat/reaction-card.html`;
@@ -720,7 +775,6 @@ function rollReactionMacro(actor: Actor, reaction: NpcFeature, tier: number) {
 
 /**
  * Prepares a macro to present core active information for
- * @param a     String of the actor ID to roll the macro as, and who we're getting core info for
  */
 export async function prepareFrameMacro(macro: FrameMacroCtx) {
   // Determine which Actor to speak as
@@ -767,8 +821,6 @@ export async function prepareTextMacro(macro: TextMacroCtx) {
 
 /**
  * Given prepared data, handles rolling of a generic text-only macro to display descriptions etc.
- * @param actor {Actor} Actor rolling the macro.
- * @param data {LancerTextMacroData} Prepared macro data.
  */
 async function rollTextMacro(
   actor: Actor,
@@ -849,7 +901,7 @@ export async function prepareTechMacro(macro: TechMacroCtx) {
   ];
 
   // Got all o' the ingredients
-  await rollTechMacro(raw_actor, item.Name, acc, flat_bonuses.join("+"), effects, item.Tags);
+  await rollTechMacro(raw_actor, item.Name, acc, flat_bonuses.join("+"), effects, item.Tags, macro.skip_acc_prompt);
 }
 
 async function rollTechMacro(
@@ -858,9 +910,10 @@ async function rollTechMacro(
   acc: number,
   flat_bonus: string,
   effects: Effect[],
-  tags: TagInstance[]
+  tags: TagInstance[],
+  skip?: boolean // Skip acc/diff 
 ) {
-  let atk_str = await buildAttackRollString(title, acc, flat_bonus);
+  let atk_str = await buildAttackRollString(title, acc, flat_bonus, skip);
   if (!atk_str) return;
   let attack_roll = new Roll(atk_str).roll();
   const attack_tt = await attack_roll.getTooltip();
@@ -879,8 +932,9 @@ async function rollTechMacro(
 }
 
 // asks for accuracy and difficulty. Returns the result. The supplied accuracy is used as a default value
-export async function promptAccDiffModifier(acc?: number, title?: string): Promise<number> {
+export async function promptAccDiffModifier(acc: number, skip?: boolean, title?: string): Promise<number> {
   if (!acc) acc = 0;
+  if(skip) return acc;
   let diff = 0;
   if (acc < 0) {
     diff = -acc;
@@ -976,9 +1030,8 @@ export async function prepareOverchargeMacro(a: OverchargeMacroCtx) {
 
 /**
  * Performs a roll on the overheat table for the given actor
- * @param macro ID of actor to overheat
  */
-export async function prepareOverheatMacro(macro: StructStressMacroCtx) {
+export async function prepareOverheatMacro(macro: StressMacroCtx) {
   // Determine which Actor to speak as
   let raw_actor = await get_macro_speaker(macro.actor);
   let actor = (await raw_actor.data.data.derived.mmec_promise).ent;
@@ -998,7 +1051,7 @@ export async function prepareOverheatMacro(macro: StructStressMacroCtx) {
  * Performs a roll on the structure table for the given actor
  * @param a ID of actor to structure
  */
-export async function prepareStructureMacro(macro: StructStressMacroCtx) {
+export async function prepareStructureMacro(macro: StructMacroCtx) {
   // Determine which Actor to speak as
   let raw_actor = await get_macro_speaker(macro.actor);
   let actor = (await raw_actor.data.data.derived.mmec_promise).ent;
@@ -1021,11 +1074,11 @@ export function macro_elt_params(ctx: AnyMacroCtx): string {
 }
 
 // Inverse of the above method
-export function resolve_macro_ctx_from_element(elt: JQuery): ActionMacroCtx {
-  let encoded = elt[0].dataset.dataMacroInfo;
+export function recover_macro_from_elt(elt: HTMLElement): AnyMacroCtx {
+  let encoded = elt.dataset.macroInfo;
   if (encoded) {
     let decoded = atob(encoded);
-    return JSON.parse(decoded) as ActionMacroCtx;
+    return JSON.parse(decoded) as AnyMacroCtx;
   } else {
     throw Error("Couldn't find macro info on the specified element");
   }
@@ -1053,7 +1106,7 @@ function is_frame(ctx: AnyMacroCtx): ctx is FrameMacroCtx {
 }
 
 function is_item(ctx: AnyMacroCtx): ctx is ItemMacroCtx {
-  return ctx.type == "item";
+  return ctx.type == "generic_item";
 }
 
 function is_text(ctx: AnyMacroCtx): ctx is TextMacroCtx {
@@ -1064,4 +1117,26 @@ interface Effect {
   // Effects, as we expect them when passed to cards
   title: string;
   body: string;
+}
+
+
+// Allows clicking/dragging of macros
+export function HANDLER_activate_macros(html: JQuery) {
+  let macro_elts = html.find("[data-macro-info]");
+  macro_elts.on("click", async evt => {
+    evt.stopPropagation();
+
+    // Recover the macro info, then run it. Ez-pz
+    let macro = recover_macro_from_elt(evt.currentTarget);
+    prepareMacro(macro);
+  });
+
+  enable_dragging(macro_elts, elt => {
+    let macro = recover_macro_from_elt(elt[0]);
+    let drag_payload: DraggedMacro = {
+      macro,
+      shibboleth: "yep"
+    };
+    return JSON.stringify(drag_payload);
+  });
 }

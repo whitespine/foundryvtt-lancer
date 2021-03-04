@@ -41,7 +41,7 @@ export function HANDLER_activate_collapsibles(html: JQuery, handler: CollapseHan
         evt.stopPropagation();
 
         // Toggle the handler such that classes will be set properly on re-draw
-        let id = $(evt.target).prop("collapse-id");
+        let id = $(evt.currentTarget).prop("collapse-id");
         let state = handler.toggle(id);
 
         // Set appropriate class on all items

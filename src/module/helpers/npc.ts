@@ -1,5 +1,8 @@
 import { NpcFeature } from "machine-mind";
+import { LancerActorType } from "../actor/lancer-actor";
 import { ActivationType } from "../enums";
+import { macro_elt_params, WeaponMacroCtx } from "../macros";
+import { MMEntityContext } from "../mm-util/helpers";
 import { effect_box, HelperData, resolve_dotpath, resolve_helper_dotpath } from "./commons";
 import {
   npc_attack_bonus_preview,
@@ -88,7 +91,7 @@ function npc_feature_scaffold(path: string, npc_feature: NpcFeature, body: strin
   return `
   <div class="valid ref card ${feature_class}" ${ref_params(npc_feature.as_ref())}>
     <div class="flexrow lancer-header clipped-top collapse-ctrl" collapse-id="${npc_feature.RegistryID}" >
-      <i class="cci cci-${npc_feature.FeatureType.toLowerCase()} i--m i--light"> </i>
+      <i class="cci cci-${npc_feature.FeatureType.toLowerCase()} i--m"> </i>
       <a class="macroable item-macro"><i class="mdi mdi-message"></i></a>
       <span class="minor grow">${npc_feature.Name}</span>
       ${del_button(path)}
@@ -191,7 +194,18 @@ export function npc_weapon_effect_preview(
   let tier_index: number = (helper.hash["tier"] ?? 1) - 1;
 
   let sep = `<hr class="vsep">`;
-  let subheader_items = [`<a class="roll-attack no-grow"><i class="fas fa-dice-d20 i--m i--dark"></i></a>`];
+  let subheader_items = [];
+  
+  // Make up a macro if necessary
+  if(helper.hash["macro-actor"]) {
+    let macro: WeaponMacroCtx = {
+      item: npc_feature.as_ref(),
+      name: npc_feature.Name,
+      type: "weapon",
+      actor: (helper.hash["macro-actor"] as MMEntityContext<LancerActorType>).ent.as_ref()
+    };
+    subheader_items.push(`<a class="lancer-macro no-grow" ${macro_elt_params(macro)}><i class="fas fa-dice-d20 i--m i--dark"></i></a>`);
+  }
 
   // Weapon info
 

@@ -39,8 +39,7 @@ import {
   InsinuationRecord,
   InventoriedRegEntry,
 } from "machine-mind";
-import { is_actor_type, LancerActor, LancerActorType, LancerActorTypes } from "../actor/lancer-actor";
-import { LANCER } from "../config";
+import { is_actor_type, LancerActor, LancerActorType } from "../actor/lancer-actor";
 import { is_item_type, LancerItem, LancerItemType } from "../item/lancer-item";
 import {
   EntityCollectionWrapper,
@@ -218,7 +217,7 @@ export class FoundryReg extends Registry {
     if(item_src_id) {
       // Id is found, which means this is an inventory
       if(item_src == ITEMS_TOKEN_INV) {
-        // Recover the token
+        // Recover the token. Only works on current scene, unfortunately
         let token: Token | null | undefined = canvas.tokens.get(item_src_id);
         if(token) {
           reg = new FoundryReg({
