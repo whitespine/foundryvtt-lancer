@@ -8,6 +8,12 @@
   </header>
 
   <div class="wraprow quintuple">
+    {{{stat-view-card      "HULL"         "mm.ent.Pilot.MechSkills.Hull"         macro-actor=mm}}}
+    {{{stat-view-card      "AGILITY"      "mm.ent.Pilot.MechSkills.Agi"      macro-actor=mm}}}
+    {{{stat-view-card      "SYSTEMS"      "mm.ent.Pilot.MechSkills.Sys"      macro-actor=mm}}}
+    {{{stat-view-card      "ENGINEERING"  "mm.ent.Pilot.MechSkills.Eng"  macro-actor=mm}}}
+    <div></div>
+
     {{{stat-edit-max-card  "HP"          "mm.ent.CurrentHP"         "mm.ent.MaxHP"              icon="mdi mdi-heart-outline" }}}
     {{{stat-edit-max-card  "HEAT"        "mm.ent.CurrentHeat"       "mm.ent.HeatCapacity"       icon="cci cci-heat" }}}
     {{{stat-edit-card      "BURN"        "mm.ent.Burn"                                          icon="cci cci-burn" }}}
@@ -37,7 +43,7 @@
 
   <div class="card">
     <span class="lancer-header major ">LOADOUT [SP: {{mm.ent.Loadout.TotalSP}} / {{mm.ent.MaxSP}}]</span>
-    {{{mech-loadout "mm.ent"}}}
+    {{{mech-loadout "mm.ent" macro-actor=mm}}}
   </div>
 
   <div class="card clipped">

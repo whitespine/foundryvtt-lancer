@@ -1,6 +1,6 @@
 import { EntryType, Mech, MechLoadout, SystemMount, Pilot, Frame  } from "machine-mind";
 import { WeaponMount } from "machine-mind";
-import { HelperData, inc_if, resolve_helper_dotpath } from "./commons";
+import { ext_helper_hash, HelperData, inc_if, resolve_helper_dotpath } from "./commons";
 import { mech_weapon_refview } from "./item";
 import { simple_mm_ref } from "./refs";
 
@@ -26,7 +26,7 @@ function system_mount(
     </div>`;
 }
 
-// A drag-drop slot for a weapon mount. TODO: delete button, clear button
+// A drag-drop slot for a weapon mount. 
 function weapon_mount(
   mech_path: string,
   mount_path: string,
@@ -34,7 +34,7 @@ function weapon_mount(
 ): string {
   let mount = resolve_helper_dotpath(helper, mount_path) as WeaponMount
   // let mech = resolve_helper_dotpath(helper, mech_path, EntryType.MECH);
-  let slots = mount.Slots.map((slot, index) => mech_weapon_refview(`${mount_path}.Slots.${index}.Weapon`, mech_path, helper, slot.Size));
+  let slots = mount.Slots.map((slot, index) => mech_weapon_refview(`${mount_path}.Slots.${index}.Weapon`, mech_path, ext_helper_hash(helper, {size: slot.Size})));
   let err = mount.validate() ?? "";
 
   return ` 
@@ -97,6 +97,7 @@ export function mech_loadout(mech_path: string, helper: HelperData): string {
   const mech: Mech = resolve_helper_dotpath(helper, mech_path);
   if(!mech) {return "err";}
   const loadout_path = `${mech_path}.Loadout`;
+
   return `
     <div class="flexcol">
         ${frame_refview(`${loadout_path}.Frame`, helper)}

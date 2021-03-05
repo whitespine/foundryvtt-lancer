@@ -32,6 +32,9 @@ import { npc_reaction_effect_preview, npc_system_effect_preview, npc_tech_effect
 import { compact_tag_list } from "./tags";
 import { effect_box, ext_helper_hash, HelperData, inc_if, resolve_dotpath, resolve_helper_dotpath, selected, std_checkbox, std_enum_select, std_num_input, std_string_input, std_x_of_y } from "./commons";
 import { ref_commons, ref_params  } from "./refs";
+import { macro_elt_params, WeaponMacroCtx } from "../macros";
+import { MMEntityContext } from "../mm-util/helpers";
+import { LancerActorType } from "../actor/lancer-actor";
 
 /**
  * Handlebars helper for weapon size selector
@@ -323,7 +326,9 @@ export function pilot_armor_slot(armor_path: string, helper: HelperData): string
 
 
 
-// Helper for showing a pilot weapon, or a slot to hold it (if path is provided)
+/** Helper for showing a pilot weapon, or a slot to hold it (if path is provided)
+ * If "macro-actor" is provided, that actor mmec will be used to show a macro
+ */
 export function pilot_weapon_refview(weapon_path: string, helper: HelperData): string {
   // Fetch the item
   let weapon_: PilotWeapon | null = resolve_helper_dotpath(helper, weapon_path);
@@ -342,6 +347,22 @@ export function pilot_weapon_refview(weapon_path: string, helper: HelperData): s
   }
 
   let weapon = weapon_!;
+
+  // Make a macro, maybe
+  let macro = "";
+  if(helper.hash["macro-actor"]) {
+    let macro_actor: MMEntityContext<LancerActorType> = helper.hash["macro-actor"];
+    let macro_ctx: WeaponMacroCtx = {
+      name: weapon.Name,
+      type: "weapon",
+      item: weapon.as_ref(),
+      actor: macro_actor.ent.as_ref()
+    }
+    macro = `<a class="flexrow lancer-macro" style="max-width: min-content;"  ${macro_elt_params(macro_ctx)}>
+                <i class="fas fa-dice-d20 i--sm i--dark"></i>
+              </a>`;
+  }
+
   return `<div class="valid ${EntryType.PILOT_WEAPON} ref drop-settable card clipped pilot-weapon-compact item macroable"
                 ${ref_params(cd.ref, weapon_path)} >
     <div class="lancer-header">
@@ -351,9 +372,7 @@ export function pilot_weapon_refview(weapon_path: string, helper: HelperData): s
     </div>
     <div class="flexcol">
       <div class="flexrow">
-        <a class="flexrow roll-attack" style="max-width: min-content;">
-          <i class="fas fa-dice-d20 i--sm i--dark"></i>
-        </a>
+        ${macro}
         ${show_range_array(weapon.Range, helper)}
         <hr class="vsep">
         ${show_damage_array(weapon.Damage, helper)}
@@ -391,7 +410,7 @@ export function pilot_gear_refview(gear_path: string, helper: HelperData): strin
     uses = `
       <div class="compact-stat">
         <span class="minor" style="max-width: min-content;">USES: </span>
-        <span class="minor" style="max-width: min-content;">todo</span>
+        <span class="minor" style="max-width: min-content;">${gear.Uses}</span>
         <span class="minor" style="max-width: min-content;" > / </span>
         <span class="minor" style="max-width: min-content;">${limited.Value}</span>
       </div>
@@ -420,11 +439,15 @@ export function pilot_gear_refview(gear_path: string, helper: HelperData): strin
 
 /**
  * Handlebars helper for a mech weapon preview card. Doubles as a slot. Mech path needed for bonuses
+ * If "macro-actor" provided, add a macro
  */
-export function mech_weapon_refview(weapon_path: string, mech_path: string | "", helper: HelperData, size?: FittingSize): string { 
+export function mech_weapon_refview(weapon_path: string, mech_path: string | "", helper: HelperData): string { 
   // Fetch the item(s)
   let weapon_: MechWeapon | null = resolve_helper_dotpath(helper, weapon_path);
   let mech_: Mech | null = resolve_helper_dotpath(helper, mech_path);
+
+  // Determine the size
+  let size: FittingSize | null = helper.hash["size"] || null;
 
   // Generate commons
   let cd = ref_commons(weapon_);
@@ -453,6 +476,28 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
     ranges = Range.calc_range_with_bonuses(weapon, profile, mech_);
   }
 
+  // Augment damages
+  let damages = profile.BaseDamage;
+  if(mech_) {
+    let dmg_bonuses = mech_.AllBonuses.filter(b => b.ID == "damage");
+    dmg_bonuses = dmg_bonuses.filter(d => {
+      for(let r of ranges) {
+        if(d.applies_to_weapon(weapon, profile, r)) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    // We don't know the types, just fix as variable
+    for(let b of dmg_bonuses) {
+      damages.push(new Damage({
+        type: DamageType.Variable,
+        val: b.Value
+      }));
+    }
+  }
+
   // Generate loading segment as needed
   let loading = "";
   if(weapon.IsLoading) {
@@ -462,6 +507,23 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
                 <a class="gen-control" data-action="set" data-set-value="(bool)${!weapon.Loaded}" data-path="${weapon_path}.Loaded"><i class="${loading_icon}"></i></a>
                 </span>`;
   }
+
+  // Make a macro, maybe
+  let macro = "";
+  if(helper.hash["macro-actor"]) {
+    let macro_actor: MMEntityContext<LancerActorType> = helper.hash["macro-actor"];
+    let macro_ctx: WeaponMacroCtx = {
+      name: weapon.Name,
+      type: "weapon",
+      item: weapon.as_ref(),
+      actor: macro_actor.ent.as_ref(),
+      // Should we specify profile? Or just use selected? Opting with the latter for now
+    }
+    macro = `<a class="flexrow lancer-macro" style="max-width: min-content;"  ${macro_elt_params(macro_ctx)}>
+                <i class="fas fa-dice-d20 i--sm i--dark"></i>
+              </a>`;
+  }
+
 
   // Generate effects
   let effect = profile.Effect ? effect_box("Effect", profile.Effect, helper) : "";
@@ -480,7 +542,7 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
     </div> 
     <div class="lancer-body">
       <div class="flexrow" style="text-align: left; white-space: nowrap;">
-        <a class="roll-attack"><i class="fas fa-dice-d20 i--m i--dark"></i></a>
+        ${macro}
         <hr class="vsep">
         ${show_range_array(ranges, helper)}
         <hr class="vsep">

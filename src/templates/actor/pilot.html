@@ -122,7 +122,7 @@
         <div class="card clipped">
           <h2 class="lancer-header major ">WEAPONS</h2>
           {{#each mm.ent.Loadout.Weapons as |weapon key|}}
-            {{{pilot-weapon-slot (concat "mm.ent.Loadout.Weapons." key)}}}
+            {{{ pilot-weapon-slot (concat "mm.ent.Loadout.Weapons." key) macro-actor=../mm }}}
           {{/each}}
         </div>
       </div>

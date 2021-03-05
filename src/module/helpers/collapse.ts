@@ -26,7 +26,7 @@ export function HANDLER_activate_collapsibles(html: JQuery, handler: CollapseHan
     // Perform initial state setting
     $(html).find(".collapse-item").each((index, _item) => {
         let item = $(_item);
-        let id = item.prop("collapse-id");
+        let id = item.attr("collapse-id") ?? "";
         if(handler.get(id)) {
             item.addClass("expanded");
         } else {
@@ -41,7 +41,7 @@ export function HANDLER_activate_collapsibles(html: JQuery, handler: CollapseHan
         evt.stopPropagation();
 
         // Toggle the handler such that classes will be set properly on re-draw
-        let id = $(evt.currentTarget).prop("collapse-id");
+        let id = $(evt.currentTarget).attr("collapse-id") ?? "";
         let state = handler.toggle(id);
 
         // Set appropriate class on all items

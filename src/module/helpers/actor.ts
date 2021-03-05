@@ -49,10 +49,10 @@ export function stat_view_card(title: string, data_path: string, helper: HelperD
   let data_val = resolve_helper_dotpath(helper, data_path);
 
   // Inject a macro if need be
-  let macro_txt = "";
+  let macro = "";
   if(helper.hash["macro-actor"]) {
     let actor = helper.hash["macro-actor"] as MMEntityContext<LancerActorType>;
-    let macro: StatMacroCtx = {
+    let macro_ctx: StatMacroCtx = {
       actor: actor.ent.as_ref(),
       stat_path: data_path,
       title,
@@ -60,7 +60,7 @@ export function stat_view_card(title: string, data_path: string, helper: HelperD
       name: title,
       icon: icon || undefined
     }
-    macro_txt = `<a class="lancer-macro i--s fas fa-dice-d20" ${macro_elt_params(macro)}></a>`;
+    macro = `<a class="lancer-macro i--s fas fa-dice-d20" ${macro_elt_params(macro_ctx)}></a>`;
   }
 
   return `
@@ -70,7 +70,7 @@ export function stat_view_card(title: string, data_path: string, helper: HelperD
         <span class="major">${title}</span>
       </div>
       <div class="flexrow">
-        ${macro_txt}
+        ${macro}
         <span class="lancer-stat major">${data_val}</span>
       </div>
     </div>

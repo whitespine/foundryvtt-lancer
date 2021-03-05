@@ -1,7 +1,7 @@
 import { NpcFeature } from "machine-mind";
 import { LancerActorType } from "../actor/lancer-actor";
 import { ActivationType } from "../enums";
-import { macro_elt_params, WeaponMacroCtx } from "../macros";
+import { macro_elt_params, TechMacroCtx, WeaponMacroCtx } from "../macros";
 import { MMEntityContext } from "../mm-util/helpers";
 import { effect_box, HelperData, resolve_dotpath, resolve_helper_dotpath } from "./commons";
 import {
@@ -147,7 +147,18 @@ export function npc_tech_effect_preview(
   let tier_index: number = (helper.hash["tier"] ?? 1) - 1;
 
   let sep = `<hr class="vsep">`;
-  let subheader_items = [`<a class="roll-tech"><i class="fas fa-dice-d20 i--m"></i></a>`];
+  let subheader_items: string[] = [];
+
+  // Make up a macro if necessary
+  if(helper.hash["macro-actor"]) {
+    let macro: TechMacroCtx = {
+      item: npc_feature.as_ref(),
+      name: npc_feature.Name,
+      type: "tech",
+      actor: (helper.hash["macro-actor"] as MMEntityContext<LancerActorType>).ent.as_ref()
+    };
+    subheader_items.push(`<a class="lancer-macro no-grow" ${macro_elt_params(macro)}><i class="fas fa-dice-d20 i--m i--dark"></i></a>`);
+  }
 
   let attack_bonus = npc_feature.AttackBonus[tier_index];
   let from_sys = false;

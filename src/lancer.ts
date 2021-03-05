@@ -44,9 +44,8 @@ import * as macros from "./module/macros";
 
 // Import node modules
 import compareVersions = require("compare-versions");
-import { NpcFeatureType, EntryType, Manufacturer, Bonus } from "machine-mind";
+import { EntryType } from "machine-mind";
 import {
-  resolve_dotpath,
   resolve_helper_dotpath,
   popout_editor_button,
   safe_html_helper,
@@ -78,13 +77,14 @@ import { clicker_num_input, clicker_stat_card, compact_stat_edit, compact_stat_v
 import { editable_mm_ref_list_item, simple_mm_ref, mm_ref_portrait, mm_ref_list_append_slot, editable_mm_ref_list_item_native } from "./module/helpers/refs";
 import { mech_loadout, pilot_slot } from "./module/helpers/loadout";
 import { LancerNPCSheet } from "./module/actor/npc-sheet";
-import { bonus_list_display, single_bonus_editor } from "./module/helpers/bonuses";
-import { action_list_display, single_action_editor } from "./module/helpers/actions";
+import { bonus_list_display } from "./module/helpers/bonuses";
+import { action_list_display } from "./module/helpers/actions";
 import { NativeDrop, resolve_native_drop } from "./module/helpers/dragdrop";
 import { funcs } from "machine-mind";
 
 const lp = LANCER.log_prefix;
 
+// import 'material-design-iconic-font/dist/css/material-design-iconic-font.css';
 
 /* ------------------------------------ */
 /* Initialize system                    */
