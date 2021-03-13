@@ -33,6 +33,7 @@ export class LancerNPCSheet extends LancerActorSheet<EntryType.NPC> {
   // Just bound some values
   async _updateObject(event: Event | JQuery.Event, formData: any): Promise<any> {
     formData["mm.ent.Tier"] = funcs.bound_int(formData["mm.ent.Tier"], 1, 3); // Tier is 1-3
+    console.log(formData);
     super._updateObject(event, formData);
   }
 

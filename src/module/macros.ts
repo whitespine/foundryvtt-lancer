@@ -409,16 +409,22 @@ async function get_macro_item(
 }
 
 export async function renderMacro(actor: Actor, template: string, templateData: any) {
-  const html = await renderTemplate(template, templateData);
   let roll = templateData.roll || templateData.attack;
 
-  // Find the d20 result if we can. Currently assumes a single dice.
+  // Find the d20 result if we can. Currently assumes a single dice. Augment the template with this if available
   let d20_roll = 0;
-  let d20s: Die[] = roll.dice.filter((d: Die) => d.faces == 20);
-  if(d20s.length) {
-    d20_roll = d20s[0].results[0];
+  let d20s: Die[] | undefined = roll?.dice.filter((d: Die) => d.faces == 20);
+  if(d20s?.length) {
+    console.log("d20s", d20s);
+    //@ts-ignore Dice result type is wrong
+    d20_roll = d20s[0].results[0]?.result;
   }
 
+  const html = await renderTemplate(template, {
+    ...templateData, 
+    roll,
+    d20_roll
+  });
 
   let chat_data = {
     user: game.user,

@@ -180,9 +180,13 @@ button {
 
 #chat-log .message {
   background: rgba(237, 237, 237);
-  border-radius: 25px 5px;
+  border-radius: 15px 5px;
   padding: 0;
-  overflow: hidden;
+}
+
+/* To also fit within borders */
+#chat-log .message .message-header {
+  border-radius: 13px 0 0 0;
 }
 
 #chat-log .message-header {
@@ -671,6 +675,8 @@ tr.lcp-index-header {
   margin: 5px;
   margin-left: auto;
   max-width: 40px;
+  display: flex;
+  align-items: center;
 }
 
 /* Empty box at end of item lists where you can drop things. By default we don't want it to be visible */
@@ -1119,6 +1125,10 @@ code.horus:hover {
     /* Red glow */
     box-shadow: 4px 0 2px #FFF inset;
     box-shadow: 0px 0px 4px 4px var(--main-theme-color);
+
+    &.nat-20 {
+      animation: drop_glow 800ms ease-out infinite alternate;
+    }
   }
 
 }
@@ -1313,24 +1323,59 @@ input.core-power-toggle:not(:checked)::before
   flex-wrap: nowrap !important;
 }
 
-/* Glow effect courtesy of https://codepen.io/jackrugile/pen/ABeIi */
 .highlight-can-drop {
-	animation: glow 800ms ease-out infinite alternate;
+	animation: drop_glow 800ms ease-out infinite alternate;
 	background: #222922;
 	background: linear-gradient(#333933, #222922);
-	border-color: #393;
-	box-shadow: 0 0 5px rgba(0,255,0,.2), inset 0 0 5px rgba(0,255,0,.1), 0 2px 0 #000;
 	color: #efe;
 	outline: none;
 }
 
-@keyframes glow {
-    0% {
-		border-color: #393;
-		box-shadow: 0 0 5px rgba(0,255,0,.2), inset 0 0 5px rgba(0,255,0,.1), 0 2px 0 #000;
-    }	
-    100% {
-		border-color: #6f6;
-		box-shadow: 0 0 20px rgba(0,255,0,.6), inset 0 0 10px rgba(0,255,0,.4), 0 2px 0 #000;
-    }
+/* Allows rapid definition of new glows */
+/* Glow effect courtesy of https://codepen.io/jackrugile/pen/ABeIi */
+@mixin define_glow_anim($name, $glow_color, $border1, $border2, ) {
+  @include keyframes($name) {
+      0% {
+        border-color: $border1;
+        box-shadow: 0 0 5px rgba($glow_color, .2), inset 0 0 5px rgba($glow_color, .1), 0 2px 0 ;
+      }	
+      100% {
+        border-color: $border2;
+        box-shadow: 0 0 20px rgba($glow_color, .6), inset 0 0 10px rgba($glow_color, .4), 0 2px 0;
+      }
+  }
+}
+
+/* Make our glows */
+@include define_glow_anim(drop_glow, #0F0, #393, #6f6);
+@include define_glow_anim(crit_glow, #FA4, rgb(54, 43, 33), rgb(175, 95, 84));
+
+
+/* Used for HORUS text */
+@include keyframes(distort) {
+  0% {
+    text-shadow: 2px 1px #ff00ff, -2px -3px #00ffff;
+    transform: translate(-1px, 1px) translate3D(-30px, 0px, 0) rotate(-0.1deg);
+    cursor: crosshair;
+  }
+  25% {
+    text-shadow: -2px -3px #ff00ff, 2px 1px #00ffff;
+    transform: translate(2px, 1px) translate3D(-30px, 0px, 0) rotate(-0.1deg);
+    cursor: cell;
+  }
+  50% {
+    text-shadow: 2px -1px #ff00ff, -4px 1px #00ffff;
+    transform: translate(-2px, 1px) translate3D(-30px, 0px, 0) rotate(-0.1deg);
+    cursor: col-resize;
+  }
+  75% {
+    text-shadow: -4px -1px #ff00ff, -2px -1px #00ffff;
+    transform: translate(3px, 1px) translate3D(-30px, 0px, 0) rotate(-0.1deg);
+    cursor: move;
+  }
+  100% {
+    text-shadow: -2px 0 #ff00ff, 2px -1px #00ffff;
+    transform: translate(-2px, 0) translate3D(-30px, 0px, 0) rotate(-0.1deg);
+    cursor: all-scroll;
+  }
 }

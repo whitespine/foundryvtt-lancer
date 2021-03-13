@@ -24,7 +24,6 @@ import {
   License,
   NpcFeature,
   FittingSize,
-  Action,
 } from "machine-mind";
 import { MechWeapon } from "machine-mind";
 import { TypeIcon } from "../config";
@@ -142,41 +141,6 @@ export function show_range_array(ranges: Range[], options: HelperData): string {
   }
   return `<div class="flexrow no-grow compact-range ${classes}">${results.join(" ")}</div>`
 }
-
-/**
- * Handlebars helper for an NPC feature preview attack bonus stat
- * @param atk {number} Attack bonus to render
- */
-export function npc_attack_bonus_preview(atk: number, txt: string = "ATTACK") {
-  return `<div class="compact-acc">
-    <i style="margin-right: 5px;" class="cci cci-reticule i--m"></i>
-    <span class="medium"> ${atk < 0 ? "-" : "+"}${atk} ${txt}</span>
-  </div>`;
-}
-
-/**
- * Handlebars helper for an NPC feature preview accuracy stat
- * @param acc {number} Accuracy bonus to render
- */
-export function npc_accuracy_preview(acc: number) {
-  let icon: string;
-  let text: string;
-  if (acc > 0) {
-    icon = "accuracy";
-    text = `+${acc} ACCURACY`;
-  } else if(acc < 0) {
-    icon = "difficulty";
-    text = `-${acc} DIFFICULTY`;
-  } else {
-    return "";
-  }
-  
-  return `<div class="compact-acc">
-      <i style="margin-right: 5px" class="cci cci-${icon} i--m"></i>
-      <span class="medium">${text}</span>
-    </div>`;
-}
-
 
 /**
  * Handlebars partial for weapon type selector

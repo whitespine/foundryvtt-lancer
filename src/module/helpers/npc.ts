@@ -5,8 +5,6 @@ import { ItemMacroCtx, macro_elt_params, TechMacroCtx, WeaponMacroCtx } from "..
 import { MMEntityContext } from "../mm-util/helpers";
 import { effect_box, HelperData, inc_if, resolve_helper_dotpath } from "./commons";
 import {
-  npc_attack_bonus_preview,
-  npc_accuracy_preview,
   show_damage_array,
   show_range_array,
 } from "./item";
@@ -264,7 +262,7 @@ export function npc_weapon_effect_preview(
     npc_feature,
     `
     <div class="lancer-body flex-col">
-      <div class="flexrow no-wrap">
+      <div class="flexrow no-wrap flex-center">
         ${subheader_items.join(sep)}
       </div>
       <div>
@@ -278,3 +276,38 @@ export function npc_weapon_effect_preview(
     helper
   );
 }
+
+/**
+ * Handlebars helper for an NPC feature preview attack bonus stat
+ * @param atk {number} Attack bonus to render
+ */
+export function npc_attack_bonus_preview(atk: number, txt: string = "ATTACK") {
+  return `<div class="compact-acc">
+    <i style="margin-right: 5px;" class="cci cci-reticule i--m"></i>
+    <span class="medium"> ${atk < 0 ? "-" : "+"}${atk} ${txt}</span>
+  </div>`;
+}
+
+/**
+ * Handlebars helper for an NPC feature preview accuracy stat
+ * @param acc {number} Accuracy bonus to render
+ */
+export function npc_accuracy_preview(acc: number) {
+  let icon: string;
+  let text: string;
+  if (acc > 0) {
+    icon = "accuracy";
+    text = `+${acc} ACCURACY`;
+  } else if(acc < 0) {
+    icon = "difficulty";
+    text = `-${acc} DIFFICULTY`;
+  } else {
+    return "";
+  }
+  
+  return `<div class="compact-acc">
+      <i style="margin-right: 5px" class="cci cci-${icon} i--m"></i>
+      <span class="medium">${text}</span>
+    </div>`;
+}
+

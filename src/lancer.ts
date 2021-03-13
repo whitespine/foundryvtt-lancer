@@ -21,6 +21,8 @@ import { LancerItem, lancerItemInit } from "./module/item/lancer-item";
 import {
   action_type_icon,
   action_type_selector,
+  npc_accuracy_preview,
+  npc_attack_bonus_preview,
 } from "./module/helpers/npc";
 
 // Import applications
@@ -60,8 +62,6 @@ import {
   weapon_size_selector,
   weapon_type_selector,
   range_editor,
-  npc_attack_bonus_preview,
-  npc_accuracy_preview,
   mech_weapon_refview,
   system_type_selector,
   npc_feature_preview,
@@ -322,7 +322,7 @@ Hooks.once("init", async function () {
         return " crit ";
       }
     } else {
-      return " debug-remove-this ";
+      return "";
     }
   });
   
