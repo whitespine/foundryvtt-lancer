@@ -358,7 +358,7 @@ export function pilot_weapon_refview(weapon_path: string, helper: HelperData): s
       item: weapon.as_ref(),
       actor: macro_actor.ent.as_ref()
     }
-    macro = `<a class="flexrow lancer-macro" style="max-width: min-content;"  ${macro_elt_params(macro_ctx)}>
+    macro = `<a class="lancer-macro" style="max-width: min-content;"  ${macro_elt_params(macro_ctx)}>
                 <i class="fas fa-dice-d20 i--sm i--dark"></i>
               </a>`;
   }
@@ -371,10 +371,10 @@ export function pilot_weapon_refview(weapon_path: string, helper: HelperData): s
       <a class="gen-control i--light" data-action="null" data-path="${weapon_path}"><i class="fas fa-trash"></i></a>
     </div>
     <div class="flexcol">
-      <div class="flexrow">
+      <div class="flexrow flex-center">
         ${macro}
         ${show_range_array(weapon.Range, helper)}
-        <hr class="vsep">
+        <hr class="vsep--m">
         ${show_damage_array(weapon.Damage, helper)}
       </div>
 
@@ -384,6 +384,7 @@ export function pilot_weapon_refview(weapon_path: string, helper: HelperData): s
 }
 
 // Helper for showing a pilot gear, or a slot to hold it (if path is provided)
+// If "macro-actor" provided, that mmec will be used to create a macro on this item
 export function pilot_gear_refview(gear_path: string, helper: HelperData): string {
   // Fetch the item
   let gear_: PilotGear | null = resolve_dotpath(helper.data?.root, gear_path);
@@ -501,11 +502,11 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
   // Generate loading segment as needed
   let loading = "";
   if(weapon.IsLoading) {
-    let loading_icon = `mdi mdi-hexagon-slice-${weapon.Loaded ? 6 : 0}`;
+    let loading_icon = `i--m mdi mdi-hexagon-slice-${weapon.Loaded ? 6 : 0}`;
     loading = `<span> 
                 LOADED: 
-                <a class="gen-control" data-action="set" data-set-value="(bool)${!weapon.Loaded}" data-path="${weapon_path}.Loaded"><i class="${loading_icon}"></i></a>
-                </span>`;
+                <a class="gen-control ${loading_icon}" data-action="set" data-action-value="(bool)${!weapon.Loaded}" data-path="${weapon_path}.Loaded" data-item-override="${weapon_path}"></a>
+              </span>`;
   }
 
   // Make a macro, maybe
@@ -519,7 +520,7 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
       actor: macro_actor.ent.as_ref(),
       // Should we specify profile? Or just use selected? Opting with the latter for now
     }
-    macro = `<a class="flexrow lancer-macro" style="max-width: min-content;"  ${macro_elt_params(macro_ctx)}>
+    macro = `<a class="lancer-macro" style="max-width: min-content;"  ${macro_elt_params(macro_ctx)}>
                 <i class="fas fa-dice-d20 i--sm i--dark"></i>
               </a>`;
   }
@@ -532,7 +533,7 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
   let on_crit = profile.OnCrit ? effect_box("On Crit", profile.OnCrit, helper) : "";
 
   return `
-  <div class="valid ${EntryType.MECH_WEAPON} ref drop-settable flexcol clipped lancer-weapon-container macroable item"
+  <div class="valid ${EntryType.MECH_WEAPON} ref drop-settable flexcol clipped lancer-weapon-container"
                 ${ref_params(cd.ref, weapon_path)}
                 style="max-height: fit-content;">
     <div class="lancer-header">
@@ -541,19 +542,18 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
       <a class="gen-control i--light" data-action="null" data-path="${weapon_path}"><i class="fas fa-trash"></i></a>
     </div> 
     <div class="lancer-body">
-      <div class="flexrow" style="text-align: left; white-space: nowrap;">
+      <div class="flexrow flex-center" style="text-align: left; white-space: nowrap;">
         ${macro}
-        <hr class="vsep">
+        <hr class="vsep--m">
         ${show_range_array(ranges, helper)}
-        <hr class="vsep">
+        <hr class="vsep--m">
         ${show_damage_array(weapon.SelectedProfile.BaseDamage, helper)}
 
         <!-- Loading toggle, if we are loading-->
-        ${inc_if(`<hr class="vsep"> ${loading}`, loading)}
+        ${inc_if(`<hr class="vsep--m"> ${loading}`, loading)}
       </div>
       
       <div class="flexcol">
-        <span>${weapon.SelectedProfile.Description}</span>
         ${effect}
         ${on_attack}
         ${on_hit}

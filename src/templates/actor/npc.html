@@ -41,7 +41,7 @@
 
 
     {{!-- The rank, as a large pillar(s) --}}
-    <div class="flexcol" style="grid-area: 1/4/3/5;">
+    <div class="flexcol flex-center" style="grid-area: 1/4/3/5;">
       <span class="major">TIER:</span>
       <i class="i--m cci cci-npc-tier-{{mm.ent.Tier}} tier-icon theme--npc"></i>
     </div>
@@ -80,29 +80,34 @@
       </div> --}}
 
       {{!-- Stats et all --}}
-      <div class="wraprow quintuple">
-        {{{clicker-stat-card   "TIER"         "mm.ent.Tier"         icon=(concat "cci cci-npc-tier-" mm.ent.Tier) }}}
+      <div class="wraprow quadruple">
+        <div class="double">
+          {{{clicker-stat-card   "TIER"         "mm.ent.Tier"         icon=(concat "cci cci-npc-tier-" mm.ent.Tier) }}}
+        </div>
+        <div class="double">
+          {{{stat-view-card      "ACTIV."      "mm.ent.Activations"    icon="cci cci-heart" }}}
+        </div>
+
         {{{stat-view-card      "HULL"         "mm.ent.Hull"         macro-actor=mm}}}
         {{{stat-view-card      "AGILITY"      "mm.ent.Agility"      macro-actor=mm}}}
         {{{stat-view-card      "SYSTEMS"      "mm.ent.Systems"      macro-actor=mm}}}
         {{{stat-view-card      "ENGINEERING"  "mm.ent.Engineering"  macro-actor=mm}}}
 
         {{{stat-edit-max-card  "STRUCTURE"   "mm.ent.Structure"    "mm.ent.MaxStructure" }}}
-        {{{stat-view-card      "ARMOR"       "mm.ent.Armor"    icon="cci cci-armor" }}}
         {{{stat-edit-max-card  "HP"          "mm.ent.CurrentHP"    "mm.ent.MaxHP"    icon="mdi mdi-heart-outline" }}}
+        {{{stat-edit-card      "O.SHIELD"  "mm.ent.Overshield"    icon="mdi mdi-octagram" }}}
+        {{{stat-view-card      "EVASION"     "mm.ent.Evasion"    icon="cci cci-evasion" }}}
+
+
         {{{stat-edit-max-card  "STRESS"      "mm.ent.Stress"    "mm.ent.MaxStress" }}}
         {{{stat-edit-max-card  "HEAT"        "mm.ent.CurrentHeat"    "mm.ent.HeatCapacity"    icon="cci cci-heat" }}}
+        {{{stat-edit-card      "BURN"        "mm.ent.Burn"    icon="cci cci-burn" }}}
+        {{{stat-view-card      "E-DEF"       "mm.ent.EDefense"    icon="cci cci-edef" }}}
 
         {{{stat-view-card      "SPEED"       "mm.ent.Speed"    icon="mdi mdi-arrow-right-bold-hexagon-outline" }}}
-        {{{stat-view-card      "EVASION"     "mm.ent.Evasion"    icon="cci cci-evasion" }}}
-        {{{stat-view-card      "ACTIVATIONS" "mm.ent.Activations"    icon="cci cci-heart" }}}
-        {{{stat-edit-card      "O.SHIELD"  "mm.ent.Overshield"    icon="cci cci-heat" }}}
-
+        {{{stat-view-card      "ARMOR"       "mm.ent.Armor"    icon="cci cci-armor" }}}
         {{{stat-view-card      "SENSORS"     "mm.ent.SensorRange"    icon="cci cci-sensor" }}}
-        {{{stat-view-card      "E-DEF"       "mm.ent.EDefense"    icon="cci cci-edef" }}}
         {{{stat-view-card      "SAVE T."     "mm.ent.SaveTarget"    icon="cci cci-save" }}}
-        {{{stat-edit-card      "BURN"        "mm.ent.Burn"    icon="cci cci-burn" }}}
-        <div></div>
       </div>
 
       {{!-- Equipment et all --}}

@@ -1,6 +1,6 @@
 import { EntryType,funcs, Mech, Npc, Pilot  } from "machine-mind";
 import { LancerActorType } from "../actor/lancer-actor";
-import { macro_elt_params, StatMacroCtx } from "../macros";
+import { macro_elt_params, OverchargeMacroCtx, StatMacroCtx } from "../macros";
 import { MMEntityContext } from "../mm-util/helpers";
 import { ext_helper_hash, HelperData, inc_if, resolve_helper_dotpath, selected, std_num_input, std_x_of_y } from "./commons";
 import { simple_mm_ref } from "./refs";
@@ -14,11 +14,11 @@ export function stat_edit_card_max(title: string, data_path: string, max_path: s
   let icon = helper.hash["icon"] ?? "";
   return `
     <div class="card clipped">
-      <div class="lancer-header">
-        ${inc_if(`<i class="${icon} i--m header-icon"> </i>`, icon)}
-        <span class="major">${title}</span>
+      <div class="lancer-header major">
+        ${inc_if(`<i class="${icon} i--m"> </i>`, icon)}
+        <span>${title}</span>
       </div>
-      ${std_x_of_y(data_path, data_val, max_val, "lancer-stat")}
+      ${std_x_of_y(data_path, data_val, max_val, "lancer-stat major")}
     </div>
     `;
 }
@@ -28,11 +28,11 @@ export function stat_edit_card(title: string, data_path: string, helper: HelperD
   let icon = helper.hash["icon"] ?? "";
   return `
     <div class="card clipped">
-      <div class="lancer-header">
-        ${inc_if(`<i class="${icon} i--m header-icon"> </i>`, icon)}
-        <span class="major">${title}</span>
+      <div class="lancer-header major">
+        ${inc_if(`<i class="${icon} i--m"> </i>`, icon)}
+        <span>${title}</span>
       </div>
-      ${std_num_input(data_path, ext_helper_hash(helper, {classes: "lancer-stat lancer-invisible-input"}))}
+      ${std_num_input(data_path, ext_helper_hash(helper, {classes: "lancer-stat lancer-invisible-input major"}))}
     </div>
     `;
 }
@@ -65,9 +65,9 @@ export function stat_view_card(title: string, data_path: string, helper: HelperD
 
   return `
     <div class="card clipped">
-      <div class="lancer-header">
-        ${inc_if(`<i class="${icon} i--m header-icon"> </i>`, icon)}
-        <span class="major">${title}</span>
+      <div class="lancer-header major">
+        ${inc_if(`<i class="${icon} i--m"> </i>`, icon)}
+        <span>${title}</span>
       </div>
       <div class="flexrow">
         ${macro}
@@ -90,7 +90,6 @@ export function compact_stat_view(icon: string, data_path: string, options: Help
 
 // Shows a compact editable value
 export function compact_stat_edit(icon: string, data_path: string, max_path: string, options: HelperData): string {
-  let data_val = resolve_helper_dotpath(options, data_path);
   let max_val = resolve_helper_dotpath(options, max_path);
   return `        
         <div class="compact-stat">
@@ -118,7 +117,7 @@ export function clicker_stat_card(title: string, data_path: string, helper: Help
   let icon = helper.hash["icon"] ?? "";
   return `<div class="card clipped">
       <div class="lancer-header major">
-        ${inc_if(`<i class="${icon} i--m header-icon"> </i>`, icon)}
+        ${inc_if(`<i class="${icon} i--m"> </i>`, icon)}
         <span>${title}</span>
       </div>
       ${clicker_num_input(data_path, helper)}
@@ -146,8 +145,8 @@ export function npc_clicker_stat_card(title: string, data_path: string, helper: 
   return `
     <div class="card clipped">
       <div class="flexrow lancer-header major">
-        ${inc_if(`<i class="${icon} i--m header-icon"> </i>`, icon)}
-        <span class="lancer-header major ">${title}</span>
+        ${inc_if(`<i class="${icon} i--m"> </i>`, icon)}
+        <span>${title}</span>
         <a class="gen-control" data-path="${data_path}" data-action="set" data-action-value="(struct)npc_stat_array"><i class="fas fa-redo"></i></a>
       </div>
       ${tier_clickers.join("")}
@@ -158,22 +157,36 @@ export function npc_clicker_stat_card(title: string, data_path: string, helper: 
  * Handlebars helper for an overcharge button
  * Currently this is overkill, but eventually we want to support custom overcharge values
  * @param overcharge_path Path to current overcharge level, from 0 to 3
+ * If "macro-actor" provided, use that mmec for computing heat / optionally applying it
  */
 export const OVERCHARGE_SEQUENCE = ["1", "1d3", "1d6", "1d6 + 4"];
 export function overcharge_button(overcharge_path: string, options: HelperData): string {
   let index = resolve_helper_dotpath(options, overcharge_path) as number;
   index = funcs.bound_int(index, 0, OVERCHARGE_SEQUENCE.length - 1)
   let over_val = OVERCHARGE_SEQUENCE[index];
+  let macro = "";
+  if(options.hash["macro-actor"]) {
+    let mmec = options.hash["macro-actor"] as MMEntityContext<EntryType.MECH>;
+    let macro_ctx: OverchargeMacroCtx = {
+      name: "Overcharge",
+      type: "overcharge",
+      actor: mmec.ent.as_ref(),
+      icon: "systems/lancer/assets/icons/overcharge.svg"
+    }
+    macro = macro_elt_params(macro_ctx);
+  }
+
+
   return `
     <div class="card clipped flexcol">
-      <div class="lancer-header ">
-        <span class="major">OVERCHARGE</span>
+      <div class="lancer-header major">
+        <span>OVERCHARGE</span>
       </div>
       <div class=flexrow>
-        <a class="overcharge-button">
+        <a class="overcharge-button level-${index} ${inc_if("lancer-macro", macro)}" ${macro}>
           <i class="cci cci-overcharge i--dark i--sm"> </i>
+          <span>${over_val}</span>
         </a>
-        <span>${over_val}</span>
       </div>
     </div>`;
 }

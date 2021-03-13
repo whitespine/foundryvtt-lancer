@@ -342,21 +342,44 @@ export function HANDLER_activate_ref_drop_setting<T>(
     }
   });
 }
-// Allow every ".ref.drop-settable" spot to be right-click cleared
+
+// Allow every ".ref.drop-settable" spot to be double-right-click cleared
 // Uses same getter/commit func scheme as other callbacks
+const DOUBLE_INTERVAL = 500;
+const double_timer = {
+  last_path: null as string | null,
+  last_time: 0
+};
 export function HANDLER_activate_ref_drop_clearing<T>(
   html: JQuery,
   data_getter: () => Promise<T> | T,
   commit_func: (data: T) => void | Promise<void>
 ) {
   html.find(".ref.drop-settable").on("contextmenu", async (event) => {
-    let data = await data_getter();
     let path = event.currentTarget.dataset.path;
-    if(path) {
+
+    // Mandate path
+    if(!path) {
+      return;
+    }
+
+    /* First decide if we're going to do anything, based on if curr_path matches and time within bounds */
+    let curr_time = Date.now();
+    let time_since = curr_time - double_timer.last_time;
+    if(time_since < DOUBLE_INTERVAL && double_timer.last_path == path) {
+      // Set the item as null
+      let data = await data_getter();
+
       // Check there's anything there before doing anything
       if(!resolve_dotpath(data, path)) return;
+
+      // Merge in as null and commit
       gentle_merge(data, { [path]: null });
       await commit_func(data);
+    } else {
+      // Setup for the next right click
+      double_timer.last_time = curr_time;
+      double_timer.last_path = path ?? null;
     }
   });
 }

@@ -294,7 +294,8 @@ export async function prepareMacro(any_macro: AnyMacroCtx) {
           break;
         case NpcFeatureType.System:
         case NpcFeatureType.Trait:
-          await rollTextMacro(actor, item.Name, item.FormattedEffectByTier(tier));
+          let name = `${item.FeatureType.toUpperCase()} :: ${item.Name}`;
+          await rollTextMacro(actor, name, item.FormattedEffectByTier(tier));
           break;
         case NpcFeatureType.Reaction:
           await rollReactionMacro(actor, item, tier);
@@ -410,10 +411,20 @@ async function get_macro_item(
 export async function renderMacro(actor: Actor, template: string, templateData: any) {
   const html = await renderTemplate(template, templateData);
   let roll = templateData.roll || templateData.attack;
+
+  // Find the d20 result if we can. Currently assumes a single dice.
+  let d20_roll = 0;
+  let d20s: Die[] = roll.dice.filter((d: Die) => d.faces == 20);
+  if(d20s.length) {
+    d20_roll = d20s[0].results[0];
+  }
+
+
   let chat_data = {
     user: game.user,
     type: roll ? CONST.CHAT_MESSAGE_TYPES.ROLL : CONST.CHAT_MESSAGE_TYPES.IC,
     roll: roll,
+    d20_roll,
     speaker: {
       actor: actor,
       token: actor.token,
@@ -766,7 +777,7 @@ async function rollAttackMacro({
 function rollReactionMacro(actor: Actor, reaction: NpcFeature, tier: number) {
   const template = `systems/lancer/templates/chat/reaction-card.html`;
   return renderMacro(actor, template, {
-    title: reaction.Name,
+    title: `REACTION :: ${reaction.Name}`,
     effect: reaction.FormattedEffectByTier(tier),
     trigger: reaction.Trigger,
     tags: reaction.Tags,
@@ -895,7 +906,7 @@ export async function prepareTechMacro(macro: TechMacroCtx) {
   // Make an effect out of the tech option
   let effects = [
     {
-      title: action.Name,
+      title: `TECH :: ${action.Name}`,
       body: action.Detail,
     },
   ];
@@ -1002,7 +1013,7 @@ export async function prepareOverchargeMacro(a: OverchargeMacroCtx) {
     actor.CurrentOvercharge = funcs.bound_int(
       actor.CurrentOvercharge + 1,
       0,
-      OVERCHARGE_SEQUENCE.length
+      OVERCHARGE_SEQUENCE.length - 1
     );
 
     // Only increase heat if we haven't disabled it

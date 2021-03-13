@@ -1,9 +1,9 @@
-import { NpcFeature } from "machine-mind";
+import { NpcFeature, NpcFeatureType } from "machine-mind";
 import { LancerActorType } from "../actor/lancer-actor";
 import { ActivationType } from "../enums";
-import { macro_elt_params, TechMacroCtx, WeaponMacroCtx } from "../macros";
+import { ItemMacroCtx, macro_elt_params, TechMacroCtx, WeaponMacroCtx } from "../macros";
 import { MMEntityContext } from "../mm-util/helpers";
-import { effect_box, HelperData, resolve_dotpath, resolve_helper_dotpath } from "./commons";
+import { effect_box, HelperData, inc_if, resolve_helper_dotpath } from "./commons";
 import {
   npc_attack_bonus_preview,
   npc_accuracy_preview,
@@ -11,7 +11,7 @@ import {
   show_range_array,
 } from "./item";
 import { ref_params } from "./refs";
-import { compact_tag, compact_tag_list } from "./tags";
+import { compact_tag_list } from "./tags";
 
 export const EffectIcons = {
   Generic: "systems/lancer/assets/icons/generic_item.svg",
@@ -86,14 +86,34 @@ function del_button(path: string): string {
   return `<a class="gen-control" data-action="delete" data-path="${path}"><i class="fas fa-trash"></i></a>`
 }
 
-function npc_feature_scaffold(path: string, npc_feature: NpcFeature, body: string) {
+function npc_feature_scaffold(path: string, npc_feature: NpcFeature, body: string, helper: HelperData) {
   let feature_class = `npc-${npc_feature.FeatureType.toLowerCase()}`
+
+  // Macro if needed
+  let macro = "";
+  if(helper.hash["macro-actor"]) {
+    let actor_mmec = helper.hash["macro-actor"] as MMEntityContext<LancerActorType>;
+    let macro_ctx: ItemMacroCtx = {
+      item: npc_feature.as_ref(),
+      name: npc_feature.Name,
+      type: "generic_item",
+      actor: actor_mmec.ent.as_ref(),
+    }
+    macro = macro_elt_params(macro_ctx);
+  }
+
+  // Decide icon
+  let feature_icon ="cci cci-${npc_feature.FeatureType.toLowerCase()}";
+  if(npc_feature.FeatureType == NpcFeatureType.Tech) {
+    feature_icon ="cci cci-tech-quick";
+  }
+
   return `
   <div class="valid ref card ${feature_class}" ${ref_params(npc_feature.as_ref())}>
     <div class="flexrow lancer-header clipped-top collapse-ctrl" collapse-id="${npc_feature.RegistryID}" >
-      <i class="cci cci-${npc_feature.FeatureType.toLowerCase()} i--m"> </i>
-      <a class="macroable item-macro"><i class="mdi mdi-message"></i></a>
-      <span class="minor grow">${npc_feature.Name}</span>
+      <i class="${feature_icon} i--m"> </i>
+      ${inc_if(`<a class="lancer-macro mdi mdi-message" ${macro}></a>`, macro)}
+      <span class="major grow">${npc_feature.Name}</span>
       ${del_button(path)}
     </div>
     <div class="collapse-item" collapse-id="${npc_feature.RegistryID}">
@@ -111,7 +131,8 @@ export function npc_reaction_effect_preview(path: string, helper: HelperData) {
       ${effect_box("TRIGGER", npc_feature.Trigger, helper)}
       ${effect_box("EFFECT", npc_feature.Effect, helper)}
       ${compact_tag_list(path + ".Tags", helper)}
-    </div>`
+    </div>`,
+    helper
   );
 }
 
@@ -124,7 +145,8 @@ function npc_system_trait_effect_preview(path: string, helper: HelperData) {
     `<div class="flexcol lancer-body">
       ${effect_box("EFFECT", npc_feature.Effect, helper)}
       ${compact_tag_list(path + ".Tags", helper)}
-    </div>`
+    </div>`,
+    helper
   );
 }
 
@@ -190,7 +212,8 @@ export function npc_tech_effect_preview(
         ${compact_tag_list(path + ".Tags", helper)}
       </div>
     </div>
-    `
+    `,
+    helper
   );
 }
 
@@ -251,6 +274,7 @@ export function npc_weapon_effect_preview(
       ${effect_box("EFFECT", npc_feature.Effect, helper)}
       ${compact_tag_list(path + ".Tags", helper)}
     </div>
-    `
+    `,
+    helper
   );
 }

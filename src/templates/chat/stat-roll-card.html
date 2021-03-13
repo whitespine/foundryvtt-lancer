@@ -1,10 +1,10 @@
 <div class="card clipped-bot" style="margin: 0px;">
-  <div class="lancer-header clipped-top">// CHECK :: {{title}} //</div>
+  <div class="lancer-header">// CHECK :: {{title}} //</div>
     <div class="dice-roll lancer-dice-roll">
       <div class="dice-result">
         <div class="dice-formula lancer-dice-formula flexrow">
           <span style="text-align: left; margin-left: 5px;">{{ roll.formula }}</span>
-          <span class="dice-total lancer-dice-total major">{{ roll.total }}</span>
+          <span class="dice-total lancer-dice-total major {{crit-class d20_roll roll.total}}">{{ roll.total }}</span>
         </div>
         <div style="text-align: left;">
           {{{ roll_tooltip }}}

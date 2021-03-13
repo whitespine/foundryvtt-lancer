@@ -6,8 +6,11 @@
 :root {
   --main-font-family: Helvetica, Arial, sans-serif;
 
-  --main-theme-color: #991e2a;  /* I've configured calls to this to fall back on fuchsia when things go wrong */
-  --secondary-theme-color: #505050;  
+  /* --main-theme-color: #991e2a;  /* I've configured calls to this to fall back on fuchsia when things go wrong */
+
+  --main-theme-color: #125044;
+  /* --secondary-theme-color: #505050;   */
+  --secondary-theme-color: #879190;
   --loadout-color: #777f86;  
   --ref-color: #ddc0b3;  
   --gms-theme-color: #991e2a;
@@ -22,7 +25,7 @@
   --action-list-color: #8ab0c2;
   --bonus-color: #5d8673;
   --bonus-list-color: #71a373;
-  --system-color: #9ad882;
+  --system-color: #6a9759;
   --error-color: #b4800e;
   --tech-clip-path: polygon( 0 0, calc(100% - 12px) 0, calc(100% - 12px) 7px, calc(100% - 7px) 7px, calc(100% - 7px) 3px, calc(100% - 3px) 3px, calc(100% - 3px) 0, 100% 0, 100% 3px, calc(100% - 3px) 3px, calc(100% - 3px) 7px, calc(100% - 7px) 7px, calc(100% - 7px) 12px, 100% 12px, 100% 100%, 0 100% );
   --tech-color: #7d2477;
@@ -126,7 +129,7 @@ button {
 
 .flex-center {
   align-items: center;
-  justify-content: center;
+  /* justify-content: center; */
 }
 
 
@@ -167,11 +170,6 @@ button {
   align-items: flex-start;
 }
 
-.header-icon {
-  float: left;
-  padding-left: 10px;
-}
-
 .pilot-callsign {
   font-size: 34px;
   font-weight: bold;
@@ -198,18 +196,46 @@ button {
 }
 
 #chat-log .message-content {
-  padding: 5px 10px;
+  /* padding: 5px 10px; */
+  border-top: 2px solid black;
 }
 
-/* ---------- */
-
-.vsep {
+/* ---- Vertical separators of various sizes ------ */
+@mixin vsep-mixin($height) {
   border: none;
   border-left: 1px solid #444444;
   border-right: 1px solid #444444;
   max-width: 3px;
   margin-left: 6px;
   margin-right: 6px;
+  height: $height;
+}
+
+.vsep {
+  @include vsep-mixin(20px)
+}
+
+.vsep--xs {
+  @include vsep-mixin(15px)
+}
+
+.vsep--s {
+  @include vsep-mixin(20px)
+}
+
+.vsep--sm {
+  @include vsep-mixin(25px)
+}
+.vsep--m {
+  @include vsep-mixin(30px)
+}
+
+.vsep--l {
+  @include vsep-mixin(40px)
+}
+
+.vsep--xl {
+  @include vsep-mixin(60px)
 }
 
 .add-button {
@@ -379,7 +405,7 @@ ul.items-list {
   min-width: $pixels;
   max-width: $pixels;
   min-height: $pixels;
-  max-height: $pixels;
+  /* max-height: $pixels; */
 }
 
 .i--xs {
@@ -615,8 +641,8 @@ tr.lcp-index-header {
   max-height: 40px;
   font-weight: bold;
 
-  .span {
-    padding-left: 5px;
+  span {
+    margin-left: 5px;
   }
 }
 
@@ -756,7 +782,7 @@ tr.lcp-index-header {
   /* If our parent item is clipped, we should be as well (? might not be necessary) */
   .clipped > &,
   .clipped-top > & {
-    padding-left: 10px;
+    /* padding-left: 10px; */
     clip-path: var(--top-dogear-path);
     -webkit-clip-path: var(--top-dogear-path);
   }
@@ -836,24 +862,36 @@ tr.lcp-index-header {
 }
 
 /* General font sizing options */
+
+/* Some flex helpers */
+@mixin fontie($size, $weight) {
+  font-size: $size;
+  font-weight: $weight;
+
+  /* Need this to override some other inbuilt foundry css rules. Don't want to !important it */
+  input {
+    font-size: $size;
+  /*
+    font-weight: $weight;
+  */
+  }
+}
+
 /* Big */
 .major {
-  font-size: 18px;
-  font-weight: bolder;
+  @include fontie(18px, bolder);
 }
 
 /* Slightly less big */
 .submajor {
-  font-size: 15px;
-  font-weight: bold;
+  @include fontie(15px, bold);
 }
 
 /* Omit - normal */
 
 /* Small */
 .minor {
-  font-size: 12px;
-  font-weight: lighter;
+  @include fontie(12px, light);
 }
 
 .lancer-stat {
@@ -915,16 +953,6 @@ input[type=string].lancer-input {
   &.nested {
     margin: 0px 0px;
   }
-}
-
-.lancer-title {
-  text-align: center;
-  margin-left: 10px;
-  margin-right: 10px;
-  margin-top: 3px;
-  margin-bottom: 3px;
-  color: white;
-  background-color: var(--main-theme-color, fuchsia);
 }
 
 .desc-text {
@@ -1086,6 +1114,19 @@ code.horus:hover {
   border: 1px solid #999;
   border-radius: 3px;
   box-shadow: 0 0 2px #FFF inset;
+
+  &.crit {
+    /* Red glow */
+    box-shadow: 4px 0 2px #FFF inset;
+    box-shadow: 0px 0px 4px 4px var(--main-theme-color);
+  }
+
+}
+
+/* The entire mech loadout box */
+.mech-loadout {
+  border: solid 10px black;
+  border-radius: 10px;
 }
 
 .lancer-dice-total {
@@ -1162,25 +1203,37 @@ input.core-power-toggle:not(:checked)::before
   color: grey;
 }
 
-.overcharge-container {
-  clip-path: circle();
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: var(--main-theme-color, fuchsia);
+.overcharge-heat {
+  color:#fc3e0f; 
+  flex-grow: unset;
+  width: 1.5em;
 }
 
 .overcharge-button {
-  background-color: white;
-  clip-path: circle();
   display: flex;
   justify-content: center;
   align-items: center;
   line-height: .8em;
   font-weight: bold;
   font-size: 16pt;
-  color: var(--main-theme-color, fuchsia);
   border: none;
+  border-radius: 2em;
+
+  &.level-0 {
+    background-color: white;
+  }
+
+  &.level-1 {
+    background-color: rgb(197, 238, 84);
+  }
+
+  &.level-2 {
+    background-color: rgb(219, 164, 13);
+  }
+
+  &.level-3 {
+    background-color: rgb(219, 89, 13);
+  }
 }
 
 /* Some flex helpers */

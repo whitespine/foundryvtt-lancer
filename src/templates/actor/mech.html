@@ -12,36 +12,38 @@
     {{{stat-view-card      "AGILITY"      "mm.ent.Pilot.MechSkills.Agi"      macro-actor=mm}}}
     {{{stat-view-card      "SYSTEMS"      "mm.ent.Pilot.MechSkills.Sys"      macro-actor=mm}}}
     {{{stat-view-card      "ENGINEERING"  "mm.ent.Pilot.MechSkills.Eng"  macro-actor=mm}}}
-    <div></div>
+    {{{stat-view-card      "GRIT"         "mm.ent.Pilot.Grit"  macro-actor=mm}}}
 
     {{{stat-edit-max-card  "HP"          "mm.ent.CurrentHP"         "mm.ent.MaxHP"              icon="mdi mdi-heart-outline" }}}
     {{{stat-edit-max-card  "HEAT"        "mm.ent.CurrentHeat"       "mm.ent.HeatCapacity"       icon="cci cci-heat" }}}
     {{{stat-edit-card      "BURN"        "mm.ent.Burn"                                          icon="cci cci-burn" }}}
-    {{{stat-edit-card      "O.SHIELD"    "mm.ent.Overshield"                                    icon="cci cci-heat" }}}
+    {{{stat-edit-card      "O.SHIELD"    "mm.ent.Overshield"                                    icon="mdi mdi-octagram" }}}
     {{{stat-edit-max-card  "REPAIRS"     "mm.ent.CurrentRepairs"    "mm.ent.RepairCapacity"     icon="cci cci-repair" }}}
-    {{{stat-view-card      "SIZE"        "mm.ent.Size"                                          icon=(concat "mdi " mm.ent.SizeIcon) }}}
 
+    {{{stat-view-card      "SIZE"        "mm.ent.Size"                                          icon=(concat "cci " mm.ent.SizeIcon) }}}
     {{{stat-view-card      "ARMOR"       "mm.ent.Armor"             icon="mdi mdi-shield-outline" }}}
     {{{stat-view-card      "EVASION"     "mm.ent.Evasion"           icon="cci cci-evasion" }}}
     {{{stat-view-card      "E-DEF"       "mm.ent.EDefense"          icon="cci cci-edef" }}}
     {{{stat-view-card      "SPEED"       "mm.ent.Speed"             icon="mdi mdi-arrow-right-bold-hexagon-outline" }}}
-    {{{stat-view-card      "TECH ATK"    "mm.ent.TechAttack"        icon="cci cci-tech-full" }}}
+
+    {{{stat-view-card      "TECH ATK"    "mm.ent.TechAttack"        icon="cci cci-tech-full" macro-actor=mm }}}
     {{{stat-view-card      "SENSORS"     "mm.ent.SensorRange"       icon="cci cci-sensor" }}}
     {{{stat-view-card      "SAVE"        "mm.ent.SaveTarget"        icon="cci cci-save" }}}
     {{{stat-view-card      "SYSPOINTS"  "mm.ent.MaxSP"             icon="cci cci-system" }}}
-    {{{stat-view-card      "ATTACK"      "mm.ent.AttackBonus"       icon="cci cci-heart" }}}
-    {{{overcharge-button   "mm.ent.CurrentOvercharge" }}}
+    {{{stat-view-card      "ATTACK"      "mm.ent.AttackBonus"       icon="cci cci-heart" macro-actor=mm }}}
 
-    <div class="card clipped double">
-      <div class="lancer-header ">
-        <i class="cci cci-pilot i--m i--light header-icon"> </i>
-        <span class="major">PILOT</span>
+    {{{overcharge-button   "mm.ent.CurrentOvercharge" macro-actor=mm }}}
+
+    <div class="card clipped quadruple">
+      <div class="lancer-header major">
+        <i class="cci cci-pilot i--m i--light"> </i>
+        <span>PILOT</span>
       </div>
       {{{pilot-slot "mm.ent.Pilot" }}}
     </div>
   </div>
 
-  <div class="card">
+  <div class="mech-loadout card">
     <span class="lancer-header major ">LOADOUT [SP: {{mm.ent.Loadout.TotalSP}} / {{mm.ent.MaxSP}}]</span>
     {{{mech-loadout "mm.ent" macro-actor=mm}}}
   </div>

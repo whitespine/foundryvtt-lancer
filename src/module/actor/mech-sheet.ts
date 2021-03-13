@@ -4,6 +4,7 @@ import { EntryType, funcs, MountType, OpCtx, RegRef, SystemMount, WeaponMount, W
 import { MMEntityContext, mm_wrap_item } from "../mm-util/helpers";
 import { ResolvedNativeDrop } from "../helpers/dragdrop";
 import { gentle_merge, resolve_dotpath } from "../helpers/commons";
+import { OVERCHARGE_SEQUENCE } from "../helpers/actor";
 
 /**
  * Extend the basic ActorSheet
@@ -99,10 +100,7 @@ export class LancerMechSheet extends LancerActorSheet<EntryType.MECH> {
   _activateOverchargeControls(html: any) {
     let button = html.find(".overcharge-button");
 
-    // Increment on click
-    button.on("click", async (evt: JQuery.ClickEvent) => {
-      this._event_handler("overcharge", evt);
-    });
+    // Left click behavior handled by macro functionality
 
     // Decrement on right click
     button.on("contextmenu", async (evt: JQuery.ClickEvent) => {
@@ -183,11 +181,8 @@ export class LancerMechSheet extends LancerActorSheet<EntryType.MECH> {
         let wep_mount = resolve_dotpath(data, path) as WeaponMount;
         wep_mount?.reset();
         break;
-      case "overcharge":
-        ent.CurrentOvercharge++;
-        break;
       case "overcharge-rollback":
-        ent.CurrentOvercharge--;
+        ent.CurrentOvercharge = funcs.bound_int(ent.CurrentOvercharge - 1, 0, OVERCHARGE_SEQUENCE.length - 1);
         break;
       default:
         return; // no-op

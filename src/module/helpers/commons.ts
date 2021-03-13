@@ -204,7 +204,7 @@ export function ext_helper_hash<T extends HelperData>(orig_helper: T, overrides:
   }
 }
 
-/** Enables controls that can:
+/** Enables controls that can perform any of the following `action`s:
  * - "delete": delete() the item located at data-path
  * - "null": set as null the value at the specified path
  * - "splice": remove the array item at the specified path
@@ -216,9 +216,11 @@ export function ext_helper_hash<T extends HelperData>(orig_helper: T, overrides:
  *    - if prefixed with (struct), will refer to the LANCER.control_structs above, generating whatever value matches the key
  * - "append": append the item to array at the specified path, using same semantics as data-action-value
  * - "insert": insert the item to array at the specified path, using same semantics as data-action-value. Resolves path in same way as "splice". Inserts before.
- * all using a similar api: a `path` to the item, and an `action` to perform on that item. In some cases, a `val` will be used
+ * all using a similar api: a `data-path` to the item, and an `data-action` to perform on that item. In some cases, a `data-action-value` will be used
  * 
- * The data getter and commit func are used to retrieve the target data, and to save it back (respectively)
+ * The data getter and commit func are used to retrieve the target data, and to save it back (respectively).
+ * 
+ * If "data-commit-item" is set, then we will attempt to call the "writeback()" function of the object specified by that path, instead of (or should it be as well as?) our commit func
  */
 export function HANDLER_activate_general_controls<T extends LancerActorSheetData<any> | LancerItemSheetData<any>>(
     html: JQuery, 
@@ -234,6 +236,7 @@ export function HANDLER_activate_general_controls<T extends LancerActorSheetData
       const action = elt.dataset.action;
       const data = await data_getter();
       const raw_val: string = elt.dataset.actionValue ?? "";
+      const item_override: string = elt.dataset.commitItem ?? "";
 
       if(!path || !data) {
           console.error("Gen control failed: missing path");
@@ -277,7 +280,17 @@ export function HANDLER_activate_general_controls<T extends LancerActorSheetData
       }
 
       // Handle writing back our changes
-      await commit_func(data);
+      if(item_override) {
+        let item = resolve_dotpath(data, item_override);
+        try {
+          await item.writeback();
+        } catch (e) {
+          console.error(`Failed to writeback item at path "${item_override}"`);
+          return;
+        }
+      } else {
+        await commit_func(data);
+      }
     });
 }
 

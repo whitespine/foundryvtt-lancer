@@ -273,7 +273,15 @@ Hooks.once("init", async function () {
     return str.toUpperCase();
   });
 
+  // Does some minimal sanitization on html
   Handlebars.registerHelper("safe-html", safe_html_helper);
+
+  // For loops in Handlebars
+  Handlebars.registerHelper("for", function (n, block) {
+    var accum = "";
+    for (var i = 0; i < n; ++i) accum += block.fn(i);
+    return accum;
+  });
 
 
   // ------------------------------------------------------------------------
@@ -306,6 +314,17 @@ Hooks.once("init", async function () {
   Handlebars.registerHelper("std-string-input", std_string_input);
   Handlebars.registerHelper("std-num-input", std_num_input);
   Handlebars.registerHelper("std-checkbox", std_checkbox);
+  Handlebars.registerHelper("crit-class", (roll_base: number, roll_total: number) => {
+    if(roll_total >= 20) {
+      if(roll_base == 20) {
+        return " crit nat-20 ";
+      } else {
+        return " crit ";
+      }
+    } else {
+      return " debug-remove-this ";
+    }
+  });
   
 
   // ------------------------------------------------------------------------

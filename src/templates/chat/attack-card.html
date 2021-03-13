@@ -1,7 +1,7 @@
 <div class="card clipped-bot" style="margin: 0px;">
   <div class="lancer-header submajor">
     <i class="cci cci-weapon i--m"></i>
-    <span>WEAPON :: {{ title }}</span>
+    <span>{{ title }}</span>
   </div>
   <div class="card clipped">
     <div class="lancer-header clipped-top">// ATTACK //</div>
@@ -9,7 +9,7 @@
       <div class="dice-result">
         <div class="dice-formula lancer-dice-formula flexrow">
           <span style="text-align: left; margin-left: 5px;">{{ attack.formula }}</span>
-          <span class="dice-total lancer-dice-total major">{{ attack.total }}</span>
+          <span class="dice-total lancer-dice-total major {{crit-class d20_roll roll.total}}">{{ attack.total }}</span>
           <i class="cci cci-reticule i--m i--dark"> </i>
         </div>
         <div style="text-align: left;">

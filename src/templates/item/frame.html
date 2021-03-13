@@ -59,14 +59,14 @@
 
   {{!-- Traits --}}
   <div class="card">
-    <div class="lancer-header">
-      <span class="major left">TRAITS</span>
+    <div class="lancer-header major">
+      <span>TRAITS</span>
       <a class="gen-control" data-action="append" data-path="mm.ent.Traits" data-action-value="(struct)frame_trait" style="float: right">+</a>
     </div>
     {{#each mm.ent.Traits as |trait trait_index|}}
       <div class="card clipped frame_trait">
         <div class="lancer-header major">
-          <i class="cci cci-trait i--m i--light header-icon"> </i>
+          <i class="cci cci-trait i--m i--light"> </i>
           <input class="lancer-invisible-input i--light" name="mm.ent.Traits.{{trait_index}}.Name" value="{{trait.Name}}" data-dtype="String" />
           {{{popout-editor-button (concat "mm.ent.Traits." trait_index ".Description") }}}
           <a class="gen-control" data-action="splice" data-path="mm.ent.Traits.{{trait_index}}">
