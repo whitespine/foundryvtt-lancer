@@ -6,10 +6,10 @@ import { effect_box, ext_helper_hash, HelperData, inc_if, resolve_helper_dotpath
  * - bonus_path=<string path to the individual bonus item>,  ex: ="ent.mm.Bonuses.3"
  * - bonus=<bonus object to pre-populate with>
  */
-export function single_bonus_editor(bonus_path: string, options: HelperData) {
+export function single_bonus_editor(bonus_path: string, helper: HelperData) {
   // Our main two inputs
-  let id_input = std_string_input(`${bonus_path}.ID`, ext_helper_hash(options, {label: "ID"}));
-  let val_input = std_string_input(`${bonus_path}.Value`, ext_helper_hash(options, {label: "Value"}));
+  let id_input = std_string_input(`${bonus_path}.ID`, ext_helper_hash(helper, {label: "ID"}));
+  let val_input = std_string_input(`${bonus_path}.Value`, ext_helper_hash(helper, {label: "Value"}));
 
   // Icon factories
   const damage_icon = (d: DamageType) => `<i class="i--m ${Damage.icon_for(d)}"> </i>`;
@@ -18,22 +18,22 @@ export function single_bonus_editor(bonus_path: string, options: HelperData) {
   // Our type options
   let damage_checkboxes: string[] = [];
   for (let dt of Object.values(DamageType)) {
-    damage_checkboxes.push(std_checkbox(`${bonus_path}.DamageTypes.${dt}`, ext_helper_hash(options, {label: damage_icon(dt)})));
+    damage_checkboxes.push(std_checkbox(`${bonus_path}.DamageTypes.${dt}`, ext_helper_hash(helper, {label: damage_icon(dt)})));
   }
 
   let range_checkboxes: string[] = [];
   for (let rt of Object.values(RangeType)) {
-    range_checkboxes.push(std_checkbox(`${bonus_path}.RangeTypes.${rt}`, ext_helper_hash(options, {label: range_icon(rt)})));
+    range_checkboxes.push(std_checkbox(`${bonus_path}.RangeTypes.${rt}`, ext_helper_hash(helper, {label: range_icon(rt)})));
   }
 
   let type_checkboxes: string[] = [];
   for (let wt of Object.values(WeaponType)) {
-    type_checkboxes.push(std_checkbox(`${bonus_path}.WeaponTypes.${wt}`, ext_helper_hash(options, {label: wt})));
+    type_checkboxes.push(std_checkbox(`${bonus_path}.WeaponTypes.${wt}`, ext_helper_hash(helper, {label: wt})));
   }
 
   let size_checkboxes: string[] = [];
   for (let st of Object.values(WeaponSize)) {
-    size_checkboxes.push(std_checkbox(`${bonus_path}.WeaponSizes.${st}`, ext_helper_hash(options, {label: st})));
+    size_checkboxes.push(std_checkbox(`${bonus_path}.WeaponSizes.${st}`, ext_helper_hash(helper, {label: st})));
   }
 
   // Consolidate them into rows
