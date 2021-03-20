@@ -99,7 +99,7 @@
       <div class="card clipped">
         <div class="flexrow">
           {{{clicker-stat-card "LEVEL"    "mm.ent.Level" }}}
-          {{{stat-view-card    "GRIT"     "mm.ent.Grit" macro-actor=mm }}}
+          {{{stat-view-card    "GRIT"     "mm.ent.Grit" macro-actor=mm.ent }}}
         </div>
       </div>
 
@@ -117,7 +117,7 @@
         <div class="card clipped">
           <h2 class="lancer-header major ">WEAPONS</h2>
           {{#each mm.ent.Loadout.Weapons as |weapon key|}}
-            {{{ pilot-weapon-slot (concat "mm.ent.Loadout.Weapons." key) macro-actor=../mm }}}
+            {{{ pilot-weapon-slot (concat "mm.ent.Loadout.Weapons." key) macro-actor=../mm.ent }}}
           {{/each}}
         </div>
       </div>
@@ -151,13 +151,13 @@
       <div class="card clipped">
         <div class="flexrow">
           {{{stat-view-card    "LEVEL"    "mm.ent.Level" }}}
-          {{{stat-view-card    "GRIT"     "mm.ent.Grit" macro-actor=mm }}}
+          {{{stat-view-card    "GRIT"     "mm.ent.Grit" macro-actor=mm.ent }}}
         </div>
         <div class="flexrow">
-          {{{clicker-stat-card    "HULL"   "mm.ent.MechSkills.Hull" macro-actor=mm }}}
-          {{{clicker-stat-card    "AGI"    "mm.ent.MechSkills.Agi"  macro-actor=mm}}} 
-          {{{clicker-stat-card    "SYS"    "mm.ent.MechSkills.Sys"  macro-actor=mm}}} 
-          {{{clicker-stat-card    "ENG"    "mm.ent.MechSkills.Eng"  macro-actor=mm}}}
+          {{{clicker-stat-card    "HULL"   "mm.ent.MechSkills.Hull" macro-actor=mm.ent }}}
+          {{{clicker-stat-card    "AGI"    "mm.ent.MechSkills.Agi"  macro-actor=mm.ent}}} 
+          {{{clicker-stat-card    "SYS"    "mm.ent.MechSkills.Sys"  macro-actor=mm.ent}}} 
+          {{{clicker-stat-card    "ENG"    "mm.ent.MechSkills.Eng"  macro-actor=mm.ent}}}
         </div>
       </div>
 

@@ -8,11 +8,11 @@
   </header>
 
   <div class="wraprow quintuple">
-    {{{stat-view-card      "HULL"         "mm.ent.Pilot.MechSkills.Hull"         macro-actor=mm}}}
-    {{{stat-view-card      "AGILITY"      "mm.ent.Pilot.MechSkills.Agi"      macro-actor=mm}}}
-    {{{stat-view-card      "SYSTEMS"      "mm.ent.Pilot.MechSkills.Sys"      macro-actor=mm}}}
-    {{{stat-view-card      "ENGINEERING"  "mm.ent.Pilot.MechSkills.Eng"  macro-actor=mm}}}
-    {{{stat-view-card      "GRIT"         "mm.ent.Pilot.Grit"  macro-actor=mm}}}
+    {{{stat-view-card      "HULL"         "mm.ent.Pilot.MechSkills.Hull"         macro-actor=mm.ent}}}
+    {{{stat-view-card      "AGILITY"      "mm.ent.Pilot.MechSkills.Agi"      macro-actor=mm.ent}}}
+    {{{stat-view-card      "SYSTEMS"      "mm.ent.Pilot.MechSkills.Sys"      macro-actor=mm.ent}}}
+    {{{stat-view-card      "ENGINEERING"  "mm.ent.Pilot.MechSkills.Eng"  macro-actor=mm.ent}}}
+    {{{stat-view-card      "GRIT"         "mm.ent.Pilot.Grit"  macro-actor=mm.ent}}}
 
     {{{stat-edit-max-card  "HP"          "mm.ent.CurrentHP"         "mm.ent.MaxHP"              icon="mdi mdi-heart-outline" }}}
     {{{stat-edit-max-card  "HEAT"        "mm.ent.CurrentHeat"       "mm.ent.HeatCapacity"       icon="cci cci-heat" }}}
@@ -26,13 +26,13 @@
     {{{stat-view-card      "E-DEF"       "mm.ent.EDefense"          icon="cci cci-edef" }}}
     {{{stat-view-card      "SPEED"       "mm.ent.Speed"             icon="mdi mdi-arrow-right-bold-hexagon-outline" }}}
 
-    {{{stat-view-card      "TECH ATK"    "mm.ent.TechAttack"        icon="cci cci-tech-full" macro-actor=mm }}}
+    {{{stat-view-card      "TECH ATK"    "mm.ent.TechAttack"        icon="cci cci-tech-full" macro-actor=mm.ent }}}
     {{{stat-view-card      "SENSORS"     "mm.ent.SensorRange"       icon="cci cci-sensor" }}}
     {{{stat-view-card      "SAVE"        "mm.ent.SaveTarget"        icon="cci cci-save" }}}
     {{{stat-view-card      "SYSPOINTS"  "mm.ent.MaxSP"             icon="cci cci-system" }}}
-    {{{stat-view-card      "ATTACK"      "mm.ent.AttackBonus"       icon="cci cci-heart" macro-actor=mm }}}
+    {{{stat-view-card      "ATTACK"      "mm.ent.AttackBonus"       icon="cci cci-heart" macro-actor=mm.ent }}}
 
-    {{{overcharge-button   "mm.ent.CurrentOvercharge" macro-actor=mm }}}
+    {{{overcharge-button   "mm.ent.CurrentOvercharge" macro-actor=mm.ent }}}
 
     <div class="card clipped quadruple">
       <div class="lancer-header major">
@@ -45,7 +45,7 @@
 
   <div class="mech-loadout card">
     <span class="lancer-header major ">LOADOUT [SP: {{mm.ent.Loadout.TotalSP}} / {{mm.ent.MaxSP}}]</span>
-    {{{mech-loadout "mm.ent" macro-actor=mm}}}
+    {{{mech-loadout "mm.ent" macro-actor=mm.ent}}}
   </div>
 
   <div class="card clipped">

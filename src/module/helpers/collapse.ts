@@ -47,11 +47,10 @@ export function HANDLER_activate_collapsibles(html: JQuery, handler: CollapseHan
         // Set appropriate class on all items
         let selector = `.collapse-item[collapse-id="${id}"]`;
         if(state) {
-            // If already expanded, make collapsed. 
-            html.find(selector).removeClass("expanded").addClass("collapsed");
-        } else {
-            // Vice versa
+            // Remove collapsed, add expanded.
             html.find(selector).removeClass("collapsed").addClass("expanded");
+        } else {
+            html.find(selector).removeClass("expanded").addClass("collapsed");
         }
     });
 }

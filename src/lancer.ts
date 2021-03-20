@@ -201,13 +201,13 @@ Hooks.once("init", async function () {
 
   // rp, to resolve path values strs. Helps use effectively half as many arguments for many helpers/partials
   // Using this, {{{rp path}}} {{path}} would show the value at path, and path, respectively. No need to pass both!
-  Handlebars.registerHelper("rp", function(path: string, options: HelperData) {
-    return resolve_helper_dotpath(options, path);
+  Handlebars.registerHelper("rp", function(path: string, helper: HelperData) {
+    return resolve_helper_dotpath(helper, path);
   });
 
   // get-set, to resolve situations wherein we read and write to the same path via "value" and "name" element properties
-  Handlebars.registerHelper("getset", function(path: string, options: HelperData) {
-    let value = resolve_helper_dotpath(options, path);
+  Handlebars.registerHelper("getset", function(path: string, helper: HelperData) {
+    let value = resolve_helper_dotpath(helper, path);
     return ` name="${path}" value="${value}" `;
   });
 
@@ -344,6 +344,16 @@ Hooks.once("init", async function () {
   Handlebars.registerHelper("pilot-gear-slot", pilot_gear_refview);
 
   // ------------------------------------------------------------------------
+  // Mech stuff
+  Handlebars.registerHelper("overcharge-button", overcharge_button);
+  Handlebars.registerHelper("mech-loadout", mech_loadout);
+
+  // ------------------------------------------------------------------------
+  // NPC stuff
+  Handlebars.registerHelper("tier-selector", npc_tier_selector);
+  Handlebars.registerHelper("npc-feat-preview", npc_feature_preview);
+
+  // ------------------------------------------------------------------------
   // Tags
   Handlebars.registerHelper("mm-tag-list", compact_tag_list);
   Handlebars.registerHelper("tags-view", tag_list_display);
@@ -379,51 +389,6 @@ Hooks.once("init", async function () {
   Handlebars.registerHelper("uses-ctrl", uses_control);
   Handlebars.registerHelper("act-icon", action_type_icon);
   Handlebars.registerHelper("act-type-sel", action_type_selector);
-
-  // ------------------------------------------------------------------------
-  // Effects
-  /*
-  Handlebars.registerHelper("eff-preview", effect_preview);
-  Handlebars.registerPartial("generic-eff-preview", generic_effect_preview);
-  Handlebars.registerHelper("basic-eff-preview", basic_effect_preview);
-  Handlebars.registerHelper("ai-eff-preview", ai_effect_preview);
-  Handlebars.registerHelper("bonus-eff-preview", bonus_effect_preview);
-  Handlebars.registerHelper("chg-eff-preview", charge_effect_preview);
-  Handlebars.registerHelper("dep-eff-preview", deployable_effect_preview);
-  Handlebars.registerHelper("drn-eff-preview", drone_effect_preview);
-  Handlebars.registerHelper("off-eff-preview", offensive_effect_preview);
-  Handlebars.registerHelper("prf-eff-preview", profile_effect_preview);
-  Handlebars.registerHelper("prot-eff-preview", protocol_effect_preview);
-  Handlebars.registerHelper("rct-eff-preview", reaction_effect_preview);
-  Handlebars.registerHelper("inv-eff-preview", invade_option_preview);
-  Handlebars.registerHelper("tech-eff-preview", tech_effect_preview);
-
-  // ------------------------------------------------------------------------
-  // NPC Effects
-  Handlebars.registerHelper("npc-feat-preview", npc_feature_preview);
-  Handlebars.registerHelper("npc-rct-preview", npc_reaction_effect_preview);
-  Handlebars.registerHelper("npc-sys-preview", npc_system_effect_preview);
-  Handlebars.registerHelper("npc-trait-preview", npc_trait_effect_preview);
-  Handlebars.registerHelper("npc-tech-preview", npc_tech_effect_preview);
-  Handlebars.registerHelper("npc-wpn-preview", npc_weapon_effect_preview);
-  */
-
-  // ------------------------------------------------------------------------
-  // Frames
-  // Handlebars.registerPartial("core-system", core_system_preview);
-
-  // ------------------------------------------------------------------------
-  // Pilot components
-  Handlebars.registerHelper("overcharge-button", overcharge_button);
-
-  // ------------------------------------------------------------------------
-  // Mech components
-  Handlebars.registerHelper("mech-loadout", mech_loadout);
-
-  // ------------------------------------------------------------------------
-  // NPC components
-  Handlebars.registerHelper("tier-selector", npc_tier_selector);
-  Handlebars.registerHelper("npc-feat-preview", npc_feature_preview);
 });
 
 /* ------------------------------------ */

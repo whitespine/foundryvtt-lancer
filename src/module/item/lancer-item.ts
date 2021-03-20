@@ -1,5 +1,5 @@
 import { LANCER, TypeIcon } from "../config";
-import { EntryType, License, NpcFeatureType, OpCtx, RegRef } from "machine-mind";
+import { EntryType, License, LiveEntryTypes, NpcFeatureType, OpCtx, RegRef } from "machine-mind";
 import { FoundryRegActorData, FoundryRegItemData } from "../mm-util/foundry-reg";
 import { LancerActor, LancerActorType, LancerMech, LancerPilot } from "../actor/lancer-actor";
 import { system_ready } from "../../lancer";
@@ -114,6 +114,7 @@ export class LancerItem<T extends LancerItemType> extends Item {
             if(this.actor) {
               let actor_mmec: MMEntityContext<LancerActorType> = await this.actor.data.data.derived.mmec_promise;
               if(actor_mmec.ent.Type == EntryType.MECH || actor_mmec.ent.Type == EntryType.PILOT) {
+                console.log("Item fetched actor mmec. Actor mmec has lb" + actor_mmec.ent.LimitedBonus);
                 // Add pilot/mech lim bonus
                 dr.max_uses += actor_mmec.ent.LimitedBonus;
               }
@@ -337,6 +338,7 @@ export type LancerWeaponModData = FoundryRegItemData<EntryType.WEAPON_MOD>;
 export type LancerWeaponMod = LancerItem<EntryType.WEAPON_MOD>;
 
 export type AnyLancerItem = LancerItem<LancerItemType>;
+export type AnyMMItem = LiveEntryTypes<LancerItemType>;
 
 export type LancerItemType =  EntryType.CORE_BONUS
   | EntryType.FACTION

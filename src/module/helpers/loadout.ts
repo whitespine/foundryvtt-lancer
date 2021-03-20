@@ -107,9 +107,9 @@ export function mech_loadout(mech_path: string, helper: HelperData): string {
 }
 
 // Create a div with flags for dropping native pilots
-export function pilot_slot(data_path: string, options: HelperData): string {
+export function pilot_slot(data_path: string, helper: HelperData): string {
   // get the existing
-  let existing = resolve_helper_dotpath<Pilot | null>(options, data_path, null);
+  let existing = resolve_helper_dotpath<Pilot | null>(helper, data_path, null);
   return simple_mm_ref(EntryType.PILOT, existing, "No Pilot", data_path, true);
 }
 

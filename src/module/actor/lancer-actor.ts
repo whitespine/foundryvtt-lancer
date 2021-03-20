@@ -9,6 +9,7 @@ import {
   RegRef,
   RegDeployableData,
   OpCtx,
+  LiveEntryTypes,
 } from "machine-mind";
 import { FoundryRegActorData, FoundryRegItemData } from "../mm-util/foundry-reg";
 import { LancerHooks, LancerSubscription } from "../helpers/hooks";
@@ -340,6 +341,7 @@ export type LancerDeployable = LancerActor<EntryType.DEPLOYABLE>;
 export type LancerDeployableData = FoundryRegActorData<EntryType.DEPLOYABLE>;
 
 export type AnyLancerActor = LancerActor<LancerActorType>;
+export type AnyMMActor = LiveEntryTypes<LancerActorType>;
 export type LancerActorType =
   | EntryType.MECH
   | EntryType.DEPLOYABLE

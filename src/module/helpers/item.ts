@@ -33,7 +33,7 @@ import { effect_box, ext_helper_hash, HelperData, inc_if, resolve_dotpath, resol
 import { ref_commons, ref_params  } from "./refs";
 import { macro_elt_params, WeaponMacroCtx } from "../macros";
 import { MMEntityContext } from "../mm-util/helpers";
-import { LancerActorType } from "../actor/lancer-actor";
+import { AnyMMActor, LancerActorType } from "../actor/lancer-actor";
 
 /**
  * Handlebars helper for weapon size selector
@@ -59,9 +59,9 @@ export function weapon_type_selector(path: string, helper: HelperData) {
  * Handlebars helper for range type/value editing
  * Supply with path to Range, and any args that you'd like passed down to the standard input editors, as well as
  */
-export function range_editor(path: string, options: HelperData) {
+export function range_editor(path: string, helper: HelperData) {
   // Lookup the range so we can draw icon. 
-  let range: Range = resolve_helper_dotpath(options, path);
+  let range: Range = resolve_helper_dotpath(helper, path);
 
   let icon_html = `<i class="cci ${range.Icon} i--m i--dark"></i>`;
   /* TODO: For a next iteration--would be really nifty to set it up to select images rather than text. 
@@ -72,10 +72,10 @@ export function range_editor(path: string, options: HelperData) {
   */
 
   // Extend the options to not have to repeat lookup
-  let type_options = ext_helper_hash(options, {"value": range.RangeType}, {"default": RangeType.Range});
+  let type_options = ext_helper_hash(helper, {"value": range.RangeType}, {"default": RangeType.Range});
   let range_type_selector = std_enum_select(path + ".RangeType", RangeType, type_options);
 
-  let value_options = ext_helper_hash(options, {"value": range.Value});
+  let value_options = ext_helper_hash(helper, {"value": range.Value});
   let value_input = std_string_input(path + ".Value", value_options);
 
   return `<div class="flexrow flex-center" style="padding: 5px;">
@@ -90,16 +90,16 @@ export function range_editor(path: string, options: HelperData) {
  * Handlebars helper for weapon damage type/value editing.
  * Supply with path to Damage, and any args that you'd like passed down to the standard input editors
  */
-export function damage_editor(path: string, options: HelperData) {
+export function damage_editor(path: string, helper: HelperData) {
   // Lookup the damage so we can draw icon. 
-  let damage: Damage = resolve_helper_dotpath(options, path);
+  let damage: Damage = resolve_helper_dotpath(helper, path);
 
   let icon_html = `<i class="cci ${damage.Icon} i--m"></i>`;
 
-  let type_options = ext_helper_hash(options, {"value": damage.DamageType}, {"default": DamageType.Kinetic});
+  let type_options = ext_helper_hash(helper, {"value": damage.DamageType}, {"default": DamageType.Kinetic});
   let damage_type_selector = std_enum_select(path + ".DamageType", DamageType, type_options);
 
-  let value_options = ext_helper_hash(options, {"value": damage.Value});
+  let value_options = ext_helper_hash(helper, {"value": damage.Value});
   let value_input = std_string_input(path + ".Value", value_options);
 
   return `<div class="flexrow flex-center" style="padding: 5px;">
@@ -115,9 +115,9 @@ export function damage_editor(path: string, options: HelperData) {
  * Supply with the array of Damage[], as well as:
  * - classes: Any additional classes to put on the div holding them
  */
-export function show_damage_array(damages: Damage[], options: HelperData): string {
+export function show_damage_array(damages: Damage[], helper: HelperData): string {
   // Get the classes
-  let classes = options.hash["classes"] || "";
+  let classes = helper.hash["classes"] || "";
   let results: string[] = [];
   for(let damage of damages) {
     let damage_item = `<span class="compact-damage"><i class="cci ${damage.Icon} i--m i--dark"></i>${damage.Value}</span>`;
@@ -129,9 +129,9 @@ export function show_damage_array(damages: Damage[], options: HelperData): strin
 /**
  * Handlebars helper for showing range values
  */
-export function show_range_array(ranges: Range[], options: HelperData): string {
+export function show_range_array(ranges: Range[], helper: HelperData): string {
   // Get the classes
-  let classes = options.hash["classes"] || "";
+  let classes = helper.hash["classes"] || "";
 
   // Build out results
   let results: string[] = [];
@@ -145,8 +145,8 @@ export function show_range_array(ranges: Range[], options: HelperData): string {
 /**
  * Handlebars partial for weapon type selector
  */
-export function system_type_selector(path: string, options: HelperData) {
-  return std_enum_select(path, SystemType, ext_helper_hash(options, {}, {default: SystemType.System}));
+export function system_type_selector(path: string, helper: HelperData) {
+  return std_enum_select(path, SystemType, ext_helper_hash(helper, {}, {default: SystemType.System}));
 }
 
 /**
@@ -252,7 +252,7 @@ export function pilot_armor_slot(armor_path: string, helper: HelperData): string
   let eva_val = armor.Bonuses.find(b => b.ID == "pilot_evasion")?.Value ?? "0";
   let hp_val = armor.Bonuses.find(b => b.ID == "pilot_hp")?.Value ?? "0";
 
-  return `<div class="valid ${cd.ref.type} ref drop-settable card clipped pilot-armor-compact item" 
+  return `<div class="valid ${cd.ref.type} ref drop-settable card clipped" 
                 ${ref_params(cd.ref, armor_path)} >
             <div class="lancer-header">
               <i class="mdi mdi-shield-outline i--m i--light"> </i>
@@ -315,19 +315,18 @@ export function pilot_weapon_refview(weapon_path: string, helper: HelperData): s
   // Make a macro, maybe
   let macro = "";
   if(helper.hash["macro-actor"]) {
-    let macro_actor: MMEntityContext<LancerActorType> = helper.hash["macro-actor"];
     let macro_ctx: WeaponMacroCtx = {
       name: weapon.Name,
       type: "weapon",
       item: weapon.as_ref(),
-      actor: macro_actor.ent.as_ref()
+      actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref()
     }
     macro = `<a class="lancer-macro" style="max-width: min-content;"  ${macro_elt_params(macro_ctx)}>
                 <i class="fas fa-dice-d20 i--sm i--dark"></i>
               </a>`;
   }
 
-  return `<div class="valid ${EntryType.PILOT_WEAPON} ref drop-settable card clipped pilot-weapon-compact item macroable"
+  return `<div class="valid ${EntryType.PILOT_WEAPON} ref drop-settable card clipped"
                 ${ref_params(cd.ref, weapon_path)} >
     <div class="lancer-header">
       <i class="cci cci-weapon i--m"> </i>
@@ -347,8 +346,9 @@ export function pilot_weapon_refview(weapon_path: string, helper: HelperData): s
   </div>`;
 }
 
-// Helper for showing a pilot gear, or a slot to hold it (if path is provided)
-// If "macro-actor" provided, that mmec will be used to create a macro on this item
+/** Helper for showing a pilot gear, or a slot to hold it (if path is provided)
+ * @argument "macro-actor" If supplied in hash, this MM actor entry will be used as the macro's actor (TODO)
+ */
 export function pilot_gear_refview(gear_path: string, helper: HelperData): string {
   // Fetch the item
   let gear_: PilotGear | null = resolve_dotpath(helper.data?.root, gear_path);
@@ -382,11 +382,11 @@ export function pilot_gear_refview(gear_path: string, helper: HelperData): strin
     `
   }
 
-  return `<div class="valid ${EntryType.PILOT_GEAR} ref drop-settable card clipped macroable"
+  return `<div class="valid ${EntryType.PILOT_GEAR} ref drop-settable card clipped"
                 ${ref_params(cd.ref, gear_path)} >
     <div class="lancer-header">
       <i class="cci cci-generic-item i--m"> </i>
-      <a class="gear-macro macroable"><i class="mdi mdi-message"></i></a>
+      <!--<a class="gear-macro"><i class="mdi mdi-message"></i></a>-->
       <span class="minor">${gear.Name}</span>
       <a class="gen-control i--light" data-action="null" data-path="${gear_path}"><i class="fas fa-trash"></i></a>
     </div>
@@ -404,7 +404,7 @@ export function pilot_gear_refview(gear_path: string, helper: HelperData): strin
 
 /**
  * Handlebars helper for a mech weapon preview card. Doubles as a slot. Mech path needed for bonuses
- * If "macro-actor" provided, add a macro
+ * @argument "macro-actor" If supplied in hash, this MM actor entry will be used as the macro's actor
  */
 export function mech_weapon_refview(weapon_path: string, mech_path: string | "", helper: HelperData): string { 
   // Fetch the item(s)
@@ -476,12 +476,11 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
   // Make a macro, maybe
   let macro = "";
   if(helper.hash["macro-actor"]) {
-    let macro_actor: MMEntityContext<LancerActorType> = helper.hash["macro-actor"];
     let macro_ctx: WeaponMacroCtx = {
       name: weapon.Name,
       type: "weapon",
       item: weapon.as_ref(),
-      actor: macro_actor.ent.as_ref(),
+      actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref()
       // Should we specify profile? Or just use selected? Opting with the latter for now
     }
     macro = `<a class="lancer-macro" style="max-width: min-content;"  ${macro_elt_params(macro_ctx)}>
@@ -497,7 +496,7 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
   let on_crit = profile.OnCrit ? effect_box("On Crit", profile.OnCrit, helper) : "";
 
   return `
-  <div class="valid ${EntryType.MECH_WEAPON} ref drop-settable flexcol clipped lancer-weapon-container"
+  <div class="valid ${EntryType.MECH_WEAPON} ref drop-settable flexcol clipped-top"
                 ${ref_params(cd.ref, weapon_path)}
                 style="max-height: fit-content;">
     <div class="lancer-header">

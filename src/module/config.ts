@@ -113,17 +113,17 @@ export const STATUSES = [
   {
     id: "npc_tier_1",
     label: "Tier 1",
-    icon: "systems/lancer/assets/icons/white/npc_tier_1.svg",
+    icon: "systems/lancer/assets/icons/npc_tier_1.svg",
   },
   {
     id: "npc_tier_2",
     label: "Tier 2",
-    icon: "systems/lancer/assets/icons/white/npc_tier_2.svg",
+    icon: "systems/lancer/assets/icons/npc_tier_2.svg",
   },
   {
     id: "npc_tier_3",
     label: "Tier 3",
-    icon: "systems/lancer/assets/icons/white/npc_tier_3.svg",
+    icon: "systems/lancer/assets/icons/npc_tier_3.svg",
   },
 ];
 

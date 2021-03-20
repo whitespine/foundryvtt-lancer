@@ -393,17 +393,17 @@ async function control_structs(key: string, ctx: MMEntityContext<any>): Promise<
  * - `label_classes`: Additional classes to put on the label, if one exists.
  * - `default`: If resolved value is undefined, use this
  */
-function std_input(path: string, type: string, options: HelperData) {
+function std_input(path: string, type: string, helper: HelperData) {
   // Get other info
-  let input_classes: string = options.hash["classes"] || "";
-  let label: string = options.hash["label"] || "";
-  let label_classes: string = options.hash["label_classes"] || "";
-  let default_val: string = "" + (options.hash["default"] ?? ""); // May sometimes get zero. Handle that
+  let input_classes: string = helper.hash["classes"] || "";
+  let label: string = helper.hash["label"] || "";
+  let label_classes: string = helper.hash["label_classes"] || "";
+  let default_val: string = "" + (helper.hash["default"] ?? ""); // May sometimes get zero. Handle that
 
-  let value: string | undefined = options.hash["value"];
+  let value: string | undefined = helper.hash["value"];
   if(value == undefined) {
     // Resolve
-    value = resolve_helper_dotpath(options, path) ?? default_val;
+    value = resolve_helper_dotpath(helper, path) ?? default_val;
   }
 
   let input = `<input class="grow ${input_classes}" name="${path}" value="${value}" type="${type.toLowerCase()}" data-dtype="${type}" />`;
@@ -419,12 +419,12 @@ function std_input(path: string, type: string, options: HelperData) {
   }
 }
 
-export function std_string_input(path: string, options: HelperData) {
-  return std_input(path, "String", options);
+export function std_string_input(path: string, helper: HelperData) {
+  return std_input(path, "String", helper);
 }
 
-export function std_num_input(path: string, options: HelperData) {
-  return std_input(path, "Number", options);
+export function std_num_input(path: string, helper: HelperData) {
+  return std_input(path, "Number", helper);
 }
 
 // Shows a [X] / Y display, where X is an editable value and Y is some total (e.x. max hp)
@@ -446,18 +446,18 @@ export function std_x_of_y(x_path: string, x: number, y: number, add_classes: st
  * - `label_classes`: Additional classes to put on the label, if it exists
  * - `default`: Change the default value if resolution fails. Otherwise, we just use the first one in the enum.
  */
-export function std_checkbox(path: string, options: HelperData) {
+export function std_checkbox(path: string, helper: HelperData) {
   // Get hash args
-  let input_classes: string = options.hash["classes"] || "";
-  let label: string = options.hash["label"] || "";
-  let label_classes: string = options.hash["label_classes"] || "";
-  let default_val: boolean = !!options.hash["default"]; 
+  let input_classes: string = helper.hash["classes"] || "";
+  let label: string = helper.hash["label"] || "";
+  let label_classes: string = helper.hash["label_classes"] || "";
+  let default_val: boolean = !!helper.hash["default"]; 
 
   // Get the value, either by supplied arg, path resolution, or default
-  let value: boolean | undefined = options.hash["value"];
+  let value: boolean | undefined = helper.hash["value"];
   if(value == undefined) {
     // Resolve
-    value = resolve_helper_dotpath(options, path) ?? default_val;
+    value = resolve_helper_dotpath(helper, path) ?? default_val;
   }
 
 
@@ -482,21 +482,21 @@ export function std_checkbox(path: string, options: HelperData) {
  * - `classes`: Additional classes to put on the select.
  * - `default`: Change the default value if resolution fails. Otherwise, we just use the first one in the enum.
  */
-export function std_enum_select<T extends string>(path: string, enum_: {[key: string]: T}, options: HelperData) {
+export function std_enum_select<T extends string>(path: string, enum_: {[key: string]: T}, helper: HelperData) {
   // Get the classes to add
-  let select_classes: string = options.hash["classes"] || "";
+  let select_classes: string = helper.hash["classes"] || "";
 
   // Get the default. If undefined, use first found.
-  let default_val: T | undefined = options.hash["default"];
+  let default_val: T | undefined = helper.hash["default"];
   if(default_val == undefined) {
     default_val = Object.values(enum_)[0];
   }
 
   // Get the value
-  let value: T | undefined = options.hash["value"];
+  let value: T | undefined = helper.hash["value"];
   if(value == undefined) {
     // Resolve
-    value = resolve_helper_dotpath(options, path, default_val);
+    value = resolve_helper_dotpath(helper, path, default_val);
   }
 
   // Restrict value to the enum

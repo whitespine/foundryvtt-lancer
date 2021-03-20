@@ -1,5 +1,5 @@
 import { EntryType,funcs, Mech, Npc, Pilot  } from "machine-mind";
-import { LancerActorType } from "../actor/lancer-actor";
+import { AnyMMActor, LancerActorType } from "../actor/lancer-actor";
 import { macro_elt_params, OverchargeMacroCtx, StatMacroCtx } from "../macros";
 import { MMEntityContext } from "../mm-util/helpers";
 import { ext_helper_hash, HelperData, inc_if, resolve_helper_dotpath, selected, std_num_input, std_x_of_y } from "./commons";
@@ -40,8 +40,8 @@ export function stat_edit_card(title: string, data_path: string, helper: HelperD
 // 
 /**
  * Shows a readonly value clipped card with a number inside
- * If "icon" is provided, that icon will be shown to the left of the title.
- * If "macro-actor" is provided (as an MMEntityContext for the actor), a die icon will function as a macro for this stat on that actor
+ * @argument "icon" if provided in hash, that icon will be shown to the left of the title.
+ * @argument "macro-actor" If supplied in hash, this MM actor entry will be used as the macro's actor
  */
 export function stat_view_card(title: string, data_path: string, helper: HelperData): string {
   // Get basic display info
@@ -51,9 +51,8 @@ export function stat_view_card(title: string, data_path: string, helper: HelperD
   // Inject a macro if need be
   let macro = "";
   if(helper.hash["macro-actor"]) {
-    let actor = helper.hash["macro-actor"] as MMEntityContext<LancerActorType>;
     let macro_ctx: StatMacroCtx = {
-      actor: actor.ent.as_ref(),
+      actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref(),
       stat_path: data_path,
       title,
       type: "stat",
@@ -78,8 +77,8 @@ export function stat_view_card(title: string, data_path: string, helper: HelperD
 }
 
 // Shows a compact readonly value
-export function compact_stat_view(icon: string, data_path: string, options: HelperData): string {
-  let data_val = resolve_helper_dotpath(options, data_path);
+export function compact_stat_view(icon: string, data_path: string, helper: HelperData): string {
+  let data_val = resolve_helper_dotpath(helper, data_path);
   return `        
     <div class="compact-stat">
         <i class="${icon} i--m i--dark"></i>
@@ -89,12 +88,12 @@ export function compact_stat_view(icon: string, data_path: string, options: Help
 }
 
 // Shows a compact editable value
-export function compact_stat_edit(icon: string, data_path: string, max_path: string, options: HelperData): string {
-  let max_val = resolve_helper_dotpath(options, max_path);
+export function compact_stat_edit(icon: string, data_path: string, max_path: string, helper: HelperData): string {
+  let max_val = resolve_helper_dotpath(helper, max_path);
   return `        
         <div class="compact-stat">
           <i class="${icon} i--m i--dark"></i>
-          ${std_num_input(data_path, ext_helper_hash(options, {classes: "lancer-stat minor"}))}
+          ${std_num_input(data_path, ext_helper_hash(helper, {classes: "lancer-stat minor"}))}
           <span class="minor" style="max-width: min-content;" > / </span>
           <span class="lancer-stat minor">${max_val}</span>
         </div>
@@ -102,10 +101,10 @@ export function compact_stat_edit(icon: string, data_path: string, max_path: str
 }
 
 // An editable field with +/- buttons
-export function clicker_num_input(data_path: string, options: HelperData) {
+export function clicker_num_input(data_path: string, helper: HelperData) {
     return `<div class="flexrow arrow-input-container">
       <button class="mod-minus-button" type="button">-</button>
-      ${std_num_input(data_path, ext_helper_hash(options, {classes: "lancer-stat minor", default: 0}))}
+      ${std_num_input(data_path, ext_helper_hash(helper, {classes: "lancer-stat minor", default: 0}))}
       <button class="mod-plus-button" type="button">+</button>
     </div>`;
 }
@@ -157,20 +156,19 @@ export function npc_clicker_stat_card(title: string, data_path: string, helper: 
  * Handlebars helper for an overcharge button
  * Currently this is overkill, but eventually we want to support custom overcharge values
  * @param overcharge_path Path to current overcharge level, from 0 to 3
- * If "macro-actor" provided, use that mmec for computing heat / optionally applying it
+ * @argument "macro-actor" If supplied in hash, this MM actor entry will be used as the macro's actor
  */
 export const OVERCHARGE_SEQUENCE = ["1", "1d3", "1d6", "1d6 + 4"];
-export function overcharge_button(overcharge_path: string, options: HelperData): string {
-  let index = resolve_helper_dotpath(options, overcharge_path) as number;
+export function overcharge_button(overcharge_path: string, helper: HelperData): string {
+  let index = resolve_helper_dotpath(helper, overcharge_path) as number;
   index = funcs.bound_int(index, 0, OVERCHARGE_SEQUENCE.length - 1)
   let over_val = OVERCHARGE_SEQUENCE[index];
   let macro = "";
-  if(options.hash["macro-actor"]) {
-    let mmec = options.hash["macro-actor"] as MMEntityContext<EntryType.MECH>;
+  if(helper.hash["macro-actor"]) {
     let macro_ctx: OverchargeMacroCtx = {
       name: "Overcharge",
       type: "overcharge",
-      actor: mmec.ent.as_ref(),
+      actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref(),
       icon: "systems/lancer/assets/icons/overcharge.svg"
     }
     macro = macro_elt_params(macro_ctx);
@@ -208,9 +206,9 @@ export function npc_tier_selector(tier_path: string, helper: HelperData) {
 }
 
 // Create a div with flags for dropping native pilots/mechs/npcs
-export function deployer_slot(data_path: string, options: HelperData): string {
+export function deployer_slot(data_path: string, helper: HelperData): string {
   // get the existing
-  let existing = resolve_helper_dotpath<Pilot | Mech | Npc | null>(options, data_path, null);
+  let existing = resolve_helper_dotpath<Pilot | Mech | Npc | null>(helper, data_path, null);
   return simple_mm_ref([EntryType.PILOT, EntryType.MECH, EntryType.NPC], existing, "No Deployer", data_path, true);
 }
 

@@ -22,7 +22,7 @@
 
   --reaction-clip-path: polygon( 0 0, 100% 0, 100% 1px, calc(100% - 9px) 1px, calc(100% - 8px) 2px, 100% 2px, 100% 3px, calc(100% - 7px) 3px, calc(100% - 6px) 4px, 100% 4px, 100% 5px, calc(100% - 5px) 5px, calc(100% - 4px) 6px, 100% 6px, 100% 7px, calc(100% - 3px) 7px, calc(100% - 2px) 8px, 100% 8px, 100% 100%, 0 100% );
   --trait-color: #0a7674;
-  --action-list-color: #8ab0c2;
+  --action-list-color: #305377;
   --bonus-color: #5d8673;
   --bonus-list-color: #71a373;
   --system-color: #6a9759;
@@ -352,12 +352,11 @@ ul.items-list {
 .collapse-item {
   &.collapsed {
     /* @include animation(0, 0.5s, animation-scale-out-down, ease); */
-    visibility: collapse;
+    display: none;
   }
 
   &.expanded {
-    visibility: visible;
-    /* @include animation(0, 0.5s, animation-scale-in-down, ease); */
+    @include animation(0, 0.5s, animation-scale-in-down, ease);
   }
 }
 
@@ -365,7 +364,6 @@ ul.items-list {
 @include keyframes('animation-scale-in-down') {
     0% {
       @include transform( scaleY(0) translateY(-50%) );
-      visibility: visible;
     }
  
     100% {

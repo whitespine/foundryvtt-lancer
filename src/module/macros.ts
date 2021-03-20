@@ -41,7 +41,7 @@ import {
   funcs,
 } from "machine-mind";
 import { FoundryReg, FoundryRegCat } from "./mm-util/foundry-reg";
-import { resolve_dotpath } from "./helpers/commons";
+import { resolve_dotpath, resolve_helper_dotpath } from "./helpers/commons";
 import { OVERCHARGE_SEQUENCE } from "./helpers/actor";
 import { enable_dragging } from "./helpers/dragdrop";
 
@@ -69,8 +69,8 @@ interface MacroRollMods {
 export interface ActionMacroCtx extends MacroCtx, MacroRollMods {
   type: "action";
   item: RegRef<LancerItemType> | null; // Some actions are item-based such as specific skirmishes etc
-  action_id: string | number; // The unique identifier of the action of the object. If numeric, use that index. If not matched, just use first found action. (TODO:) Also supports "boost", "ram", "bolster", "stabilize", "lock-on", "grapple"
-  // Also supports any action id's located here. Only check these if item action could not resolve by name/index. https://github.com/massif-press/lancer-data/blob/9117622a10cdf692f5aa0ad2c5a27d12cc7c0011/lib/actions.json
+  action_path: string; // Path to the action on the item. E.x: "Actions.2". 
+  // ^ Also supports any action id's located here. Only check these if no item. https://github.com/massif-press/lancer-data/blob/9117622a10cdf692f5aa0ad2c5a27d12cc7c0011/lib/actions.json
   profile?: number; // The profile index, if applicable
 }
 
@@ -242,7 +242,7 @@ export async function prepareMacro(any_macro: AnyMacroCtx) {
         // Do first action
         let action_data: ActionMacroCtx = {
           ...macro,
-          action_id: 0,
+          action_path: "Actions.0",
           type: "action",
         };
         await prepareActionMacro(action_data);
@@ -391,8 +391,8 @@ async function get_macro_item(
   macro: AnyMacroCtx,
   required: boolean
 ): Promise<AnyLancerItem | null> {
-  if (is_item(macro) || is_tech(macro) || is_weapon(macro)) {
-    let item = macro.item;
+  if ((macro as any).hasOwnProperty("item")) {
+    let item = (macro as any).item as RegRef<LancerItemType>;
     if (item) {
       return new FoundryReg().resolve_to_foundry_doc(item) as Promise<AnyLancerItem | null>;
     }
@@ -477,6 +477,39 @@ export async function prepareStatMacro(macro: StatMacroCtx) {
 }
 
 async function prepareActionMacro(macro: ActionMacroCtx) {
+  // Determine which Actor to speak as
+  let actor = await get_macro_speaker(macro.actor);
+  let ent = await actor.data.data.derived.mmec_promise;
+
+  // Get the item. Not always necessary
+  let raw_item = (await get_macro_item(macro, false)) as AnyLancerItem;
+  let action: Action;
+  if(raw_item) {
+    // Get as mm
+    let item = await raw_item.data.data.derived.mmec_promise;
+
+    // Attempt to resolve from item actions
+    let x: Action | null = resolve_dotpath(item.ent, macro.action_path);
+    if(!x) {
+      throw new Error(`Could not resolve action "${macro.action_path}"`);
+    }
+    action = x;
+  } else {
+    // Attempt to resolve from global actions
+    let x = BaseActionsMap.get(macro.action_path.toString());
+    if(!x) {
+      console.error("Unresolved reference: ", macro.item);
+      throw new Error("Macro item reference failed to resolve, and " + macro.action_path + " is not a valid global action id");
+    }
+    action = x;
+  }
+
+  // Now just need to construct the template
+  const template = `systems/lancer/templates/chat/action-card.html`;
+  return renderMacro(actor, template, {
+    action  
+  });
+
   // Construct the template
   // const templateData = {
   // title: data.title,

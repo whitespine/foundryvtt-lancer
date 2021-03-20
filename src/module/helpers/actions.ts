@@ -1,24 +1,24 @@
 import { Action, ActivationType, RegEntry, RegRef } from "machine-mind";
-import { LancerActorType } from "../actor/lancer-actor";
+import { AnyMMActor } from "../actor/lancer-actor";
 import { GenericEditDialogue } from "../apps/generic-editor";
-import { LancerItemType } from "../item/lancer-item";
+import { AnyMMItem, LancerItemType } from "../item/lancer-item";
 import { ActionMacroCtx, macro_elt_params } from "../macros";
-import { ext_helper_hash, HelperData, inc_if, resolve_helper_dotpath, std_checkbox, std_enum_select, std_num_input, std_string_input } from "./commons";
+import { ext_helper_hash, HelperData, inc_if, resolve_dotpath, resolve_helper_dotpath, std_checkbox, std_enum_select, std_num_input, std_string_input } from "./commons";
 
 /** Full on editor. Pretty ugly. 
  */
-export function single_action_editor(path: string, options: HelperData) {
+export function single_action_editor(path: string, helper: HelperData) {
     // Save ourselves from typing
-    const qs = (key: string) => std_string_input(`${path}.${key}`, ext_helper_hash(options, {label: key}));
-    const qn = (key: string) => std_num_input(`${path}.${key}`, ext_helper_hash(options, {label: key}));
-    const qc = (key: string) => std_checkbox(`${path}.${key}`, ext_helper_hash(options, {label: key}));
+    const qs = (key: string) => std_string_input(`${path}.${key}`, ext_helper_hash(helper, {label: key}));
+    const qn = (key: string) => std_num_input(`${path}.${key}`, ext_helper_hash(helper, {label: key}));
+    const qc = (key: string) => std_checkbox(`${path}.${key}`, ext_helper_hash(helper, {label: key}));
 
     let inputs: string[] = [
         qs("ID"),
         qs("Name"),
-        std_enum_select(`${path}.Activation`, ActivationType, ext_helper_hash(options, {default: ActivationType.None})),
+        std_enum_select(`${path}.Activation`, ActivationType, ext_helper_hash(helper, {default: ActivationType.None})),
         qn("Cost"),
-        std_string_input(`${path}.RawFrequency`, ext_helper_hash(options, {label: "Frequency"})),
+        std_string_input(`${path}.RawFrequency`, ext_helper_hash(helper, {label: "Frequency"})),
          // std_string_input(`${path}.Init`, ext_helper_hash(options, {label: "Init"})), // Doesn't seem to be implemented yet in CC data
         qs("Trigger"),
         qs("Terse"),
@@ -38,14 +38,6 @@ export function single_action_editor(path: string, options: HelperData) {
 }
 
 
-
-
-/** 
- * 
- * 
- * actor_path must always be provided. Item path may be "" if no item. Action path always provided
- * 
- */
 /** Displays a single action, in its full glory. Collapsible, rollable, draggable. 
  * If specified as editable, will have a trash can to delete, and edit icon can be clicked to modify
  * 
@@ -55,20 +47,20 @@ export function single_action_editor(path: string, options: HelperData) {
  * At least one of actor or item path should be probably be specified.
  * However, there are itemless actor actions, or un-owned item actions
  * 
- * @param actor_path The path to the MM-wrapped actor entity. Can be left as "" if not applicable
  * @param item_path The path to the MM-wrapped item entity. Can be left as "" if not applicable
- * @param action_path The path to the particular action on the item
+ * @param action_path The path to the particular action on the item, FROM THE ITEM. Ex: "Actions.2"
+ * 
+ * @argument "macro-actor" If supplied in hash, this MM actor entry will be used as the macro's actor
  * @argument "editable" If supplied in hash, this action will be editable
  */
-export function single_action_preview(actor_path: string, item_path: string, action_path: string, options: HelperData): string {
-    // Resolve the item/actor
-    let item = resolve_helper_dotpath<RegEntry<LancerItemType> | null>(options, item_path, null);
-    let actor = resolve_helper_dotpath<RegEntry<LancerActorType> | null>(options, actor_path, null);
-    let action = resolve_helper_dotpath<Action | null>(options, action_path, null);
-    let editable = options.hash.editable ?? false; // Decides if we should a delete button, and allow open edit dialogue
+export function single_action_preview(item_path: string, action_path: string, helper: HelperData): string {
+    // Resolve the item
+    let item = resolve_helper_dotpath<RegEntry<LancerItemType> | null>(helper, item_path, null);
+    let action = resolve_dotpath(item, action_path) as Action | null;
+    let editable = helper.hash.editable ?? false; // Decides if we should a delete button, and allow open edit dialogue
 
     // Override icon if needed
-    let icon = options.hash.icon ?? undefined;
+    let icon = helper.hash.icon ?? undefined;
 
     // Make sure we have all of our requirements
     if(!action) {
@@ -76,28 +68,27 @@ export function single_action_preview(actor_path: string, item_path: string, act
     }
 
     // Generate a collapsible id for this action, and a delete button
-    let collapsible_id = `${actor?.RegistryID || ""}-${item?.RegistryID || ""}-${action.ID || ""}`;
+    let collapsible_id = `${item?.RegistryID || ""}-${action_path}`;
     let delete_button = `<a class="gen-control" data-action="splice" data-path="${action_path}"><i class="fas fa-trash"></i></a>`; // Relies on this being in an array
     let edit_button =  `<a class="fas fa-edit action-edit-button" data-path="${action_path}"> </a>`;
 
     // Make context if we are able
-    let ctx: ActionMacroCtx | null = null;
-    if(actor) {
-        ctx = {
+    let macro = "";
+    if(helper.hash["macro-actor"]) {
+        let macro_ctx: ActionMacroCtx = {
             type: "action",
-            action_id: action.ID || MISSING_ACTION_ID,
-            actor: actor?.as_ref(),
+            action_path: action_path,
+            actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref(),
             item: item?.as_ref() ?? null,
             name: action.Name,
             icon
         }
+        macro = `<a class="i--m fas fa-dice-d20 roll-action" ${macro_elt_params(macro_ctx)}> </a>`;
     }
-    let macro_button = ctx ? `<a class="i--m fas fa-dice-d20 roll-action" ${macro_elt_params(ctx)}> </a>` : "";
 
     return `
         <div class="action card ${inc_if("editable", editable)}" data-path="${action_path}">
             <div class="lancer-header">
-                ${macro_button}
                 <span>
                     ${action.Name}
                 </span>
@@ -105,40 +96,41 @@ export function single_action_preview(actor_path: string, item_path: string, act
                 ${inc_if(delete_button, editable)}
                 <a class="i--m fas fa-caret-down collapse-ctrl" collapse-id="${collapsible_id}"> </a>
             </div>
-            <div class="collapse-item" collapse-id="${collapsible_id}">
-                ${action.Detail}
+            <div class="collapse-item flexrow flex-center" collapse-id="${collapsible_id}">
+                ${macro}
+                <span>${action.Detail}</span>
             </div>
         </div>`;
 }
 
-const MISSING_ACTION_ID = "Err: Missing ID";
-   
 /** Expected arguments:
- * - actions_path=<string path to the actions array>,  ex: ="ent.mm.Actiones"
+ * @param item_path String path to the item mm RegEntry object. "mm.ent"
+ * @param actions_path =<string path to the actions array, FROM THE ITEM>,  ex: ="Profiles.2.Actions". This differs from standard conventions, but is needed for macros
  * Displays a list of actions, with buttons to add/delete (if edit true).
  */
-export function action_list_display(actor_path: string, item_path: string, actions_path: string, options: HelperData): string {
+export function action_list_display(item_path: string, actions_path: string, helper: HelperData): string {
   let items: string[] = [];
-  let edit = options.hash.editable ?? false;
-  let actions_array = resolve_helper_dotpath<Action[]>(options, actions_path);
+  let edit = helper.hash.editable ?? false;
+  let item = resolve_helper_dotpath<AnyMMItem>(helper, item_path);
+
+  let actions_array = resolve_dotpath(item, actions_path) as Action[];
   if(!actions_path) return "err";
 
   // Render each action
   for(let i=0; i<actions_array.length; i++) {
-    items.push(single_action_preview(actor_path, item_path, `${actions_path}.${i}`, options)); 
+    items.push(single_action_preview(item_path, `${actions_path}.${i}`, helper)); 
   }
 
   return `
     <div class="card action-list">
       <div class="lancer-header">
         <span class="left">// Actions</span>
-        ${inc_if(`<a class="gen-control fas fa-plus" data-action="append" data-path="${actions_path}" data-action-value="(struct)action"></a>`, edit)}
+        ${inc_if(`<a class="gen-control fas fa-plus" data-action="append" data-path="${item_path}.${actions_path}" data-action-value="(struct)action"></a>`, edit)}
       </div>
       ${items.join("\n")}
     </div>
     `;
 }
-
 
 
 // Allows right clicking actions to edit them

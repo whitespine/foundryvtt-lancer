@@ -1,5 +1,5 @@
 import { NpcFeature, NpcFeatureType } from "machine-mind";
-import { LancerActorType } from "../actor/lancer-actor";
+import { AnyMMActor, LancerActorType } from "../actor/lancer-actor";
 import { ActivationType } from "../enums";
 import { ItemMacroCtx, macro_elt_params, TechMacroCtx, WeaponMacroCtx } from "../macros";
 import { MMEntityContext } from "../mm-util/helpers";
@@ -84,18 +84,20 @@ function del_button(path: string): string {
   return `<a class="gen-control" data-action="delete" data-path="${path}"><i class="fas fa-trash"></i></a>`
 }
 
+/** A generic format to render all npc features
+ * @argument "macro-actor" If supplied in hash, this MM actor entry will be used as the macro's actor
+ */
 function npc_feature_scaffold(path: string, npc_feature: NpcFeature, body: string, helper: HelperData) {
   let feature_class = `npc-${npc_feature.FeatureType.toLowerCase()}`
 
   // Macro if needed
   let macro = "";
   if(helper.hash["macro-actor"]) {
-    let actor_mmec = helper.hash["macro-actor"] as MMEntityContext<LancerActorType>;
     let macro_ctx: ItemMacroCtx = {
       item: npc_feature.as_ref(),
       name: npc_feature.Name,
       type: "generic_item",
-      actor: actor_mmec.ent.as_ref(),
+      actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref()
     }
     macro = macro_elt_params(macro_ctx);
   }
@@ -156,6 +158,9 @@ export function npc_trait_effect_preview(path: string, helper: HelperData) {
   return npc_system_trait_effect_preview(path, helper);
 }
 
+/** Creates a preview for a tech effect
+ * @argument "macro-actor" If supplied in hash, this MM actor entry will be used as the macro's actor
+ */
 export function npc_tech_effect_preview(
   path: string,
   helper: HelperData
@@ -166,7 +171,7 @@ export function npc_tech_effect_preview(
   // Get the tier (or default 1)
   let tier_index: number = (helper.hash["tier"] ?? 1) - 1;
 
-  let sep = `<hr class="vsep">`;
+  let sep = `<hr class="vsep--m">`;
   let subheader_items: string[] = [];
 
   // Make up a macro if necessary
@@ -175,7 +180,7 @@ export function npc_tech_effect_preview(
       item: npc_feature.as_ref(),
       name: npc_feature.Name,
       type: "tech",
-      actor: (helper.hash["macro-actor"] as MMEntityContext<LancerActorType>).ent.as_ref()
+      actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref()
     };
     subheader_items.push(`<a class="lancer-macro no-grow" ${macro_elt_params(macro)}><i class="fas fa-dice-d20 i--m i--dark"></i></a>`);
   }
@@ -215,6 +220,9 @@ export function npc_tech_effect_preview(
   );
 }
 
+/** Creates a preview for a weapon
+ * @argument "macro-actor" If supplied in hash, this MM actor entry will be used as the macro's actor
+ */
 export function npc_weapon_effect_preview(
   path: string,
   helper: HelperData
@@ -225,7 +233,7 @@ export function npc_weapon_effect_preview(
   // Get the tier (or default 1)
   let tier_index: number = (helper.hash["tier"] ?? 1) - 1;
 
-  let sep = `<hr class="vsep">`;
+  let sep = `<hr class="vsep--m">`;
   let subheader_items = [];
   
   // Make up a macro if necessary
@@ -234,7 +242,7 @@ export function npc_weapon_effect_preview(
       item: npc_feature.as_ref(),
       name: npc_feature.Name,
       type: "weapon",
-      actor: (helper.hash["macro-actor"] as MMEntityContext<LancerActorType>).ent.as_ref()
+      actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref()
     };
     subheader_items.push(`<a class="lancer-macro no-grow" ${macro_elt_params(macro)}><i class="fas fa-dice-d20 i--m i--dark"></i></a>`);
   }

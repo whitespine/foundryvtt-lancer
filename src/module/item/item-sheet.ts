@@ -9,6 +9,8 @@ import { HANDLER_activate_tag_context_menus, HANDLER_activate_tag_dropping } fro
 import { HANDLER_activate_edit_bonus } from "../helpers/bonuses";
 import { HANDLER_activate_edit_action } from "../helpers/actions";
 import { CollapseHandler, HANDLER_activate_collapsibles } from "../helpers/collapse";
+import { AnyLancerActor, AnyMMActor } from "../actor/lancer-actor";
+import { HANDLER_activate_macros } from "../macros";
 
 const lp = LANCER.log_prefix;
 
@@ -131,6 +133,9 @@ export class LancerItemSheet<T extends LancerItemType> extends ItemSheet {
 
     // Enable tag dropping
     HANDLER_activate_tag_dropping(html, getfunc, commitfunc);
+
+    // Enable macros
+    HANDLER_activate_macros(html);
   }
 
   /* -------------------------------------------- */
@@ -184,13 +189,23 @@ export class LancerItemSheet<T extends LancerItemType> extends ItemSheet {
       //@ts-ignore
       this.object = await new Promise((s) => setTimeout(s, 50)).then(() => get_pack(this.item.type)).then(p => p.getEntity(this.item.id));
     }
+    console.log("Item sheet getting data");
     const data = super.getData() as LancerItemSheetData<T>; // Not fully populated yet!
 
-    // Wait for preparations to complete
+    // Get the prepared MM item data asynchronously
     let tmp_dat = this.item.data as LancerItem<T>["data"]; // For typing convenience
     data.mm = await tmp_dat.data.derived.mmec_promise;
+
+    // Try to find the license
     let lic_ref = tmp_dat.data.derived.license;
     data.license = lic_ref ? (await data.mm.reg.resolve(data.mm.ctx, lic_ref)) : null;
+
+    // Get the owner's data as well
+    data.mm_owner = null;
+    if(this.item.isOwned) {
+      let owner = this.item.actor as AnyLancerActor;
+      data.mm_owner = (await owner.data.data.derived.mmec_promise).ent;
+    }
 
     console.log(`${lp} Rendering with following item ctx: `, data);
     this._currData = data;

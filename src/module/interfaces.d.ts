@@ -34,7 +34,7 @@ import {
 } from "machine-mind";
 import { FoundryRegActorData, FoundryRegItemData } from "./mm-util/foundry-reg";
 import { MMEntityContext, abracadabra } from "./mm-util/helpers";
-import { LancerActorType } from "./actor/lancer-actor";
+import { AnyMMActor, LancerActorType } from "./actor/lancer-actor";
 // ------------------------------------------------------
 // |       UTILITY
 // ------------------------------------------------------
@@ -60,6 +60,9 @@ export type LancerItemSheetData<T extends LancerItemType> = {
 
   // reg ctx
   mm: MMEntityContext<T>;
+
+  // Our owning actor, as an mm entity
+  mm_owner: AnyMMActor | null;
 
   // The license, if it could be recovered
   license: License | null;
