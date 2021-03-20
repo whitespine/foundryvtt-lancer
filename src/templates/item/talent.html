@@ -17,7 +17,7 @@
     {{{textarea-card "DESCRIPTION" "mm.ent.Description"}}}
 
     {{#each mm.ent.Ranks as |rank index|}}
-      <div class="talent-level card clipped-bot flexcol">
+      <div class="card clipped-bot">
         <div class="lancer-header" style="flex-basis: auto;">
           <i class="cci cci-rank-{{inc index}} i--xl i--dark"></i>
           <input class="lancer-invisible-input" name="mm.ent.Ranks.{{index}}.Name" value="{{rank.Name}}" data-dtype="String" style="color: white"/>

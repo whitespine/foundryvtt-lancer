@@ -319,3 +319,23 @@ export function npc_accuracy_preview(acc: number) {
     </div>`;
 }
 
+export function npc_feature_preview(npc_feature_path: string, helper: HelperData) {
+  let feature: NpcFeature = resolve_helper_dotpath(helper, npc_feature_path);
+
+  switch (feature.FeatureType) {
+    case "Reaction":
+      return npc_reaction_effect_preview(npc_feature_path, helper);
+    case "System":
+      return npc_system_effect_preview(npc_feature_path, helper);
+    case "Trait":
+      return npc_trait_effect_preview(npc_feature_path, helper);
+    case "Tech":
+      return npc_tech_effect_preview(npc_feature_path, helper);
+    case "Weapon":
+      return npc_weapon_effect_preview(npc_feature_path, helper);
+    default:
+      return "bad feature";
+  }
+}
+
+

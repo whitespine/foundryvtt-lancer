@@ -211,7 +211,7 @@ export function chunky_tag(tag_path: string, helper: HelperData): string {
     </div>
     <div class="flexcol">
       <span class="medium theme--main" style="grid-area: 1/2/2/3; text-align:left; padding-left: 0.5em; margin-top: 0.25em;"> ${tag_instance.Tag.Name} </span>
-      <span class="effect-text" style="grid-area: 2/2/3/3">${tag_instance.Tag.Description}</textarea>
+      <span class="desc-text" style="grid-area: 2/2/3/3">${tag_instance.Tag.Description}</textarea>
       <a class="fa fa-trash gen-control" data-action="splice" data-path="tag_path" style="grid-area: 2/3/3/4; margin-right: 11px; margin-top: -.8em; justify-self: right; align-self: self-start"></a>
     </div>
   </div>`;

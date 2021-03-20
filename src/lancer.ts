@@ -23,6 +23,7 @@ import {
   action_type_selector,
   npc_accuracy_preview,
   npc_attack_bonus_preview,
+  npc_feature_preview,
 } from "./module/helpers/npc";
 
 // Import applications
@@ -62,25 +63,21 @@ import {
   weapon_size_selector,
   weapon_type_selector,
   range_editor,
-  mech_weapon_refview,
   system_type_selector,
-  npc_feature_preview,
   damage_editor,
-  pilot_armor_slot,
-  pilot_weapon_refview,
-  pilot_gear_refview,
   license_ref,
   manufacturer_ref,
   uses_control,
 } from "./module/helpers/item";
 import { clicker_num_input, clicker_stat_card, compact_stat_edit, compact_stat_view, deployer_slot, npc_clicker_stat_card, npc_tier_selector, overcharge_button, stat_edit_card, stat_edit_card_max, stat_view_card, } from "./module/helpers/actor";
 import { editable_mm_ref_list_item, simple_mm_ref, mm_ref_portrait, mm_ref_list_append_slot, editable_mm_ref_list_item_native } from "./module/helpers/refs";
-import { mech_loadout, pilot_slot } from "./module/helpers/loadout";
+import { mech_loadout, mech_weapon_refview, pilot_slot } from "./module/helpers/mech_loadout";
 import { LancerNPCSheet } from "./module/actor/npc-sheet";
 import { bonus_list_display } from "./module/helpers/bonuses";
 import { action_list_display } from "./module/helpers/actions";
 import { NativeDrop, resolve_native_drop } from "./module/helpers/dragdrop";
 import { funcs } from "machine-mind";
+import { pilot_armor_slot, pilot_weapon_refview, pilot_gear_refview, pilot_talent_refview } from "./module/helpers/pilot_loadout";
 
 const lp = LANCER.log_prefix;
 
@@ -342,6 +339,7 @@ Hooks.once("init", async function () {
   Handlebars.registerHelper("pilot-armor-slot", pilot_armor_slot);
   Handlebars.registerHelper("pilot-weapon-slot", pilot_weapon_refview);
   Handlebars.registerHelper("pilot-gear-slot", pilot_gear_refview);
+  Handlebars.registerHelper("pilot-talent-refview", pilot_talent_refview);
 
   // ------------------------------------------------------------------------
   // Mech stuff

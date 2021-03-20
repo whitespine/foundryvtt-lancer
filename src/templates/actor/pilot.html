@@ -169,7 +169,7 @@
             <span>TALENTS</span>
           </div>
           {{#each mm.ent.Talents as |skill index|}}
-            {{{ref-mm-controllable-item (concat "mm.ent.Talents." index) "delete" }}}
+            {{{pilot-talent-refview (concat "mm.ent.Talents." index) }}}
           {{/each}}
         </div>
 
