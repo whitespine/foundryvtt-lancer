@@ -1132,7 +1132,7 @@ code.horus:hover {
 
 /* Flash glow on doubleclick success */
 .double-click-success {
-  animation: double_click_glow 1000ms ease-out none
+  animation: double_click_glow 800ms ease-in-out none
 }
 
 /* The entire mech loadout box */
@@ -1353,6 +1353,15 @@ input.core-power-toggle:not(:checked)::before
 @include define_glow_anim(crit_glow, #FA4, rgb(54, 43, 33), rgb(175, 95, 84), 20px);
 @include define_glow_anim(double_click_glow, rgb(0, 247, 255), rgb(37, 85, 117), rgb(87, 136, 158), 100px);
 
+@include keyframes(double_click_glow) {
+  0% {
+    filter: invert(1);
+  }
+
+  100% {
+    filter: invert(0);
+  }
+}
 
 /* Used for HORUS text */
 @include keyframes(distort) {
