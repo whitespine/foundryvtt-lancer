@@ -14,7 +14,7 @@ function system_mount(
   mount_path: string,
   helper: HelperData
 ): string {
-  let slot = mech_system_refview(`${mount_path}.System`, helper);
+  let slot = mech_system_refview(`${mount_path}.System`, mech_path, helper);
 
   return ` 
     <div class="mount card">
@@ -130,7 +130,7 @@ export function frame_refview(frame_path: string, helper: HelperData): string {
  * Handlebars helper for a mech weapon preview card. Doubles as a slot. Mech path needed for bonuses
  * @argument "macro-actor" If supplied in hash, this MM actor entry will be used as the macro's actor
  */
-export function mech_weapon_refview(weapon_path: string, mech_path: string | "", helper: HelperData): string { 
+export function mech_weapon_refview(weapon_path: string, mech_path: string, helper: HelperData): string { 
   // Fetch the item(s)
   let weapon_: MechWeapon | null = resolve_helper_dotpath(helper, weapon_path);
   let mech_: Mech | null = resolve_helper_dotpath(helper, mech_path);
@@ -154,6 +154,7 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
 
   // Assert not null
   let weapon = weapon_!;
+  helper = ext_helper_hash(helper, {"override": weapon_path});
 
   // What profile are we using?
   let profile = weapon.SelectedProfile;
@@ -190,7 +191,7 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
   // Generate loading segment as needed
   let loading = "";
   if(weapon.IsLoading) {
-    let loading_icon = `i--m mdi mdi-hexagon-slice-${weapon.Loaded ? 6 : 0}`;
+    let loading_icon = `i--m mdi mdi-hexagon-${weapon.Loaded ? 'slice-6' : 'outline'}`;
     loading = `<span> 
                 LOADED: 
                 <a class="gen-control ${loading_icon}" data-action="set" data-action-value="(bool)${!weapon.Loaded}" data-path="${weapon_path}.Loaded" data-commit-item="${weapon_path}"></a>
@@ -201,7 +202,8 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
   let uses = "";
   let max_uses = funcs.tag_util.limited_max(weapon);
   if(max_uses) {
-    uses = uses_control(`${weapon_path}`, max_uses, helper);
+    let lb = mech_?.LimitedBonus ?? 0;
+    uses = uses_control(`${weapon_path}.Uses`, max_uses + lb, helper);
   }
 
   // Make a macro, maybe
@@ -265,9 +267,10 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
  * 
  * NOTE: Trash can option is assuming this is in a weapon slot. 
  */
-export function mech_system_refview(system_path: string, helper: HelperData): string { 
+export function mech_system_refview(system_path: string, mech_path: string, helper: HelperData): string { 
   // Fetch the item(s)
   let system_: MechSystem | null = resolve_helper_dotpath(helper, system_path);
+  let mech_: Mech | null = resolve_helper_dotpath(helper, mech_path);
 
   // Generate commons
   let cd = ref_commons(system_);
@@ -285,6 +288,7 @@ export function mech_system_refview(system_path: string, helper: HelperData): st
 
   // Assert not null
   let system = system_!;
+  helper = ext_helper_hash(helper, {"override": system_path});
 
   // Make a macro, maybe
   let macro = "";
@@ -304,7 +308,8 @@ export function mech_system_refview(system_path: string, helper: HelperData): st
   let uses = "";
   let max_uses = funcs.tag_util.limited_max(system);
   if(max_uses) {
-    uses = uses_control(`${system_path}.Uses`, max_uses, helper);
+    let lb = mech_?.LimitedBonus ?? 0;
+    uses = uses_control(`${system_path}.Uses`, max_uses + lb, helper);
   }
 
 

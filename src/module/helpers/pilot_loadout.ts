@@ -3,7 +3,7 @@ import { limited_max } from "machine-mind/dist/classes/mech/EquipUtil";
 import { AnyMMActor } from "../actor/lancer-actor";
 import { TypeIcon } from "../config";
 import { WeaponMacroCtx, macro_elt_params, ItemMacroCtx, TalentMacroCtx } from "../macros";
-import { HelperData, resolve_helper_dotpath, resolve_dotpath, inc_if } from "./commons";
+import { HelperData, resolve_helper_dotpath, resolve_dotpath, inc_if, ext_helper_hash } from "./commons";
 import { show_range_array, show_damage_array, uses_control } from "./item";
 import { ref_commons, ref_params } from "./refs";
 import { compact_tag_list } from "./tags";
@@ -147,7 +147,9 @@ export function pilot_gear_refview(gear_path: string, helper: HelperData): strin
       </div>`;
   }
 
+  // Assert not null. Setup helper to intercept gen-controls
   let gear = gear_!;
+  helper = ext_helper_hash(helper, {"override": gear_path});
 
   // Conditionally show uses
   let uses = "";

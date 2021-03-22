@@ -143,16 +143,43 @@ export function system_type_selector(path: string, helper: HelperData) {
 /**
  * Handlebars partial for limited uses remaining
  * TODO: make look more like compcon
- * @argument `override` If provided, will be used as a data_path_override
+ * @argument `override` If provided, will be used as a data-commit-path
  */
 export function uses_control(uses_path: string, max_uses: number, helper: HelperData) {
   const curr_uses = resolve_helper_dotpath(helper, uses_path, 0);
+  /*
   return `
     <div class="card clipped">
       <span class="lancer-header"> USES </span>
       ${std_x_of_y(uses_path , curr_uses, max_uses)}
     </div>
     `;
+    */
+
+  // Display a series of hexes. Clicking on the one matching current value will set to one less than that
+  let empty = "i--m mdi mdi-hexagon-outline";
+  let full = "i--m mdi mdi-hexagon-slice-6";
+  let cells: string[] = [];
+  for(let use=1; use <= max_uses; use++) {
+    let icon: string;
+    let set_to: number;
+    if(use < curr_uses) {
+      // Clicked on non-rightmost one. Drop down to that specific cells uses remaining. Click again to clear it
+      icon = full;
+      set_to = use;
+    } else if(use == curr_uses) {
+      // Rightmost filled one. Clear just that one on click
+      icon = full;
+      set_to = use - 1;
+    } else {
+      // Should be empty, and set to filled on click
+      icon = empty;
+      set_to = use;
+    }
+    let commit_item = helper.hash["override"] ? `data-commit-item=${helper.hash["override"]}` : "";
+    cells.push(`<a class="gen-control ${icon}" data-action="set" data-action-value="(int)${set_to}" data-path="${uses_path}" ${commit_item}></a>`);
+  }
+  return `<div class="flexrow flex-center"> USES: ${cells.join(" ")} </div>`;
 }
 
 // A specific MM ref helper focused on displaying manufacturer info.
