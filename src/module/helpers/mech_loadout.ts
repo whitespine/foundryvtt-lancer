@@ -1,5 +1,4 @@
-import { EntryType, Mech, MechLoadout, SystemMount, Pilot, Frame, Damage, DamageType, FittingSize, MechWeapon, WeaponMount, Range, MechSystem  } from "machine-mind";
-import { is_loading, limited_max } from "machine-mind/dist/classes/mech/EquipUtil";
+import { EntryType, Mech, MechLoadout, SystemMount, Pilot, Frame, Damage, DamageType, FittingSize, MechWeapon, WeaponMount, Range, MechSystem, funcs  } from "machine-mind";
 import { AnyMMActor } from "../actor/lancer-actor";
 import { TypeIcon } from "../config";
 import { WeaponMacroCtx, macro_elt_params, ActionMacroCtx, ItemMacroCtx } from "../macros";
@@ -15,7 +14,6 @@ function system_mount(
   mount_path: string,
   helper: HelperData
 ): string {
-  let mount = resolve_helper_dotpath(helper, mount_path) as SystemMount;
   let slot = mech_system_refview(`${mount_path}.System`, helper);
 
   return ` 
@@ -201,7 +199,7 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
 
   // Generate limited segment as needed
   let uses = "";
-  let max_uses = limited_max(weapon);
+  let max_uses = funcs.tag_util.limited_max(weapon);
   if(max_uses) {
     uses = uses_control(`${weapon_path}`, max_uses, helper);
   }
@@ -229,7 +227,7 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
   let on_crit = profile.OnCrit ? effect_box("On Crit", profile.OnCrit, helper) : "";
 
   return `
-  <div class="valid ${EntryType.MECH_WEAPON} ref drop-settable flexcol clipped-top"
+  <div class="valid ${EntryType.MECH_WEAPON} ref drop-settable double-click-ref flexcol clipped-top"
                 ${ref_params(cd.ref, weapon_path)}
                 data-commit-item="${weapon_path}"
                 style="max-height: fit-content;">
@@ -304,22 +302,21 @@ export function mech_system_refview(system_path: string, helper: HelperData): st
   
   // Generate limited segment as needed
   let uses = "";
-  let max_uses = limited_max(system);
+  let max_uses = funcs.tag_util.limited_max(system);
   if(max_uses) {
-    uses = uses_control(`${system_path}`, max_uses, helper);
+    uses = uses_control(`${system_path}.Uses`, max_uses, helper);
   }
 
 
-
   return `
-  <div class="valid ${EntryType.MECH_SYSTEM} ref drop-settable flexcol clipped-top"
+  <div class="valid ${EntryType.MECH_SYSTEM} ref drop-settable double-click-ref flexcol clipped-top"
                 ${ref_params(cd.ref, system_path)}
                 data-commit-item="${system_path}"
                 style="max-height: fit-content;">
     <div class="lancer-header">
       <i class="cci cci-system i--m"> </i>
       ${macro}
-      <span class="minor">${system.Name}</span>
+      <span>${system.Name}</span>
       <a class="gen-control i--light" data-action="null" data-path="${system_path}"><i class="fas fa-trash"></i></a>
     </div> 
     <div class="lancer-body">
@@ -332,46 +329,4 @@ export function mech_system_refview(system_path: string, helper: HelperData): st
   </div>`
 };
 
-
-
-/**
- * Handlebars partial for a mech system preview card.
- */
-/*
-export const mech_system_preview = `<li class="card clipped mech-system-compact item" data-item-id="{{system._id}}">
-<div class="lancer-header" style="grid-area: 1/1/2/3; display: flex">
-  <i class="cci cci-system i--m"> </i>
-  <a class="system-macro macroable"><i class="mdi mdi-message"></i></a>
-  <span class="minor grow">{{system.name}}</span>
-  <a class="stats-control" data-action="delete"><i class="fas fa-trash"></i></a>
-</div>
-<div class="flexrow">
-  <div style="float: left; align-items: center; display: inherit;">
-    <i class="cci cci-system-point i--m i--dark"> </i>
-    <span class="medium" style="padding: 5px;">{{system.data.sp}} SP</span>
-  </div>
-  {{#if system.data.uses}}
-  <div class="compact-stat">
-    <span class="minor" style="max-width: min-content;">USES: </span>
-    <span class="minor" style="max-width: min-content;">{{system.data.uses}}</span>
-    <span class="minor" style="max-width: min-content;" > / </span>
-    <span class="minor" style="max-width: min-content;">{{system.data.max_uses}}</span>
-  </div>
-  {{/if}}
-</div>
-{{#if (ne system.data.description "")}}
-<div class="desc-text" style="padding: 5px">
-  {{{system.data.description}}}
-</div>
-{{/if}}
-{{#with system.data.effect as |effect|}}
-  {{#if effect.effect_type}}
-    {{{eff-preview effect}}}
-  {{else}}
-    {{> generic-eff-preview effect=effect}}
-  {{/if}}
-{{/with}}
-{{{ tag-list .sddata.tags}}
-</li>`;
-*/
 

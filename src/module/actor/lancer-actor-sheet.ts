@@ -1,7 +1,7 @@
 import { LANCER } from "../config";
-import { HANDLER_activate_general_controls,  gentle_merge, HANDLER_activate_popout_text_editor, HANDLER_intercept_form_submits } from "../helpers/commons";
+import { HANDLER_activate_general_controls,  gentle_merge, HANDLER_activate_popout_text_editor, HANDLER_intercept_form_changes } from "../helpers/commons";
 import { enable_dragging, enable_native_dropping_mm_wrap, ResolvedNativeDrop, resolve_native_drop } from "../helpers/dragdrop";
-import { HANDLER_activate_ref_dragging, HANDLER_activate_ref_drop_clearing, HANDLER_activate_ref_drop_setting, HANDLER_openRefOnClick as HANDLER_activate_ref_clicking } from "../helpers/refs";
+import { HANDLER_activate_ref_dragging, HANDLER_activate_ref_drop_clearing, HANDLER_activate_ref_drop_setting, HANDLER_click_open_ref as HANDLER_activate_ref_clicking } from "../helpers/refs";
 import { LancerActorSheetData } from "../interfaces";
 import { HANDLER_activate_macros } from "../macros";
 import { LancerActor, LancerActorType } from "./lancer-actor";
@@ -22,7 +22,7 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
     super.activateListeners(html);
 
     // Make refs clickable to open the item
-    $(html).find(".ref.valid").on("click", HANDLER_activate_ref_clicking);
+    HANDLER_activate_ref_clicking(html);
 
     // Enable ref dragging
     HANDLER_activate_ref_dragging(html);
@@ -38,6 +38,8 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
 
     // Make refs droppable
     HANDLER_activate_ref_drop_setting(html, getfunc, commitfunc);
+
+    // Make refs clearable
     HANDLER_activate_ref_drop_clearing(html, getfunc, commitfunc);
 
     // Enable native ref drag handlers
@@ -50,7 +52,7 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
     HANDLER_activate_popout_text_editor(html, getfunc, commitfunc);
 
     // Enable preview item editing form overrides
-    HANDLER_intercept_form_submits(html, getfunc);
+    HANDLER_intercept_form_changes(html, getfunc);
 
     // Enable macros
     HANDLER_activate_macros(html);

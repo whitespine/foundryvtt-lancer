@@ -583,7 +583,7 @@ export function read_form(form_element: HTMLFormElement): {[key: string]: string
  * appropriate entity instead. 
  * Control in same way as generic action handler: with the "data-commit-item" property pointing at the MM item
  */
-export function HANDLER_intercept_form_submits<T>(
+export function HANDLER_intercept_form_changes<T>(
   html: JQuery,
   // Retrieves the data that we will operate on
   data_getter: () => Promise<T> | T,
@@ -601,7 +601,7 @@ export function HANDLER_intercept_form_submits<T>(
 
     // Get our target data
     let sheet_data = await data_getter();
-    let path = evt.target.dataset.commitItem;
+    let path = evt.currentTarget.dataset.commitItem;
     if (path) {
       let item_data = resolve_dotpath(sheet_data, path) as AnyMMItem | AnyMMActor;
       if(item_data) {
@@ -610,5 +610,50 @@ export function HANDLER_intercept_form_submits<T>(
         await item_data.writeback(); 
       }
     }
+  });
+}
+
+// Used for tracking double clicks, where applicable. `double_timer` is updated to reflect the most recent click. If we get another event and it matches, then it's a double click!
+// Note: doesn't handle nesteds (yet), but it could!
+const DOUBLE_INTERVAL = 500;
+const double_timer = {
+  last_key: null as string | null,
+  last_time: 0,
+  last_type: "left" as "left" | "right"
+};
+
+// Returns true if this matches a double click, false otherwise. Regardless, updates double click
+export function check_double(type: "left" | "right", key: string): boolean {
+    let curr_time = Date.now();
+    let time_since = curr_time - double_timer.last_time;
+
+    
+    if(
+      time_since < DOUBLE_INTERVAL  // Was it recent enough?
+      && double_timer.last_key == key  // Was it at the same element?
+      && double_timer.last_type == type  // Was it the same button?
+      ) {
+        // If it is true, we reset last_time back to zero so triple clicks don't do a double double click
+        double_timer.last_time = 0;
+
+        // But yeah, it was a double, so return true
+        return true;
+    } else {
+      // Setup for the next right click
+      double_timer.last_time = curr_time;
+      double_timer.last_key = key ?? null;
+      double_timer.last_type = type;
+      return false;
+    }
+}
+
+// Briefly applies a class to an element, e.g. to indicate success of some action. Promise resolves when cleared
+export function temp_apply_class(to: JQuery, classname: string, time: number): Promise<void> {
+  return new Promise((succ, rej) => {
+    to.addClass(classname);
+    setTimeout(() => {
+      to.removeClass(classname);
+      succ();
+    }, time);
   });
 }

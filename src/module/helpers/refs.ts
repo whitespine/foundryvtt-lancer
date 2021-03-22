@@ -8,10 +8,10 @@ import {
   License,
 } from "machine-mind";
 import { is_actor_type, LancerActor } from "../actor/lancer-actor";
-import { GENERIC_ITEM_ICON, LANCER, TypeIcon } from "../config";
+import { TypeIcon } from "../config";
 import { is_item_type, LancerItem, LancerItemType } from "../item/lancer-item";
 import { FlagData, FoundryReg } from "../mm-util/foundry-reg";
-import { gentle_merge, HelperData, resolve_dotpath, resolve_helper_dotpath } from "./commons";
+import { check_double as check_double_click, gentle_merge, HelperData, resolve_dotpath, resolve_helper_dotpath, temp_apply_class } from "./commons";
 import { convert_ref_to_native, enable_dragging, enable_simple_ref_dragging, enable_simple_ref_dropping } from "./dragdrop";
 
 // We use these for virtually every ref function
@@ -119,28 +119,39 @@ export function simple_mm_ref<T extends EntryType>(
 
 // The hook to handle clicks on refs. Opens/focuses the clicked item's window
 // $(html).find(".ref.valid").on("click", HANDLER_onClickRef);
-export async function HANDLER_openRefOnClick<T extends EntryType>(event: any) {
-  event.preventDefault();
-  event.stopPropagation();
-  const element = event.currentTarget;
+// The .double-click-ref class will require double click to open
+export async function HANDLER_click_open_ref<T extends EntryType>(html: JQuery) {
+  html.find(".ref.valid").on("click", async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const element = event.currentTarget;
 
-  const found_entity = await resolve_ref_element(element);
-  if (!found_entity) return;
+    if($(element).hasClass("double-click-ref")) {
+      if(!check_double_click("left", element.dataset.id ?? "hmm")) {
+        return; // If check fails, but we needed it to be a double click, we just bail. The check will have update appropriate flags
+      }
+    }
 
-  // We didn't really need the fully resolved class but, hwatever
-  // open that link
-  let sheet = (found_entity.flags as FlagData<T>).orig_entity.sheet;
+    const found_entity = await resolve_ref_element(element);
+    if (!found_entity) return;
 
-  // If the sheet is already rendered:
-  if (sheet.rendered) {
-    //@ts-ignore foundry-pc-types has a spelling error here
-    sheet.maximize(); // typings say "maximise", are incorrect
-    //@ts-ignore and it is entirely missing this function
-    sheet.bringToTop();
-  }
+    // We didn't really need the fully resolved class but, hwatever
+    // open that link
+    let sheet = (found_entity.flags as FlagData<T>).orig_entity.sheet;
 
-  // Otherwise render the sheet
-  else sheet.render(true);
+    temp_apply_class($(element), "double-click-success", 1000);
+
+    // If the sheet is already rendered:
+    if (sheet.rendered) {
+      //@ts-ignore foundry-pc-types has a spelling error here
+      sheet.maximize(); // typings say "maximise", are incorrect
+      //@ts-ignore and it is entirely missing this function
+      sheet.bringToTop();
+    } else {
+      // Otherwise render the sheet
+      sheet.render(true);
+    }
+  });
 }
 
 // Given a ref element (as created by simple_mm_ref or similar function), reconstruct a RegRef to the item it is referencing
@@ -345,11 +356,7 @@ export function HANDLER_activate_ref_drop_setting<T>(
 
 // Allow every ".ref.drop-settable" spot to be double-right-click cleared
 // Uses same getter/commit func scheme as other callbacks
-const DOUBLE_INTERVAL = 500;
-const double_timer = {
-  last_path: null as string | null,
-  last_time: 0
-};
+
 export function HANDLER_activate_ref_drop_clearing<T>(
   html: JQuery,
   data_getter: () => Promise<T> | T,
@@ -364,9 +371,7 @@ export function HANDLER_activate_ref_drop_clearing<T>(
     }
 
     /* First decide if we're going to do anything, based on if curr_path matches and time within bounds */
-    let curr_time = Date.now();
-    let time_since = curr_time - double_timer.last_time;
-    if(time_since < DOUBLE_INTERVAL && double_timer.last_path == path) {
+    if(check_double_click("right", path)) {
       // Set the item as null
       let data = await data_getter();
 
@@ -376,10 +381,6 @@ export function HANDLER_activate_ref_drop_clearing<T>(
       // Merge in as null and commit
       gentle_merge(data, { [path]: null });
       await commit_func(data);
-    } else {
-      // Setup for the next right click
-      double_timer.last_time = curr_time;
-      double_timer.last_path = path ?? null;
     }
   });
 }

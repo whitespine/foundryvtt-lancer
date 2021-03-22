@@ -1125,10 +1125,14 @@ code.horus:hover {
     box-shadow: 0px 0px 4px 4px var(--main-theme-color);
 
     &.nat-20 {
-      animation: drop_glow 800ms ease-out infinite alternate;
+      animation: crit_glow 800ms ease-out 1 normal;
     }
   }
+}
 
+/* Flash glow on doubleclick success */
+.double-click-success {
+  animation: double_click_glow 1000ms ease-out none
 }
 
 /* The entire mech loadout box */
@@ -1331,22 +1335,23 @@ input.core-power-toggle:not(:checked)::before
 
 /* Allows rapid definition of new glows */
 /* Glow effect courtesy of https://codepen.io/jackrugile/pen/ABeIi */
-@mixin define_glow_anim($name, $glow_color, $border1, $border2, ) {
+@mixin define_glow_anim($name, $glow_color, $border1, $border2, $size) {
   @include keyframes($name) {
       0% {
         border-color: $border1;
-        box-shadow: 0 0 5px rgba($glow_color, .2), inset 0 0 5px rgba($glow_color, .1), 0 2px 0 ;
+        box-shadow: 0 0 ($size / 4) rgba($glow_color, .2), inset 0 0 5px rgba($glow_color, .1), 0 2px 0 ;
       }	
       100% {
         border-color: $border2;
-        box-shadow: 0 0 20px rgba($glow_color, .6), inset 0 0 10px rgba($glow_color, .4), 0 2px 0;
+        box-shadow: 0 0 $size rgba($glow_color, .6), inset 0 0 10px rgba($glow_color, .4), 0 2px 0;
       }
   }
 }
 
 /* Make our glows */
-@include define_glow_anim(drop_glow, #0F0, #393, #6f6);
-@include define_glow_anim(crit_glow, #FA4, rgb(54, 43, 33), rgb(175, 95, 84));
+@include define_glow_anim(drop_glow, #0F0, #393, #6f6, 20px);
+@include define_glow_anim(crit_glow, #FA4, rgb(54, 43, 33), rgb(175, 95, 84), 20px);
+@include define_glow_anim(double_click_glow, rgb(0, 247, 255), rgb(37, 85, 117), rgb(87, 136, 158), 100px);
 
 
 /* Used for HORUS text */

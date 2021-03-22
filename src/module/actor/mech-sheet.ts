@@ -5,7 +5,6 @@ import { MMEntityContext, mm_wrap_item } from "../mm-util/helpers";
 import { ResolvedNativeDrop } from "../helpers/dragdrop";
 import { gentle_merge, resolve_dotpath } from "../helpers/commons";
 import { OVERCHARGE_SEQUENCE } from "../helpers/actor";
-import { weapon_size_magnitude } from "machine-mind/dist/funcs";
 
 /**
  * Extend the basic ActorSheet
@@ -150,7 +149,7 @@ export class LancerMechSheet extends LancerActorSheet<EntryType.MECH> {
           let old_weapons = mount.Slots.map(s => s.Weapon).filter(w => w) as MechWeapon[];
 
           // Sort biggest to smallest
-          old_weapons.sort((a, b) => weapon_size_magnitude(b.Size) - weapon_size_magnitude(a.Size));
+          old_weapons.sort((a, b) => funcs.weapon_size_magnitude(b.Size) - funcs.weapon_size_magnitude(a.Size));
 
           // Change the weapon mount and clear it
           mount.MountType = mount_type;

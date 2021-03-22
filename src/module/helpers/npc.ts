@@ -103,13 +103,13 @@ function npc_feature_scaffold(path: string, npc_feature: NpcFeature, body: strin
   }
 
   // Decide icon
-  let feature_icon ="cci cci-${npc_feature.FeatureType.toLowerCase()}";
+  let feature_icon =`cci cci-${npc_feature.FeatureType.toLowerCase()}`;
   if(npc_feature.FeatureType == NpcFeatureType.Tech) {
     feature_icon ="cci cci-tech-quick";
   }
 
   return `
-  <div class="valid ref card ${feature_class}" ${ref_params(npc_feature.as_ref())}>
+  <div class="valid ref card ${feature_class} double-click-ref" ${ref_params(npc_feature.as_ref())}>
     <div class="flexrow lancer-header clipped-top collapse-ctrl" collapse-id="${npc_feature.RegistryID}" >
       <i class="${feature_icon} i--m"> </i>
       ${inc_if(`<a class="lancer-macro mdi mdi-message" ${macro}></a>`, macro)}

@@ -653,6 +653,9 @@ async function prepareWeaponMacro(macro: WeaponMacroCtx) {
     damage.push(...item.Profiles[macro.profile ?? 0].BaseDamage); // TODO: Incorporate mods
   }
 
+  // Get reliable
+  let reliable = funcs.tag_util.get_reliable(item);
+
   // Set hit effects for mech weapons
   if (corrected instanceof MechWeaponProfile) {
     if(corrected.OnAttack) {
@@ -684,6 +687,7 @@ async function prepareWeaponMacro(macro: WeaponMacroCtx) {
     overkill,
     tags,
     title,
+    reliable,
     skip: macro.skip_acc_prompt
   }).then();
 }
@@ -698,6 +702,7 @@ async function rollAttackMacro({
   damage,
   tags,
   overkill,
+  reliable,
   skip
 }: {
   actor: AnyLancerActor;
@@ -708,6 +713,7 @@ async function rollAttackMacro({
   damage: Damage[];
   tags: TagInstance[];
   overkill: boolean;
+  reliable: number;
   skip?: boolean;
 }) {
   let atk_str = await buildAttackRollString(title, acc, flat_bonus, skip);
@@ -720,6 +726,7 @@ async function rollAttackMacro({
     roll: Roll;
     tt: HTMLElement | JQuery;
     d_type: DamageType;
+    total: number;
   }> = [];
   let overkill_heat: number = 0;
   for (const dam of damage) {
@@ -769,6 +776,29 @@ async function rollAttackMacro({
         roll: droll,
         tt: tt,
         d_type: dam.DamageType,
+        total: droll.total
+      });
+    }
+  }
+
+  // Bump up to reliable
+  let total_damage = 0;
+  for(let d of damage_results) {
+    total_damage += d.roll.total;
+  }
+  // If not meeting reliable, then bump up (either by promoting first entry, or 
+  if(total_damage < reliable) {
+    if(damage_results.length) {
+      let first_roll = damage_results[0];
+      first_roll.total += (reliable - total_damage);
+    } else {
+      // No rolls? Make our own
+      let roll = new Roll(reliable.toString());
+      damage_results.push({
+        d_type: DamageType.Variable,
+        roll,
+        tt: await roll.getTooltip(),
+        total: reliable
       });
     }
   }
