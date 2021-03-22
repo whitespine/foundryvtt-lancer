@@ -143,6 +143,7 @@ export function system_type_selector(path: string, helper: HelperData) {
 /**
  * Handlebars partial for limited uses remaining
  * TODO: make look more like compcon
+ * @argument `override` If provided, will be used as a data_path_override
  */
 export function uses_control(uses_path: string, max_uses: number, helper: HelperData) {
   const curr_uses = resolve_helper_dotpath(helper, uses_path, 0);

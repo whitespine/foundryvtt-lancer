@@ -71,7 +71,7 @@ import {
 } from "./module/helpers/item";
 import { clicker_num_input, clicker_stat_card, compact_stat_edit, compact_stat_view, deployer_slot, npc_clicker_stat_card, npc_tier_selector, overcharge_button, stat_edit_card, stat_edit_card_max, stat_view_card, } from "./module/helpers/actor";
 import { editable_mm_ref_list_item, simple_mm_ref, mm_ref_portrait, mm_ref_list_append_slot, editable_mm_ref_list_item_native } from "./module/helpers/refs";
-import { mech_loadout, mech_weapon_refview, pilot_slot } from "./module/helpers/mech_loadout";
+import { mech_loadout, mech_system_refview, mech_weapon_refview, pilot_slot } from "./module/helpers/mech_loadout";
 import { LancerNPCSheet } from "./module/actor/npc-sheet";
 import { bonus_list_display } from "./module/helpers/bonuses";
 import { action_list_display } from "./module/helpers/actions";
@@ -387,6 +387,7 @@ Hooks.once("init", async function () {
   Handlebars.registerHelper("uses-ctrl", uses_control);
   Handlebars.registerHelper("act-icon", action_type_icon);
   Handlebars.registerHelper("act-type-sel", action_type_selector);
+  Handlebars.registerHelper("mech-system-preview", mech_system_refview);
 });
 
 /* ------------------------------------ */

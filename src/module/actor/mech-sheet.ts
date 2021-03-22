@@ -1,10 +1,11 @@
 import { LANCER } from "../config";
 import { LancerActorSheet } from "./lancer-actor-sheet";
-import { EntryType, funcs, MountType, OpCtx, RegRef, SystemMount, WeaponMount, WeaponSlot } from "machine-mind";
+import { EntryType, funcs, MechWeapon, MountType, OpCtx, RegRef, SystemMount, WeaponMount, WeaponSlot } from "machine-mind";
 import { MMEntityContext, mm_wrap_item } from "../mm-util/helpers";
 import { ResolvedNativeDrop } from "../helpers/dragdrop";
 import { gentle_merge, resolve_dotpath } from "../helpers/commons";
 import { OVERCHARGE_SEQUENCE } from "../helpers/actor";
+import { weapon_size_magnitude } from "machine-mind/dist/funcs";
 
 /**
  * Extend the basic ActorSheet
@@ -145,9 +146,20 @@ export class LancerMechSheet extends LancerActorSheet<EntryType.MECH> {
             console.error("Bad mountpath:", mount_path);
           }
 
-          // Edit it. Someday we'll want to have a way to resize without nuking. that day is not today
+          // Edit it. 
+          let old_weapons = mount.Slots.map(s => s.Weapon).filter(w => w) as MechWeapon[];
+
+          // Sort biggest to smallest
+          old_weapons.sort((a, b) => weapon_size_magnitude(b.Size) - weapon_size_magnitude(a.Size));
+
+          // Change the weapon mount and clear it
           mount.MountType = mount_type;
           mount.reset();
+
+          // Try re-adding all weapons, biggest to smallest
+          for(let wep of old_weapons) {
+            mount.try_add_weapon(wep);
+          }
 
           // Write back
           await this._commitCurrMM();

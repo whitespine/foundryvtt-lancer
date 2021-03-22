@@ -17,8 +17,10 @@ import {
   Action,
   ActivationType
 } from "machine-mind";
+import { AnyMMActor } from "../actor/lancer-actor";
 import { HTMLEditDialog } from "../apps/text-editor";
 import { LancerActorSheetData, LancerItemSheetData } from "../interfaces";
+import { AnyMMItem } from "../item/lancer-item";
 import { MMEntityContext } from "../mm-util/helpers";
 
 // A shorthand for only including the first string if the second value is truthy
@@ -220,7 +222,7 @@ export function ext_helper_hash<T extends HelperData>(orig_helper: T, overrides:
  * 
  * The data getter and commit func are used to retrieve the target data, and to save it back (respectively).
  * 
- * If "data-commit-item" is set, then we will attempt to call the "writeback()" function of the object specified by that path, instead of (or should it be as well as?) our commit func
+ * If "data-commit-item" path is set, then we will attempt to call the "writeback()" function of the object specified by that path, instead of (or should it be as well as?) our commit func
  */
 export function HANDLER_activate_general_controls<T extends LancerActorSheetData<any> | LancerItemSheetData<any>>(
     html: JQuery, 
@@ -573,4 +575,40 @@ export function read_form(form_element: HTMLFormElement): {[key: string]: string
   // @ts-ignore The typings don't yet include this utility class
   let form_data = new FormDataExtended(form_element);
   return form_data.toObject();
+}
+
+
+/**
+ * Use this for previews of items. Will prevent change/submit events from propagating all the way up, and instead call writeback() on the 
+ * appropriate entity instead. 
+ * Control in same way as generic action handler: with the "data-commit-item" property pointing at the MM item
+ */
+export function HANDLER_intercept_form_submits<T>(
+  html: JQuery,
+  // Retrieves the data that we will operate on
+  data_getter: () => Promise<T> | T,
+  // commit_func: (data: T) => void | Promise<void> -- not necessary
+) {
+  // Capture anywhere with a data-commit-item path specified
+  let capturers = html.find("[data-commit-item]");
+  capturers.on("change", async (evt) => {
+    // Don't let it reach root form
+    evt.stopPropagation();
+
+    // Get our form data. We're kinda just replicating what would happen in onUpdate, but minus all of the fancier processing that is needed there
+    let form = $(evt.target).parents("form")[0];
+    let form_data = read_form(form);
+
+    // Get our target data
+    let sheet_data = await data_getter();
+    let path = evt.target.dataset.commitItem;
+    if (path) {
+      let item_data = resolve_dotpath(sheet_data, path) as AnyMMItem | AnyMMActor;
+      if(item_data) {
+        // Apply and writeback
+        gentle_merge(sheet_data, form_data); // Will apply any modifications to the item
+        await item_data.writeback(); 
+      }
+    }
+  });
 }

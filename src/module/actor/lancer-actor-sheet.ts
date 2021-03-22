@@ -1,5 +1,5 @@
 import { LANCER } from "../config";
-import { HANDLER_activate_general_controls,  gentle_merge, HANDLER_activate_popout_text_editor } from "../helpers/commons";
+import { HANDLER_activate_general_controls,  gentle_merge, HANDLER_activate_popout_text_editor, HANDLER_intercept_form_submits } from "../helpers/commons";
 import { enable_dragging, enable_native_dropping_mm_wrap, ResolvedNativeDrop, resolve_native_drop } from "../helpers/dragdrop";
 import { HANDLER_activate_ref_dragging, HANDLER_activate_ref_drop_clearing, HANDLER_activate_ref_drop_setting, HANDLER_openRefOnClick as HANDLER_activate_ref_clicking } from "../helpers/refs";
 import { LancerActorSheetData } from "../interfaces";
@@ -33,8 +33,8 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
     // Make +/- buttons work
     this._activatePlusMinusButtons(html);
 
-    let getfunc = () => this.getDataLazy();
-    let commitfunc = (_: any) => this._commitCurrMM();
+    let getfunc = () => this.getDataLazy(); // shorthand
+    let commitfunc = (_: any) => this._commitCurrMM(); // shorthand
 
     // Make refs droppable
     HANDLER_activate_ref_drop_setting(html, getfunc, commitfunc);
@@ -48,6 +48,9 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
 
     // Enable popout editors
     HANDLER_activate_popout_text_editor(html, getfunc, commitfunc);
+
+    // Enable preview item editing form overrides
+    HANDLER_intercept_form_submits(html, getfunc);
 
     // Enable macros
     HANDLER_activate_macros(html);
@@ -91,43 +94,6 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
     );
   }
 
-  getStatPath(event: any): string | null {
-    if (!event.currentTarget) return null;
-    // Find the stat input to get the stat's key to pass to the macro function
-    let el = $(event.currentTarget)
-      .closest(".stat-container")
-      .find(".lancer-stat")[0] as HTMLElement;
-
-    if (el.nodeName === "INPUT") {
-      return (<HTMLInputElement>el).name;
-    } else if (el.nodeName === "DATA") {
-      return (<HTMLDataElement>el).id;
-    } else {
-      throw "Error - stat macro was not run on an input or data element";
-    }
-  }
-
-  /**
-   * Activate event listeners for trigger macros using the prepared sheet HTML
-   * @param html {JQuery}   The prepared HTML object ready to be rendered into the DOM
-   */
-  /*
-  activateTriggerListeners(html: JQuery) {
-    // Trigger rollers
-    let triggerMacro = html.find(".roll-trigger");
-    triggerMacro.on("click", (ev: Event) => {
-      if (!ev.currentTarget) return; // No target, let other handlers take care of it.
-      ev.stopPropagation(); // Avoids triggering parent event handlers
-
-      let mData: LancerStatMacroData = {
-        title: $(ev.currentTarget).closest(".skill-compact").find(".modifier-name").text(),
-        bonus: parseInt($(ev.currentTarget).find(".roll-modifier").text()),
-      };
-
-      console.log(`${lp} Rolling '${mData.title}' trigger (d20 + ${mData.bonus})`);
-      game.lancer.rollStatMacro(this.actor, mData);
-    });
-  }*/
 
   /**
    * Converts the data from a DragEvent event into an Item (or actor/journal/whatever) to add to the Actor.

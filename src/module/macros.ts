@@ -238,23 +238,13 @@ export async function prepareMacro(any_macro: AnyMacroCtx) {
       break;
     // Systems. We prefer direct invocation of prepareSystemMacro
     case "mech_system":
-      if (item.Actions.length) {
-        // Do first action
-        let action_data: ActionMacroCtx = {
-          ...macro,
-          action_path: "Actions.0",
-          type: "action",
-        };
-        await prepareActionMacro(action_data);
-      } else {
-        // Just do a text macro
-        await prepareTextMacro({
-          ...macro,
-          body: item.Description,
-          title: item.Name,
-          type: "text",
-        });
-      }
+      // Just do a text macro
+      await prepareTextMacro({
+        ...macro,
+        body: item.Effect,
+        title: item.Name,
+        type: "text",
+      });
       break;
     // Talents
     case "talent":

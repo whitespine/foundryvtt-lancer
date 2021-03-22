@@ -49,78 +49,10 @@ export class LancerPilotSheet extends LancerActorSheet<EntryType.PILOT> {
   async activateListeners(html: JQuery) {
     super.activateListeners(html);
 
-    if (this.actor.owner) {
-      // Need to know ourself to activate some macros
-      let data = this._currData!; // We actually know this must be valid right now
-
-      // Talent rollers
-      let talentMacro = html.find(".talent-macro");
-      talentMacro.on("click", (ev) => {
-        if (!ev.currentTarget) return; // No target, let other handlers take care of it.
-        ev.stopPropagation(); // Avoids triggering parent event handlers
-
-        const el = $(ev.currentTarget).closest(".item")[0] as HTMLElement;
-
-        game.lancer.prepareItemMacro(this.actor._id, el.getAttribute("data-item-id")!, {
-          rank: (<HTMLDataElement>ev.currentTarget).getAttribute("data-rank"),
-        });
-      });
-
-      // Core active & passive text rollers
-      let CAMacro = html.find(".core-active-macro");
-      CAMacro.on("click", (ev: any) => {
-        ev.stopPropagation(); // Avoids triggering parent event handlers
-        prepareFrameMacro({
-          type: "frame",
-          subtype: "active",
-          actor: data.mm.ent.as_ref(),
-          name: "Core Active"
-        });
-      });
-
-      let CPMacro = html.find(".core-passive-macro");
-      CPMacro.on("click", (ev: any) => {
-        ev.stopPropagation(); // Avoids triggering parent event handlers
-        prepareFrameMacro({
-          type: "frame",
-          subtype: "passive",
-          actor: data.mm.ent.as_ref(),
-          name: "Core Passive"
-        });
-      });
-    }
-
     // Everything below here is only needed if the sheet is editable
     if (!this.options.editable) return;
 
     if (this.actor.owner) {
-      // Item/Macroable Dragging
-      const statMacroHandler = (e: DragEvent) => this._onDragMacroableStart(e);
-      const talentMacroHandler = (e: DragEvent) => this._onDragTalentMacroableStart(e);
-      const textMacroHandler = (e: DragEvent) => this._onDragTextMacroableStart(e);
-      const CAMacroHandler = (e: DragEvent) => this._onDragCoreActiveStart(e);
-      const CPMacroHandler = (e: DragEvent) => this._onDragCorePassiveStart(e);
-      html
-        .find('li[class*="item"]')
-        .add('span[class*="item"]')
-        .add('[class*="macroable"]')
-        .each((i: number, item: any) => {
-          if (item.classList.contains("inventory-header")) return;
-          if (item.classList.contains("stat-macro"))
-            item.addEventListener("dragstart", statMacroHandler, false);
-          if (item.classList.contains("talent-macro"))
-            item.addEventListener("dragstart", talentMacroHandler, false);
-          if (item.classList.contains("text-macro"))
-            item.addEventListener("dragstart", textMacroHandler, false);
-          if (item.classList.contains("core-active-macro"))
-            item.addEventListener("dragstart", CAMacroHandler, false);
-          if (item.classList.contains("core-passive-macro"))
-            item.addEventListener("dragstart", CPMacroHandler, false);
-          if (item.classList.contains("item"))
-            item.addEventListener("dragstart", (ev: any) => this._onDragStart(ev), false);
-          item.setAttribute("draggable", true);
-        });
-
       // Cloud download
       let download = html.find('.cloud-control[data-action*="download"]');
       download.on("click", async (ev) => {
@@ -168,43 +100,6 @@ export class LancerPilotSheet extends LancerActorSheet<EntryType.PILOT> {
         }
       });
     }
-  }
-
-  _onDragMacroableStart(event: DragEvent) {
-    // For roll-stat macros
-    event.stopPropagation(); // Avoids triggering parent event handlers
-    // It's an input so it'll always be an InputElement, right?
-    let path = this.getStatPath(event);
-    if (!path) return ui.notifications.error("Error finding stat for macro.");
-
-    let tSplit = path.split(".");
-    let data = {
-      title: tSplit[tSplit.length - 1].toUpperCase(),
-      dataPath: path,
-      type: "actor",
-      actorId: this.actor._id,
-    };
-    event.dataTransfer?.setData("text/plain", JSON.stringify(data));
-  }
-
-  _onDragTalentMacroableStart(event: DragEvent) {
-    // For talent macros
-    event.stopPropagation(); // Avoids triggering parent event handlers
-
-    let target = <HTMLElement>event.currentTarget;
-
-    let data = {
-      itemId: target.closest(".item")?.getAttribute("data-item-id"),
-      actorId: this.actor._id,
-      type: "Item",
-      title: target.nextElementSibling?.textContent,
-      rank: target.getAttribute("data-rank"),
-      data: {
-        type: EntryType.TALENT,
-      },
-    };
-
-    event.dataTransfer?.setData("text/plain", JSON.stringify(data));
   }
 
   // Baseline drop behavior. Let people add stuff to the pilot
@@ -276,65 +171,6 @@ export class LancerPilotSheet extends LancerActorSheet<EntryType.PILOT> {
     // Always return the item if we haven't failed for some reason
     return item;
   }
-
-  /**
-   * For macros which simple expect a title & description, no fancy handling.
-   * Assumes data-path-title & data-path-description defined
-   * @param event   The associated DragEvent
-   */
-  _onDragTextMacroableStart(event: DragEvent) {
-    event.stopPropagation(); // Avoids triggering parent event handlers
-
-    let target = <HTMLElement>event.currentTarget;
-
-    let data = {
-      title: target.getAttribute("data-path-title"),
-      description: target.getAttribute("data-path-description"),
-      actorId: this.actor._id,
-      type: "Text",
-    };
-
-    event.dataTransfer?.setData("text/plain", JSON.stringify(data));
-  }
-
-  /**
-   * For dragging the core active to the hotbar
-   * @param event   The associated DragEvent
-   */
-  _onDragCoreActiveStart(event: DragEvent) {
-    event.stopPropagation(); // Avoids triggering parent event handlers
-
-    // let target = <HTMLElement>event.currentTarget;
-
-    let data = {
-      actorId: this.actor._id,
-      // Title will simply be CORE ACTIVE since we want to keep the macro dynamic
-      title: "CORE ACTIVE",
-      type: "Core-Active",
-    };
-
-    event.dataTransfer?.setData("text/plain", JSON.stringify(data));
-  }
-
-  /**
-   * For dragging the core passive to the hotbar
-   * @param event   The associated DragEvent
-   */
-  _onDragCorePassiveStart(event: DragEvent) {
-    event.stopPropagation(); // Avoids triggering parent event handlers
-
-    // let target = <HTMLElement>event.currentTarget;
-
-    let data = {
-      actorId: this.actor._id,
-      // Title will simply be CORE PASSIVE since we want to keep the macro dynamic
-      title: "CORE PASSIVE",
-      type: "Core-Passive",
-    };
-
-    event.dataTransfer?.setData("text/plain", JSON.stringify(data));
-  }
-  /* -------------------------------------------- */
 
   /**
    * Implement the _updateObject method as required by the parent class spec

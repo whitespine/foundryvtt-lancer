@@ -1,9 +1,11 @@
-import { EntryType, Mech, MechLoadout, SystemMount, Pilot, Frame, Damage, DamageType, FittingSize, MechWeapon, WeaponMount, Range  } from "machine-mind";
+import { EntryType, Mech, MechLoadout, SystemMount, Pilot, Frame, Damage, DamageType, FittingSize, MechWeapon, WeaponMount, Range, MechSystem  } from "machine-mind";
+import { is_loading, limited_max } from "machine-mind/dist/classes/mech/EquipUtil";
 import { AnyMMActor } from "../actor/lancer-actor";
 import { TypeIcon } from "../config";
-import { WeaponMacroCtx, macro_elt_params } from "../macros";
+import { WeaponMacroCtx, macro_elt_params, ActionMacroCtx, ItemMacroCtx } from "../macros";
+import { action_list_display } from "./actions";
 import { effect_box, ext_helper_hash, HelperData, inc_if, resolve_helper_dotpath } from "./commons";
-import { show_damage_array, show_range_array } from "./item";
+import { show_damage_array, show_range_array, uses_control } from "./item";
 import { ref_commons, ref_params, simple_mm_ref } from "./refs";
 import { compact_tag_list } from "./tags";
 
@@ -14,7 +16,7 @@ function system_mount(
   helper: HelperData
 ): string {
   let mount = resolve_helper_dotpath(helper, mount_path) as SystemMount;
-  let slot = simple_mm_ref(EntryType.MECH_SYSTEM, mount.System, "No System", `${mount_path}.System`);
+  let slot = mech_system_refview(`${mount_path}.System`, helper);
 
   return ` 
     <div class="mount card">
@@ -193,8 +195,15 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
     let loading_icon = `i--m mdi mdi-hexagon-slice-${weapon.Loaded ? 6 : 0}`;
     loading = `<span> 
                 LOADED: 
-                <a class="gen-control ${loading_icon}" data-action="set" data-action-value="(bool)${!weapon.Loaded}" data-path="${weapon_path}.Loaded" data-item-override="${weapon_path}"></a>
+                <a class="gen-control ${loading_icon}" data-action="set" data-action-value="(bool)${!weapon.Loaded}" data-path="${weapon_path}.Loaded" data-commit-item="${weapon_path}"></a>
               </span>`;
+  }
+
+  // Generate limited segment as needed
+  let uses = "";
+  let max_uses = limited_max(weapon);
+  if(max_uses) {
+    uses = uses_control(`${weapon_path}`, max_uses, helper);
   }
 
   // Make a macro, maybe
@@ -222,6 +231,7 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
   return `
   <div class="valid ${EntryType.MECH_WEAPON} ref drop-settable flexcol clipped-top"
                 ${ref_params(cd.ref, weapon_path)}
+                data-commit-item="${weapon_path}"
                 style="max-height: fit-content;">
     <div class="lancer-header">
       <i class="cci cci-weapon i--m"> </i>
@@ -236,8 +246,8 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
         <hr class="vsep--m">
         ${show_damage_array(weapon.SelectedProfile.BaseDamage, helper)}
 
-        <!-- Loading toggle, if we are loading-->
         ${inc_if(`<hr class="vsep--m"> ${loading}`, loading)}
+        ${inc_if(`<hr class="vsep--m"> ${uses}`, uses)}
       </div>
       
       <div class="flexcol">
@@ -250,6 +260,79 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string | "",
     </div>
   </div>`
 };
+
+/**
+ * Handlebars helper for a mech system preview card. Doubles as a slot. Mech path needed for bonuses
+ * @argument "macro-actor" If supplied in hash, this MM actor entry will be used as the macro's actor
+ * 
+ * NOTE: Trash can option is assuming this is in a weapon slot. 
+ */
+export function mech_system_refview(system_path: string, helper: HelperData): string { 
+  // Fetch the item(s)
+  let system_: MechSystem | null = resolve_helper_dotpath(helper, system_path);
+
+  // Generate commons
+  let cd = ref_commons(system_);
+
+  if (!cd) {
+    // Make an empty ref. Note that it still has path stuff if we are going to be dropping things here
+    return `
+      <div class="${EntryType.MECH_SYSTEM} ref drop-settable card flexrow" 
+                        data-path="${system_path}" 
+                        data-type="${EntryType.MECH_SYSTEM}">
+        <img class="ref-icon" src="${TypeIcon(EntryType.MECH_SYSTEM)}"></img>
+        <span class="major">Insert system</span>
+      </div>`;
+  }
+
+  // Assert not null
+  let system = system_!;
+
+  // Make a macro, maybe
+  let macro = "";
+  if(helper.hash["macro-actor"]) {
+    let macro_ctx: ItemMacroCtx = {
+      name: system.Name,
+      type: "generic_item",
+      item: system.as_ref(),
+      actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref()
+    }
+    macro = `<a class="lancer-macro" style="max-width: min-content;"  ${macro_elt_params(macro_ctx)}>
+                <i class="mdi mdi-message i--sm"></i>
+              </a>`;
+  }
+  
+  // Generate limited segment as needed
+  let uses = "";
+  let max_uses = limited_max(system);
+  if(max_uses) {
+    uses = uses_control(`${system_path}`, max_uses, helper);
+  }
+
+
+
+  return `
+  <div class="valid ${EntryType.MECH_SYSTEM} ref drop-settable flexcol clipped-top"
+                ${ref_params(cd.ref, system_path)}
+                data-commit-item="${system_path}"
+                style="max-height: fit-content;">
+    <div class="lancer-header">
+      <i class="cci cci-system i--m"> </i>
+      ${macro}
+      <span class="minor">${system.Name}</span>
+      <a class="gen-control i--light" data-action="null" data-path="${system_path}"><i class="fas fa-trash"></i></a>
+    </div> 
+    <div class="lancer-body">
+      ${uses}
+      <div class="effect-text">
+        ${system.Effect}
+      </div>
+      ${inc_if(action_list_display(system_path, "Actions", helper), system.Actions.length)}
+    </div>
+  </div>`
+};
+
+
 
 /**
  * Handlebars partial for a mech system preview card.
