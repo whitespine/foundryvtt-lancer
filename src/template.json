@@ -304,6 +304,7 @@
       "tags": [],
       "type": "Trait",
       "charged": true,
+      "loaded": true,
       "uses": 0,
 
       "weapon_type": "",
@@ -401,7 +402,8 @@
       "id": "",
       "name": "New Pilot Armor",
       "synergies": [],
-      "tags": []
+      "tags": [],
+      "uses": 0
     },
     "pilot_gear": {
       "actions": [],
@@ -411,7 +413,8 @@
       "id": "",
       "name": "New Pilot Gear",
       "synergies": [],
-      "tags": []
+      "tags": [],
+      "uses": 0
     },
     "pilot_weapon": {
       "actions": [],
@@ -424,7 +427,9 @@
       "tags": [],
       "range": [],
       "damage": [],
-      "effect": ""
+      "effect": "",
+      "loaded": true,
+      "uses": 0
     },
     "reserve": {
       "name": "New Reserve",
