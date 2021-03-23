@@ -3,7 +3,7 @@ import { LancerActorSheet } from "./lancer-actor-sheet";
 import { EntryType, funcs, MechWeapon, MountType, OpCtx, RegRef, SystemMount, WeaponMount, WeaponSlot } from "machine-mind";
 import { MMEntityContext, mm_wrap_item } from "../mm-util/helpers";
 import { ResolvedNativeDrop } from "../helpers/dragdrop";
-import { gentle_merge, resolve_dotpath } from "../helpers/commons";
+import { resolve_dotpath } from "../helpers/commons";
 import { OVERCHARGE_SEQUENCE } from "../helpers/actor";
 
 /**

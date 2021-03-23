@@ -1,6 +1,6 @@
 import { LANCER } from "../config";
 import { HANDLER_activate_general_controls,  gentle_merge, HANDLER_activate_popout_text_editor, HANDLER_intercept_form_changes } from "../helpers/commons";
-import { enable_dragging, enable_native_dropping_mm_wrap, ResolvedNativeDrop, resolve_native_drop } from "../helpers/dragdrop";
+import { enable_native_dropping_mm_wrap, ResolvedNativeDrop, resolve_native_drop } from "../helpers/dragdrop";
 import { HANDLER_activate_ref_dragging, HANDLER_activate_ref_drop_clearing, HANDLER_activate_ref_drop_setting, HANDLER_click_open_ref as HANDLER_activate_ref_clicking } from "../helpers/refs";
 import { LancerActorSheetData } from "../interfaces";
 import { HANDLER_activate_macros } from "../macros";

@@ -39,6 +39,7 @@ import {
   TagInstance,
   RegNpcData,
   funcs,
+  Deployable,
 } from "machine-mind";
 import { FoundryReg, FoundryRegCat } from "./mm-util/foundry-reg";
 import { resolve_dotpath, resolve_helper_dotpath } from "./helpers/commons";
@@ -469,11 +470,12 @@ export async function prepareStatMacro(macro: StatMacroCtx) {
 async function prepareActionMacro(macro: ActionMacroCtx) {
   // Determine which Actor to speak as
   let actor = await get_macro_speaker(macro.actor);
-  let ent = await actor.data.data.derived.mmec_promise;
+  let mm = await actor.data.data.derived.mmec_promise;
 
   // Get the item. Not always necessary
   let raw_item = (await get_macro_item(macro, false)) as AnyLancerItem;
   let action: Action;
+  let heat_tag_val = 0;
   if(raw_item) {
     // Get as mm
     let item = await raw_item.data.data.derived.mmec_promise;
@@ -484,6 +486,7 @@ async function prepareActionMacro(macro: ActionMacroCtx) {
       throw new Error(`Could not resolve action "${macro.action_path}"`);
     }
     action = x;
+    heat_tag_val = ((item.ent as any).Tags as TagInstance[] | undefined)?.find(t => t.Tag.Name == "tg_self_heat")?.as_number() || heat_tag_val;
   } else {
     // Attempt to resolve from global actions
     let x = BaseActionsMap.get(macro.action_path.toString());
@@ -494,19 +497,28 @@ async function prepareActionMacro(macro: ActionMacroCtx) {
     action = x;
   }
 
+  let heat_cost = action.HeatCost || heat_tag_val;
+
   // Now just need to construct the template
   const template = `systems/lancer/templates/chat/action-card.html`;
-  return renderMacro(actor, template, {
-    action  
+  await renderMacro(actor, template, {
+    action,
+    heat_cost 
   });
 
-  // Construct the template
-  // const templateData = {
-  // title: data.title,
-  // effect: data.effect ? data.effect : null,
-  // };
-  // const template = `systems/lancer/templates/chat/system-card.html`;
-  // return renderMacro(actor, template, templateData);
+  // Only increase heat if we haven't disabled it
+  if (game.settings.get(LANCER.sys_name, LANCER.setting_automation)) { 
+    // Apply heat
+    if(game.settings.get(LANCER.sys_name, LANCER.setting_action_heat) && (mm.ent as any).CurrentHeat != null) {
+      (mm.ent as Mech | Npc | Deployable).CurrentHeat += heat_cost;
+    }
+
+    // Consume limited
+    if(game.settings.get(LANCER.sys_name, LANCER.setting_auto_limited) && (mm.ent as any).Uses != null) {
+      (mm.ent as Mech | Npc | Deployable).CurrentHeat -= action.Cost ?? 1;
+    }
+    await mm.ent.writeback();
+  }
 }
 
 async function prepareTriggerMacro(macro: SkillMacroCtx) {
@@ -678,45 +690,8 @@ async function prepareWeaponMacro(macro: WeaponMacroCtx) {
     }
   }
 
-  await rollAttackMacro({
-    actor: raw_actor,
-    acc,
-    damage,
-    effects,
-    flat_bonus: flat_bonuses.join("+"),
-    overkill,
-    tags,
-    title,
-    reliable,
-    skip: macro.skip_acc_prompt
-  }).then();
-}
-
-// Handles the actual dicing of an attack macro
-async function rollAttackMacro({
-  actor,
-  title,
-  effects,
-  acc,
-  flat_bonus,
-  damage,
-  tags,
-  overkill,
-  reliable,
-  skip
-}: {
-  actor: AnyLancerActor;
-  title: string;
-  effects: Effect[];
-  acc: number;
-  flat_bonus: string;
-  damage: Damage[];
-  tags: TagInstance[];
-  overkill: boolean;
-  reliable: number;
-  skip?: boolean;
-}) {
-  let atk_str = await buildAttackRollString(title, acc, flat_bonus, skip);
+  // Formerly its own function - we now move on to the task of actually rolling things
+  let atk_str = await buildAttackRollString(title, acc, flat_bonuses.join("+"), macro.skip_acc_prompt);
   if (!atk_str) return;
   let attack_roll = new Roll(atk_str).roll();
   const attack_tt = await attack_roll.getTooltip();
@@ -803,16 +778,38 @@ async function rollAttackMacro({
     }
   }
 
-  // Inflict overkill heat
-  if (
-    game.settings.get(LANCER.sys_name, LANCER.setting_automation) &&
-    game.settings.get(LANCER.sys_name, LANCER.setting_overkill_heat)
-  ) {
-    let mech = await actor.data.data.derived.mmec_promise;
-    if (mech.ent.Type == EntryType.NPC || mech.ent.Type == EntryType.MECH) {
-      mech.ent.CurrentHeat += overkill_heat;
-      await mech.ent.writeback();
+  // Inflict overkill heat / consume limited / unload
+  if (game.settings.get(LANCER.sys_name, LANCER.setting_automation)) {
+    // Overkill
+    if(game.settings.get(LANCER.sys_name, LANCER.setting_overkill_heat)) {
+      if (actor.Type == EntryType.NPC || actor.Type == EntryType.MECH || actor.Type == EntryType.DEPLOYABLE) {
+        actor.CurrentHeat += overkill_heat;
+      }
     }
+
+    // Self heat
+    if(game.settings.get(LANCER.sys_name, LANCER.setting_action_heat)) {
+      let self_heat = corrected.Tags.find(t => t.Tag.Name == "tg_heat_self");
+      if (self_heat && (actor.Type == EntryType.NPC || actor.Type == EntryType.MECH || actor.Type == EntryType.DEPLOYABLE)) {
+        actor.CurrentHeat += self_heat.as_number();
+      }
+    }
+
+    // Limited
+    if(game.settings.get(LANCER.sys_name, LANCER.setting_auto_limited)) {
+      if(funcs.tag_util.is_limited(corrected)) {
+        item.Uses = funcs.bound_int(item.Uses -  1, 0, raw_item.data.data.derived.max_uses);
+      }
+    }
+
+    // Unload
+    if(game.settings.get(LANCER.sys_name, LANCER.setting_auto_loading)) {
+      if(funcs.tag_util.is_loading(corrected)) {
+        item.Loaded = false;
+      }
+    }
+
+    await Promise.all([item.writeback(), actor.writeback()]);
   }
 
   // Output
@@ -826,7 +823,7 @@ async function rollAttackMacro({
     tags,
   };
   const template = `systems/lancer/templates/chat/attack-card.html`;
-  return await renderMacro(actor, template, templateData);
+  return await renderMacro(raw_actor, template, templateData);
 }
 
 /**
