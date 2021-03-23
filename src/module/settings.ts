@@ -63,9 +63,36 @@ export const registerSettings = function () {
     default: true,
   });
 
+  game.settings.register(LANCER.sys_name, LANCER.setting_auto_limited, {
+    name: "Auto-Consume Limited Charges",
+    hint: "When using an action that consumes limited charges, should they automatically be consumed?",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true,
+  });
+
+  game.settings.register(LANCER.sys_name, LANCER.setting_auto_loading, {
+    name: "Auto-Handle Loaded Weapons",
+    hint: "When using a weapon that has the loading tag, should we automatically unload it when firing?",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true,
+  });
+
   game.settings.register(LANCER.sys_name, LANCER.setting_pilot_oc_heat, {
     name: "Auto-Apply Overcharge Heat",
     hint: "When a mech rolls an overcharge, should it automatically apply heat?",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true,
+  });
+
+  game.settings.register(LANCER.sys_name, LANCER.setting_action_heat, {
+    name: "Auto-Apply Action Heat",
+    hint: "When using an action that produces heat, apply it to the mech/npc",
     scope: "world",
     config: true,
     type: Boolean,
