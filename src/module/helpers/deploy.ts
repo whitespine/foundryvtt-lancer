@@ -45,12 +45,11 @@ export function single_owned_deployable_preview(item_path: string, deployable_pa
 
     return `
         <div class="action card ${inc_if("editable", editable)}" data-path="${deployable_path}">
-            <div class="lancer-header">
+            <div class="lancer-header collapse-ctrl" collapse-id="${collapsible_id}">
                 <span>
                     ${deployable.Name}
                 </span>
                 ${inc_if(delete_button, editable)}
-                <a class="i--m fas fa-caret-down collapse-ctrl" collapse-id="${collapsible_id}"> </a>
             </div>
             <div class="collapse-item flexrow flex-center" collapse-id="${collapsible_id}">
                 ${macro}

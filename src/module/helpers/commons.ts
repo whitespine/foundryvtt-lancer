@@ -615,7 +615,7 @@ export function HANDLER_intercept_form_changes<T>(
 
 // Used for tracking double clicks, where applicable. `double_timer` is updated to reflect the most recent click. If we get another event and it matches, then it's a double click!
 // Note: doesn't handle nesteds (yet), but it could!
-const DOUBLE_INTERVAL = 500;
+const DOUBLE_INTERVAL = 300;
 const double_timer = {
   last_key: null as string | null,
   last_time: 0,

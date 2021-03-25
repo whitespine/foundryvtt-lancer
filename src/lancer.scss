@@ -361,6 +361,10 @@ ul.items-list {
   }
 }
 
+.collapse-ctrl {
+  cursor: pointer;
+}
+
 /* Animation to scale in and become visible. NOTE: broken. You cannot animate visibility like this, will need some JS to make that work*/
 @include keyframes('animation-scale-in-down') {
     0% {

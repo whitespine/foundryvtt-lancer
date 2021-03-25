@@ -88,13 +88,12 @@ export function single_action_preview(item_path: string, action_path: string, he
 
     return `
         <div class="action card ${inc_if("editable", editable)}" data-path="${action_path}">
-            <div class="lancer-header">
+            <div class="lancer-header collapse-ctrl" collapse-id="${collapsible_id}">
                 <span>
                     ${action.Name}
                 </span>
                 ${inc_if(edit_button, editable)}
                 ${inc_if(delete_button, editable)}
-                <a class="i--m fas fa-caret-down collapse-ctrl" collapse-id="${collapsible_id}"> </a>
             </div>
             <div class="collapse-item flexrow flex-center" collapse-id="${collapsible_id}">
                 ${macro}
