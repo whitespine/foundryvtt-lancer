@@ -1,5 +1,6 @@
 import { Bonus, Damage, Range, DamageType, RangeType, WeaponSize, WeaponType } from "machine-mind";
 import { BonusEditDialog } from "../apps/bonus-editor";
+import { GenericEditDialogue } from "../apps/generic-editor";
 import { effect_box, ext_helper_hash, HelperData, inc_if, resolve_helper_dotpath, std_checkbox, std_string_input } from "./commons";
 
 /** Expected arguments:
@@ -79,7 +80,7 @@ export function bonus_list_display(bonuses_path: string, helper: HelperData): st
   // Render each bonus
   for(let i=0; i<bonuses_array.length; i++) {
     let bonus = bonuses_array[i];
-    let delete_button = `<a class="gen-control" data-action="splice" data-path="${bonuses_path}.${i}"><i class="fas fa-trash"></i></a>`;
+    let delete_button = `<a class="gen-control fas fa-trash" data-action="splice" data-path="${bonuses_path}.${i}"></a>`;
     let title = `<span class="grow">${bonus.Title}</span> ${inc_if(delete_button, edit)}`;
     let boxed = `
       <div class="bonus ${inc_if("editable", edit)}" data-path="${bonuses_path}.${i}">
@@ -111,7 +112,14 @@ export function HANDLER_activate_edit_bonus<T>(
     // Find the bonus
     let bonus_path = event.currentTarget.dataset.path;
     if(!bonus_path) return;
-    let data = await data_getter();
-    return BonusEditDialog.edit_bonus(data, bonus_path, commit_func).catch(e => console.error("Dialog failed", e));
+    let sheet_data = await data_getter();
+    return GenericEditDialogue.render_form(sheet_data, single_bonus_editor(bonus_path, {
+        data: {
+            root: sheet_data, 
+        },
+        hash: {}
+    }))
+                .then(data => commit_func(data))
+                .catch(e => console.error("Bonus edit cancelled", e))
   });
 }

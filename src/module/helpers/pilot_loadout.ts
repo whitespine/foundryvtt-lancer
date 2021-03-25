@@ -40,7 +40,7 @@ export function pilot_armor_slot(armor_path: string, helper: HelperData): string
             <div class="lancer-header">
               <i class="mdi mdi-shield-outline i--m i--light"> </i>
               <span class="minor">${armor!.Name}</span>
-              <a class="gen-control" data-action="null" data-path="${armor_path}"><i class="fas fa-trash"></i></a>
+              <a class="gen-control fas fa-trash" data-action="null" data-path="${armor_path}"></a>
             </div>
             <div class="flexrow" style="align-items: center; padding: 5px">
               <div class="compact-stat">
@@ -102,9 +102,7 @@ export function pilot_weapon_refview(weapon_path: string, helper: HelperData): s
       item: weapon.as_ref(),
       actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref()
     }
-    macro = `<a class="lancer-macro" style="max-width: min-content;"  ${macro_elt_params(macro_ctx)}>
-                <i class="fas fa-dice-d20 i--sm i--dark"></i>
-              </a>`;
+    macro = `<a class="lancer-macro i--sm fas fa-dice-d20" ${macro_elt_params(macro_ctx)}> </a>`;
   }
 
   return `<div class="valid ${EntryType.PILOT_WEAPON} ref drop-settable card clipped"
@@ -112,7 +110,7 @@ export function pilot_weapon_refview(weapon_path: string, helper: HelperData): s
     <div class="lancer-header">
       <i class="cci cci-weapon i--m"> </i>
       <span class="minor">${weapon.Name}</span>
-      <a class="gen-control i--light" data-action="null" data-path="${weapon_path}"><i class="fas fa-trash"></i></a>
+      <a class="gen-control fas fa-trash" data-action="null" data-path="${weapon_path}"></a>
     </div>
     <div class="flexcol">
       <div class="flexrow flex-center">
@@ -183,9 +181,8 @@ export function pilot_gear_refview(gear_path: string, helper: HelperData): strin
     <div class="lancer-header">
       <i class="cci cci-generic-item i--m"> </i>
       ${inc_if(`<a class="lancer-macro mdi mdi-message" ${macro}></a>`, macro)}
-      <!--<a class="gear-macro"><i class="mdi mdi-message"></i></a>-->
       <span>${gear.Name}</span>
-      <a class="gen-control" data-action="null" data-path="${gear_path}"><i class="fas fa-trash"></i></a>
+      <a class="gen-control fas fa-trash" data-action="null" data-path="${gear_path}"></a>
     </div>
     <div class="flexcol">
       ${uses}
@@ -259,7 +256,7 @@ export function pilot_talent_refview(talent_path: string, helper: HelperData): s
     <div class="lancer-header">
       <i class="cci cci-generic-item i--m"> </i>
       <span>${talent.Name}</span>
-      <a class="gen-control" data-action="delete" data-path="${talent_path}"><i class="fas fa-trash"></i></a>
+      <a class="gen-control fas fa-trash" data-action="delete" data-path="${talent_path}"></a>
     </div>
     <div class="flexcol">
       ${ranks.join("\n")}

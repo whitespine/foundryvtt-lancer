@@ -2,6 +2,8 @@
 import { LANCER } from "./config";
 import {
   AnyLancerItem,
+  AnyMMItem,
+  has_uses,
   LancerItemType,
   LancerMechSystem,
   LancerMechWeapon,
@@ -12,6 +14,8 @@ import {
 } from "./item/lancer-item";
 import {
   AnyLancerActor,
+  has_heat,
+  has_struct_stress,
   LancerActorType,
   LancerNpc,
   overheat_mech,
@@ -40,11 +44,14 @@ import {
   RegNpcData,
   funcs,
   Deployable,
+  PilotGear,
 } from "machine-mind";
 import { FoundryReg, FoundryRegCat } from "./mm-util/foundry-reg";
 import { resolve_dotpath, resolve_helper_dotpath } from "./helpers/commons";
 import { OVERCHARGE_SEQUENCE } from "./helpers/actor";
 import { enable_dragging } from "./helpers/dragdrop";
+import { bound_int } from "machine-mind/dist/funcs";
+import { ref_params } from "./helpers/refs";
 
 const lp = LANCER.log_prefix;
 
@@ -110,6 +117,12 @@ export interface TalentMacroCtx extends MacroCtx {
   rank: number; 
 }
 
+// Just a system (not an action on a system)
+export interface SystemMacroCtx extends MacroCtx {
+  type: "system";
+  item: RegRef<EntryType.MECH_SYSTEM>; 
+}
+
 // Just text
 export interface TextMacroCtx extends MacroCtx {
   type: "text";
@@ -138,6 +151,14 @@ export interface StatMacroCtx extends MacroCtx, MacroRollMods {
   title: string; // The name to show at the header of the card
 }
 
+// Necessities for rolling (ie: creating a new instance of) a deployable
+// Pressing the button does not itself creates the deployable. It will create a chat card that the GM can then click to get the deployable
+export interface DeployableMacroCtx extends MacroCtx {
+  type: "deployable";
+  item: RegRef<LancerItemType>; 
+  deployable_path: string; // Path to the deployable on the item. E.x: "Deployables.2". 
+}
+
 // Necessities for rolling the details for a Frame's systems. Rolls the current frame of the mech, if avaailable
 export interface FrameMacroCtx extends MacroCtx {
   type: "frame";
@@ -157,6 +178,8 @@ export type AnyMacroCtx =
   | OverchargeMacroCtx
   | WeaponMacroCtx
   | TechMacroCtx
+  | SystemMacroCtx
+  | DeployableMacroCtx
   | StatMacroCtx
   | FrameMacroCtx;
 
@@ -196,6 +219,8 @@ export async function prepareMacro(any_macro: AnyMacroCtx) {
     return prepareWeaponMacro(any_macro);
   } else if(any_macro.type == "overcharge") {
     return prepareOverchargeMacro(any_macro);
+  } else if(any_macro.type == "deployable") {
+    return prepareDeployableMacro(any_macro);
   } else if(any_macro.type == "struct") {
     return prepareStructureMacro(any_macro);
   } else if(any_macro.type == "stress") {
@@ -239,12 +264,10 @@ export async function prepareMacro(any_macro: AnyMacroCtx) {
       break;
     // Systems. We prefer direct invocation of prepareSystemMacro
     case "mech_system":
-      // Just do a text macro
-      await prepareTextMacro({
+      prepareSystemMacro({
         ...macro,
-        body: item.Effect,
-        title: item.Name,
-        type: "text",
+        type: "system",
+        item: macro.item as RegRef<EntryType.MECH_SYSTEM>
       });
       break;
     // Talents
@@ -474,19 +497,30 @@ async function prepareActionMacro(macro: ActionMacroCtx) {
 
   // Get the item. Not always necessary
   let raw_item = (await get_macro_item(macro, false)) as AnyLancerItem;
+  let item: AnyMMItem | null = null;
   let action: Action;
-  let heat_tag_val = 0;
+  let heat_tag_val;
+  let tags: TagInstance[];
   if(raw_item) {
     // Get as mm
-    let item = await raw_item.data.data.derived.mmec_promise;
+    item = (await raw_item.data.data.derived.mmec_promise).ent;
 
     // Attempt to resolve from item actions
-    let x: Action | null = resolve_dotpath(item.ent, macro.action_path);
+    let x: Action | null = resolve_dotpath(item, macro.action_path);
     if(!x) {
       throw new Error(`Could not resolve action "${macro.action_path}"`);
     }
+
+    // Get tags/heat. Kinda annoying since we gotta resolve down to profiles
+    let corrected: MechWeaponProfile | AnyMMItem = item;
+    if(item instanceof MechWeapon) {
+      corrected = macro.profile != null ? item.Profiles[macro.profile] : item.SelectedProfile;
+    }
+
+    tags = crude_get_tags(corrected);
     action = x;
-    heat_tag_val = ((item.ent as any).Tags as TagInstance[] | undefined)?.find(t => t.Tag.Name == "tg_self_heat")?.as_number() || heat_tag_val;
+    heat_tag_val = roll_item_heat(corrected, action);
+
   } else {
     // Attempt to resolve from global actions
     let x = BaseActionsMap.get(macro.action_path.toString());
@@ -495,29 +529,31 @@ async function prepareActionMacro(macro: ActionMacroCtx) {
       throw new Error("Macro item reference failed to resolve, and " + macro.action_path + " is not a valid global action id");
     }
     action = x;
+    heat_tag_val = action.HeatCost ?? 0;
+    tags = [];
   }
-
-  let heat_cost = action.HeatCost || heat_tag_val;
 
   // Now just need to construct the template
   const template = `systems/lancer/templates/chat/action-card.html`;
   await renderMacro(actor, template, {
     action,
-    heat_cost 
+    heat_cost: heat_tag_val,
+    tags
   });
 
   // Only increase heat if we haven't disabled it
   if (game.settings.get(LANCER.sys_name, LANCER.setting_automation)) { 
     // Apply heat
-    if(game.settings.get(LANCER.sys_name, LANCER.setting_action_heat) && (mm.ent as any).CurrentHeat != null) {
-      (mm.ent as Mech | Npc | Deployable).CurrentHeat += heat_cost;
+    if(game.settings.get(LANCER.sys_name, LANCER.setting_action_heat) && has_heat(mm.ent)) {
+      (mm.ent as Mech | Npc | Deployable).CurrentHeat += heat_tag_val;
+      await mm.ent.writeback();
     }
 
     // Consume limited
-    if(game.settings.get(LANCER.sys_name, LANCER.setting_auto_limited) && (mm.ent as any).Uses != null) {
-      (mm.ent as Mech | Npc | Deployable).CurrentHeat -= action.Cost ?? 1;
+    if(item && game.settings.get(LANCER.sys_name, LANCER.setting_auto_limited) && has_uses(item)) {
+      item.Uses = bound_int(item.Uses - 1, 0, 999);
+      await item.writeback();
     }
-    await mm.ent.writeback();
   }
 }
 
@@ -778,20 +814,22 @@ async function prepareWeaponMacro(macro: WeaponMacroCtx) {
     }
   }
 
+  // Compute self heat
+  let tag_heat = roll_item_heat(corrected);
+
   // Inflict overkill heat / consume limited / unload
   if (game.settings.get(LANCER.sys_name, LANCER.setting_automation)) {
     // Overkill
     if(game.settings.get(LANCER.sys_name, LANCER.setting_overkill_heat)) {
-      if (actor.Type == EntryType.NPC || actor.Type == EntryType.MECH || actor.Type == EntryType.DEPLOYABLE) {
+      if (has_heat(actor)) {
         actor.CurrentHeat += overkill_heat;
       }
     }
 
     // Self heat
     if(game.settings.get(LANCER.sys_name, LANCER.setting_action_heat)) {
-      let self_heat = corrected.Tags.find(t => t.Tag.Name == "tg_heat_self");
-      if (self_heat && (actor.Type == EntryType.NPC || actor.Type == EntryType.MECH || actor.Type == EntryType.DEPLOYABLE)) {
-        actor.CurrentHeat += self_heat.as_number();
+      if (has_heat(actor)) {
+        actor.CurrentHeat += tag_heat;
       }
     }
 
@@ -818,6 +856,7 @@ async function prepareWeaponMacro(macro: WeaponMacroCtx) {
     attack: attack_roll,
     attack_tooltip: attack_tt,
     damages: damage_results,
+    tag_heat: tag_heat,
     overkill_heat: overkill_heat,
     effects,
     tags,
@@ -887,6 +926,62 @@ export async function prepareTextMacro(macro: TextMacroCtx) {
 }
 
 /**
+ * Produces a description card that the GM can use to summon deployable tokens
+ */
+export async function prepareDeployableMacro(macro: DeployableMacroCtx) {
+  // Determine which Actor to speak as
+  let raw_actor = await get_macro_speaker(macro.actor);
+
+  // Get the item that houses the deployable
+  let raw_item = (await get_macro_item(macro, true)) as AnyLancerItem;
+
+  // Get as MM
+  let item = (await raw_item.data.data.derived.mmec_promise).ent;
+  let deployable: Deployable | null = resolve_dotpath(item, macro.deployable_path);
+  if(!deployable) {
+    throw new Error(`Could not resolve deployable "${macro.deployable_path}"`);
+  }
+
+  // Determine which deployable we'll be talking about
+  const template = `systems/lancer/templates/chat/deployable-card.html`;
+  return renderMacro(raw_actor, template, {
+    deployable,
+    deployable_ref_params: ref_params(deployable.as_ref()),
+    tags: deployable.Tags,
+  });
+}
+
+export async function prepareSystemMacro(macro: SystemMacroCtx) {  
+  // Split up args into sensible bits
+  let raw_actor = await get_macro_speaker(macro.actor);
+  let raw_item = (await get_macro_item(macro, true)) as LancerMechSystem | LancerNpcFeature;
+
+  // Get as mm
+  let item = (await raw_item.data.data.derived.mmec_promise).ent;
+  let actor = (await raw_actor.data.data.derived.mmec_promise).ent;
+
+  // Apply heat if tagged to do so
+  let heat_cost = roll_item_heat(item);
+  if(has_heat(actor)) {
+    if (
+      game.settings.get(LANCER.sys_name, LANCER.setting_automation) &&
+      game.settings.get(LANCER.sys_name, LANCER.setting_pilot_oc_heat)
+    ) {
+      actor.CurrentHeat += heat_cost;
+    }
+  }
+
+  // Determine which Actor to speak as
+  const template = `systems/lancer/templates/chat/generic-card.html`;
+  return renderMacro(raw_actor, template, {
+    title: item.Name,
+    description: item.Effect,
+    tags: item.Tags,
+    heat_cost
+  });
+}
+
+/**
  * Given prepared data, handles rolling of a generic text-only macro to display descriptions etc.
  */
 async function rollTextMacro(
@@ -895,8 +990,6 @@ async function rollTextMacro(
   description: string,
   tags?: TagInstance[]
 ) {
-  if (!actor) return Promise.resolve();
-
   const template = `systems/lancer/templates/chat/generic-card.html`;
   return renderMacro(actor, template, {
     title,
@@ -1104,7 +1197,7 @@ export async function prepareOverheatMacro(macro: StressMacroCtx) {
   let actor = (await raw_actor.data.data.derived.mmec_promise).ent;
 
   // Verify type
-  if (actor.Type == EntryType.NPC || actor.Type == EntryType.MECH) {
+  if (has_struct_stress(actor)) {
     // Hand it off to the actor to overheat
     await overheat_mech(actor);
   } else {
@@ -1124,7 +1217,7 @@ export async function prepareStructureMacro(macro: StructMacroCtx) {
   let actor = (await raw_actor.data.data.derived.mmec_promise).ent;
 
   // Verify type
-  if (actor.Type == EntryType.NPC || actor.Type == EntryType.MECH) {
+  if (has_struct_stress(actor)) {
     // Hand it off to the actor to overheat
     await structure_mech(actor);
   } else {
@@ -1149,35 +1242,6 @@ export function recover_macro_from_elt(elt: HTMLElement): AnyMacroCtx {
   } else {
     throw Error("Couldn't find macro info on the specified element");
   }
-}
-
-// Disambiguators
-function is_action(ctx: AnyMacroCtx): ctx is ActionMacroCtx {
-  return ctx.type == "action";
-}
-
-function is_tech(ctx: AnyMacroCtx): ctx is TechMacroCtx {
-  return ctx.type == "tech";
-}
-
-function is_weapon(ctx: AnyMacroCtx): ctx is WeaponMacroCtx {
-  return ctx.type == "weapon";
-}
-
-function is_stat(ctx: AnyMacroCtx): ctx is StatMacroCtx {
-  return ctx.type == "stat";
-}
-
-function is_frame(ctx: AnyMacroCtx): ctx is FrameMacroCtx {
-  return ctx.type == "frame";
-}
-
-function is_item(ctx: AnyMacroCtx): ctx is ItemMacroCtx {
-  return ctx.type == "generic_item";
-}
-
-function is_text(ctx: AnyMacroCtx): ctx is TextMacroCtx {
-  return ctx.type == "text";
 }
 
 interface Effect {
@@ -1206,4 +1270,28 @@ export function HANDLER_activate_macros(html: JQuery) {
     };
     return JSON.stringify(drag_payload);
   });
+}
+
+// Quickly return the tag/action heat for using an item. Respects dice based heat increases
+function roll_item_heat(item: AnyMMItem | MechWeaponProfile, action?: Action): number {
+  // Action heatcost always override
+  if(action?.HeatCost != null) {
+    return action.HeatCost;
+  }
+
+  // No tags? bail
+  if((item as any).Tags == null) {
+    return 0;
+  }
+
+  let self_heat_tag = crude_get_tags(item).find(t => t.Tag.Name == "tg_heat_self");
+  if(self_heat_tag?.Value) {
+     return (new Roll(self_heat_tag.Value.toString())).roll().total;
+  } else {
+    return 0;
+  }
+}
+
+function crude_get_tags(item: AnyMMItem | MechWeaponProfile): TagInstance[] {
+  return (item as any).Tags ?? [];
 }

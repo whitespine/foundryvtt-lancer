@@ -200,6 +200,9 @@ export class LancerItemSheet<T extends LancerItemType> extends ItemSheet {
     let lic_ref = tmp_dat.data.derived.license;
     data.license = lic_ref ? (await data.mm.reg.resolve(data.mm.ctx, lic_ref)) : null;
 
+    // Force use most up to limited uses
+    data.data.derived.max_uses = tmp_dat.data.derived.max_uses;
+
     // Get the owner's data as well
     data.mm_owner = null;
     if(this.item.isOwned) {

@@ -1,9 +1,8 @@
 <div class="card" style="margin: 0px;">
-  <div class="lancer-header">// SYSTEM :: {{title}} //</div>
-    {{#if effect.effect_type}}
-      {{{eff-preview effect}}}
-    {{else}}
-      {{> generic-eff-preview effect=effect}}
-    {{/if}}
-</div>
+    <div class="lancer-header">// SYSTEM :: {{title}} //</div>
+    
+    {{{effect-box "EFFECT" description}}}
+    {{{heat "HEAT" heat_cost}}}
 
+    {{{ mm-tag-list "tags" }}}
+</div>

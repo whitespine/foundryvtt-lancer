@@ -358,6 +358,14 @@ export function is_actor_type(type: LancerActorType | LancerItemType): type is L
   return LancerActorTypes.includes(type as LancerActorType);
 }
 
+export function has_heat(actor: AnyMMActor): actor is Mech | Npc | Deployable {
+  return actor.Type == EntryType.NPC || actor.Type == EntryType.MECH || actor.Type == EntryType.DEPLOYABLE;
+}
+
+export function has_struct_stress(actor: AnyMMActor): actor is Mech | Npc  {
+  return actor.Type == EntryType.NPC || actor.Type == EntryType.MECH;
+}
+
 /**
  * Performs structure on the mech
  * For now, just rolls on table. Eventually we can include configuration to do automation

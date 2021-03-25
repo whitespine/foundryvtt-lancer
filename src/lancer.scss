@@ -23,6 +23,7 @@
   --reaction-clip-path: polygon( 0 0, 100% 0, 100% 1px, calc(100% - 9px) 1px, calc(100% - 8px) 2px, 100% 2px, 100% 3px, calc(100% - 7px) 3px, calc(100% - 6px) 4px, 100% 4px, 100% 5px, calc(100% - 5px) 5px, calc(100% - 4px) 6px, 100% 6px, 100% 7px, calc(100% - 3px) 7px, calc(100% - 2px) 8px, 100% 8px, 100% 100%, 0 100% );
   --trait-color: #0a7674;
   --action-list-color: #305377;
+  --deployable-list-color: #313892;
   --bonus-color: #5d8673;
   --bonus-list-color: #71a373;
   --system-color: #6a9759;
@@ -356,7 +357,7 @@ ul.items-list {
   }
 
   &.expanded {
-    @include animation(0, 0.5s, animation-scale-in-down, ease);
+    @include animation(0, 0.5s, animation-fade-in ease);
   }
 }
 
@@ -381,6 +382,16 @@ ul.items-list {
     100% {
         @include transform( scaleY(0) translateY(-50%) );
         visibility: collapse;
+    }
+}
+
+@include keyframes('animation-fade-in') {
+    0% {
+      filter: opacity(0);
+    }
+ 
+    100% {
+      filter: opacity(1);
     }
 }
 
@@ -792,66 +803,70 @@ tr.lcp-index-header {
   }
 
   /* Category specific coloration */
-  .npc-trait &,
-  .frame_trait & {
+  .npc-trait > &,
+  .frame_trait > & {
     background-color: var(--trait-color, fuchsia);
   }
 
-  .action-list & {
+  .action-list > & {
     background-color: var(--action-list-color, fuchsia);
   }
 
-  .bonus-list & {
+  .deployable-list > & {
+    background-color: var(--deployable-list-color, fuchsia);
+  }
+
+  .bonus-list > & {
     background-color: var(--bonus-list-color, fuchsia);
   }
 
-  .bonus & {
+  .bonus > & {
     background-color: var(--bonus-color, fuchsia);
   }
 
 
-  .wep-mount &,
-  .sys-mount &,
-  .mount & {
+  .wep-mount > &,
+  .sys-mount > &,
+  .mount > & {
     background-color: var(--main-theme-color, fuchsia);
   }  
 
-  .trigger & {
+  .trigger > & {
     color: var(--main-theme-color, fuchsia);
     background-color: white;
   }
 
-  .protocol & {
+  .protocol > & {
     background-color: var(--protocol-color);
   }
 
-  .npc-reaction & {
+  .npc-reaction > & {
     background-color: var(--reaction-color);
   }
 
-  .tech &,
-  .npc-tech & {
+  .tech > &,
+  .npc-tech > & {
     /* clip-path: var(--tech-clip-path);
     -webkit-clip-path: var(--tech-clip-path); */
     background-color: var(--tech-color);
   }
 
-  .mech_system &,
-  .npc-system {
+  .mech_system > &,
+  .npc-system > & {
     background-color: var(--system-color);
   }
 
-  .mech_weapon &,
-  .npc-weapon &,
-  .pilot_weapon & {
+  .mech_weapon > &,
+  .npc-weapon > &,
+  .pilot_weapon > & {
     background-color: var(--weapon-color);
   }
 
-  .pilot_gear & {
+  .pilot_gear > & {
     background-color: var(--system-color);
   }
 
-  .pilot_armor & {
+  .pilot_armor > & {
     background-color: var(--main-theme-color);
   }
 
@@ -1100,6 +1115,7 @@ code.horus:hover {
 .lancer-macro {
   margin: 3px 10px;
 }
+
 
 .system-macro {
   max-width: min-content;
@@ -1390,4 +1406,9 @@ input.core-power-toggle:not(:checked)::before
     transform: translate(-2px, 0) translate3D(-30px, 0px, 0) rotate(-0.1deg);
     cursor: all-scroll;
   }
+}
+
+/* We remove this when you're a GM, but it otherwise serves as a convenient "don't look here" */
+.deployable-button .hidden {
+  display: none;
 }

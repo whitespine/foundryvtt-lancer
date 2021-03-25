@@ -1,4 +1,5 @@
 import { LANCER } from "../config";
+import { CollapseHandler, HANDLER_activate_collapsibles } from "../helpers/collapse";
 import { HANDLER_activate_general_controls,  gentle_merge, HANDLER_activate_popout_text_editor, HANDLER_intercept_form_changes } from "../helpers/commons";
 import { enable_native_dropping_mm_wrap, ResolvedNativeDrop, resolve_native_drop } from "../helpers/dragdrop";
 import { HANDLER_activate_ref_dragging, HANDLER_activate_ref_drop_clearing, HANDLER_activate_ref_drop_setting, HANDLER_click_open_ref as HANDLER_activate_ref_clicking } from "../helpers/refs";
@@ -11,6 +12,8 @@ const lp = LANCER.log_prefix;
  * Extend the basic ActorSheet
  */
 export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
+  // Tracks collapse state between renders
+  private collapse_handler = new CollapseHandler();
 
   /* -------------------------------------------- */
   /**
@@ -41,6 +44,9 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
 
     // Make refs clearable
     HANDLER_activate_ref_drop_clearing(html, getfunc, commitfunc);
+
+    // Enable collapses
+    HANDLER_activate_collapsibles(html, this.collapse_handler);
 
     // Enable native ref drag handlers
     this._activateNativeRefDropBoxes(html);

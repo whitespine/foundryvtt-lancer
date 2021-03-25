@@ -253,7 +253,7 @@ export function editable_mm_ref_list_item<T extends LancerItemType>(
       <span>${cd.name}</span>
       <div class="ref-list-controls">
         <hr class="vsep--m"> 
-        <a class="gen-control i--dark" data-action="${trash_action}" data-path="${item_path}"><i class="fas fa-trash"></i></a>
+        <a class="gen-control fas fa-trash" data-action="${trash_action}" data-path="${item_path}"></a>
       </div>
     </div>`;
 }

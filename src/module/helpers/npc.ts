@@ -81,7 +81,7 @@ export function action_type_selector(a_type: string, data_target: string) {
 
 // TODO: Make this globally consistent
 function del_button(path: string): string {
-  return `<a class="gen-control" data-action="delete" data-path="${path}"><i class="fas fa-trash"></i></a>`
+  return `<a class="gen-control fas fa-trash" data-action="delete" data-path="${path}"></a>`
 }
 
 /** A generic format to render all npc features
@@ -100,7 +100,19 @@ function npc_feature_scaffold(path: string, npc_feature: NpcFeature, body: strin
       actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref()
     }
     macro = macro_elt_params(macro_ctx);
+  }  
+  
+  // Generate recharge segment as needed
+  /*
+  let loading = "";
+  if(npc_feature.Recharge.IsLoading) {
+    let loading_icon = `i--m mdi mdi-hexagon-${weapon.Loaded ? 'slice-6' : 'outline'}`;
+    loading = `<span> 
+                LOADED: 
+                <a class="gen-control ${loading_icon}" data-action="set" data-action-value="(bool)${!weapon.Loaded}" data-path="${weapon_path}.Loaded" data-commit-item="${weapon_path}"></a>
+              </span>`;
   }
+  */
 
   // Decide icon
   let feature_icon =`cci cci-${npc_feature.FeatureType.toLowerCase()}`;
@@ -182,7 +194,7 @@ export function npc_tech_effect_preview(
       type: "tech",
       actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref()
     };
-    subheader_items.push(`<a class="lancer-macro no-grow" ${macro_elt_params(macro)}><i class="fas fa-dice-d20 i--m i--dark"></i></a>`);
+    subheader_items.push(`<a class="lancer-macro i--m fas fa-dice-d20 no-grow" ${macro_elt_params(macro)}></a>`);
   }
 
   let attack_bonus = npc_feature.AttackBonus[tier_index];
@@ -244,7 +256,7 @@ export function npc_weapon_effect_preview(
       type: "weapon",
       actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref()
     };
-    subheader_items.push(`<a class="lancer-macro no-grow" ${macro_elt_params(macro)}><i class="fas fa-dice-d20 i--m i--dark"></i></a>`);
+    subheader_items.push(`<a class="lancer-macro i--m fas fa-dice-d20 no-grow" ${macro_elt_params(macro)}></a>`);
   }
 
   // Weapon info

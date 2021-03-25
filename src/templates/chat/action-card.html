@@ -2,18 +2,8 @@
     <div class="lancer-header ">// {{upper-case action.Name}} //</div>
     
     <div class="card clipped" style="padding: 5px">
-        <div class="effect-text" style="grid-area: 2/1/3/3">
-            {{{action.Detail}}}
-        </div>
-        {{#if action.HeatCost}}
-        <span>
-            {{heat_cost}}
-            <i class="cci cci-heat overcharge-heat"></i>
-        </span>
-            
-        {{/if}}
-
-
+        {{{effect-box "EFFECT" action.Detail}}}
+        {{{heat "HEAT" heat_cost}}}
         {{{ mm-tag-list "tags" }}}
     </div>
 </div>

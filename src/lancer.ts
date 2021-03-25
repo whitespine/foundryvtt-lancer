@@ -70,7 +70,7 @@ import {
   uses_control,
 } from "./module/helpers/item";
 import { clicker_num_input, clicker_stat_card, compact_stat_edit, compact_stat_view, deployer_slot, npc_clicker_stat_card, npc_tier_selector, overcharge_button, stat_edit_card, stat_edit_card_max, stat_view_card, } from "./module/helpers/actor";
-import { editable_mm_ref_list_item, simple_mm_ref, mm_ref_portrait, mm_ref_list_append_slot, editable_mm_ref_list_item_native } from "./module/helpers/refs";
+import { editable_mm_ref_list_item, simple_mm_ref, mm_ref_portrait, mm_ref_list_append_slot, editable_mm_ref_list_item_native, resolve_ref_element } from "./module/helpers/refs";
 import { mech_loadout, mech_system_refview, mech_weapon_refview, pilot_slot } from "./module/helpers/mech_loadout";
 import { LancerNPCSheet } from "./module/actor/npc-sheet";
 import { bonus_list_display } from "./module/helpers/bonuses";
@@ -78,6 +78,8 @@ import { action_list_display } from "./module/helpers/actions";
 import { NativeDrop, resolve_native_drop } from "./module/helpers/dragdrop";
 import { funcs } from "machine-mind";
 import { pilot_armor_slot, pilot_weapon_refview, pilot_gear_refview, pilot_talent_refview } from "./module/helpers/pilot_loadout";
+import { heat_display } from "./module/helpers/statuses";
+import { deployable_list_display } from "./module/helpers/deploy";
 
 const lp = LANCER.log_prefix;
 
@@ -323,6 +325,8 @@ Hooks.once("init", async function () {
     }
   });
   
+  // Condition-type stuff
+  Handlebars.registerHelper("heat", heat_display);
 
   // ------------------------------------------------------------------------
   // Refs
@@ -365,6 +369,10 @@ Hooks.once("init", async function () {
   // Actions
   Handlebars.registerHelper("actions-view", action_list_display);
   Handlebars.registerHelper("effect-box", effect_box);
+
+  // ------------------------------------------------------------------------
+  // Deployables
+  Handlebars.registerHelper("deployables-view", deployable_list_display);
 
   // ------------------------------------------------------------------------
   // Bonuses
@@ -457,13 +465,13 @@ Hooks.on("renderSidebarTab", async (app: Application, html: HTMLElement) => {
   addLCPManager(app, html);
 });
 
-// Attack function to overkill reroll button
-Hooks.on("renderChatMessage", async (cm: ChatMessage, html: any, data: any) => {
-  const overkill = html[0].getElementsByClassName("overkill-reroll");
-  for (let i = 0; i < overkill.length; i++) {
+// Attack function to overkill reroll button, and to deploy deployables
+Hooks.on("renderChatMessage", async (cm: ChatMessage, html: JQuery<HTMLElement>, data: any) => {
+  // deploy
+  const overkills = html.find(".overkill-reroll");
+  for (let overkill of overkills) {
     if (cm.isAuthor) {
-      overkill[i].addEventListener("click", async function () {
-        // console.log(data);
+      $(overkill).on("click", async () => {
         const roll = new Roll("1d6").roll();
         const templateData = {
           roll: roll,
@@ -481,8 +489,26 @@ Hooks.on("renderChatMessage", async (cm: ChatMessage, html: any, data: any) => {
           content: html,
         };
         let cm = await ChatMessage.create(chat_data);
-        cm.render();
-        return Promise.resolve();
+        return cm.render();
+      });
+    }
+  }
+
+  // now do deployables if gm
+  if(game.user.isGM) {
+    const deploy_buttons = html.find(".deployable-button");
+    for(let _button of deploy_buttons) {
+      let button = $(_button);
+      button.removeClass("hidden"); // Show that shit!
+      // Make it do shit!
+      button.on("click", async () => {
+        let resolved_deployable = await resolve_ref_element(button[0]);
+        if(!resolved_deployable || resolved_deployable.Type != EntryType.DEPLOYABLE) {
+          console.error("Deployable button is broken!");
+        } else {
+          // Place a token
+          console.log("TODO: place token for this deployable");
+        }
       });
     }
   }

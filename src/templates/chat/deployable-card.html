@@ -1,0 +1,14 @@
+<div class="card" style="margin: 0px;">
+    <div class="lancer-header ">// DEPLOYABLE :: {{upper-case deployable.Name}} //</div>
+    
+    <div class="card clipped" style="padding: 5px">
+        {{{effect-box "EFFECT" deployable.Detail}}}
+        <!-- Then the GM only stuff -->
+        <button class="deployable-button hidden" {{{deployable_ref_params}}}>
+            Deploy Token
+        </button>
+
+        {{{ mm-tag-list "tags" }}}
+    </div>
+
+</div>

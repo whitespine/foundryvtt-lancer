@@ -4,6 +4,7 @@ import { TypeIcon } from "../config";
 import { WeaponMacroCtx, macro_elt_params, ActionMacroCtx, ItemMacroCtx } from "../macros";
 import { action_list_display } from "./actions";
 import { effect_box, ext_helper_hash, HelperData, inc_if, resolve_helper_dotpath } from "./commons";
+import { deployable_list_display } from "./deploy";
 import { show_damage_array, show_range_array, uses_control } from "./item";
 import { ref_commons, ref_params, simple_mm_ref } from "./refs";
 import { compact_tag_list } from "./tags";
@@ -216,9 +217,7 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string, help
       actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref()
       // Should we specify profile? Or just use selected? Opting with the latter for now
     }
-    macro = `<a class="lancer-macro" style="max-width: min-content;"  ${macro_elt_params(macro_ctx)}>
-                <i class="fas fa-dice-d20 i--sm i--dark"></i>
-              </a>`;
+    macro = `<a class="lancer-macro i--s fas fa-dice-d20" ${macro_elt_params(macro_ctx)}> </a>`;
   }
 
 
@@ -236,7 +235,7 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string, help
     <div class="lancer-header">
       <i class="cci cci-weapon i--m"> </i>
       <span class="minor">${weapon.Name} // ${weapon.Size.toUpperCase()} ${weapon.SelectedProfile.WepType.toUpperCase()}</span>
-      <a class="gen-control i--light" data-action="null" data-path="${weapon_path}"><i class="fas fa-trash"></i></a>
+      <a class="gen-control fas fa-trash" data-action="null" data-path="${weapon_path}"></a>
     </div> 
     <div class="lancer-body">
       <div class="flexrow flex-center" style="text-align: left; white-space: nowrap;">
@@ -322,7 +321,7 @@ export function mech_system_refview(system_path: string, mech_path: string, help
       <i class="cci cci-system i--m"> </i>
       ${macro}
       <span>${system.Name}</span>
-      <a class="gen-control i--light" data-action="null" data-path="${system_path}"><i class="fas fa-trash"></i></a>
+      <a class="gen-control fas fa-trash" data-action="null" data-path="${system_path}"></a>
     </div> 
     <div class="lancer-body">
       ${uses}
@@ -330,6 +329,7 @@ export function mech_system_refview(system_path: string, mech_path: string, help
         ${system.Effect}
       </div>
       ${inc_if(action_list_display(system_path, "Actions", helper), system.Actions.length)}
+      ${inc_if(deployable_list_display(system_path, "Deployables", helper), system.Deployables.length)}
     </div>
   </div>`
 };

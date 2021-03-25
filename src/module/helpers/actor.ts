@@ -146,7 +146,7 @@ export function npc_clicker_stat_card(title: string, data_path: string, helper: 
       <div class="flexrow lancer-header major">
         ${inc_if(`<i class="${icon} i--m"> </i>`, icon)}
         <span>${title}</span>
-        <a class="gen-control" data-path="${data_path}" data-action="set" data-action-value="(struct)npc_stat_array"><i class="fas fa-redo"></i></a>
+        <a class="gen-control fas fa-redo" data-path="${data_path}" data-action="set" data-action-value="(struct)npc_stat_array"></a>
       </div>
       ${tier_clickers.join("")}
     </div>`;

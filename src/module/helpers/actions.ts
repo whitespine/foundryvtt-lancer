@@ -69,7 +69,7 @@ export function single_action_preview(item_path: string, action_path: string, he
 
     // Generate a collapsible id for this action, and a delete button
     let collapsible_id = `${item?.RegistryID || ""}-${action_path}`;
-    let delete_button = `<a class="gen-control" data-action="splice" data-path="${action_path}"><i class="fas fa-trash"></i></a>`; // Relies on this being in an array
+    let delete_button = `<a class="gen-control fas fa-trash" data-action="splice" data-path="${action_path}"></a>`; // Relies on this being in an array
     let edit_button =  `<a class="fas fa-edit action-edit-button" data-path="${action_path}"> </a>`;
 
     // Make context if we are able
@@ -83,7 +83,7 @@ export function single_action_preview(item_path: string, action_path: string, he
             name: action.Name,
             icon
         }
-        macro = `<a class="i--m fas fa-dice-d20 roll-action" ${macro_elt_params(macro_ctx)}> </a>`;
+        macro = `<a class="lancer-macro i--m fas fa-dice-d20" ${macro_elt_params(macro_ctx)}> </a>`;
     }
 
     return `
