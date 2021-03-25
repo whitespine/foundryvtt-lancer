@@ -1,38 +1,90 @@
 <form class="{{cssClass}} lancer-sheet" autocomplete="off">
   {{!-- Sheet Header --}}
-  <header class="sheet-header card clipped-bot">
-    <div grow">
+  <header class="sheet-header card clipped-bot" style="display: grid; grid-template: repeat(2, 1fr) / 1fr 1fr 1fr 1fr 120px;">
+    {{!-- Name at the top as usual --}}
+    <div class="header-fields" style="grid-area: 1/1/2/5;">
       <h1 class="charname"><input class="header-field" name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
     </div>
-    {{{ ref-portrait-img actor.img "img" mm.ent }}}
+
+    {{!-- Four columns below, containing size, grit, frame, and pilot --}}
+    {{!-- Size --}}
+    <i class="i--xl cci cci-size-{{mm.ent.Size}}" style="grid-area: 2/1/3/2; justify-self: center;"></i> 
+
+    {{!-- grit --}}
+    <div class="flexcol" style="grid-area: 2/2/3/3;">
+      <span class="major">GRIT:</span>
+      <span class="submajor">
+        {{#if mm.ent.Pilot}}
+          {{mm.ent.Pilot.Grit}}
+        {{else}}
+          N/A
+        {{/if}}
+      </span>
+    </div>
+
+    {{!-- frame --}}
+    <div class="flexcol" style="grid-area: 2/3/3/4;">
+      <span class="major">FRAME:</span>
+      <span class="submajor">
+        {{#if mm.ent.Loadout.Frame}}
+          {{mm.ent.Loadout.Frame.Name}}
+        {{else}}
+          NO FRAME
+        {{/if}}
+      </span>
+    </div>
+
+    {{!-- Pilot --}}
+    <div class="flexcol" style="grid-area: 2/4/3/5;">
+      <span class="major">PILOT:</span>
+      <span class="submajor">
+        {{#if mm.ent.Pilot}}
+          {{mm.ent.Pilot.Name}}
+        {{else}}
+          NO PILOT
+        {{/if}}
+      </span>
+    </div>
+
+
+    {{!-- Finally, the portrait --}}
+    <div class="flexcol" style="grid-area: 1/5/3/6;">
+      {{{ ref-portrait-img actor.img "img" mm.ent }}}
+    </div>
   </header>
 
-  <div class="wraprow quintuple">
+  <div class="wraprow quadruple">
     {{{stat-view-card      "HULL"         "mm.ent.Pilot.MechSkills.Hull"         macro-actor=mm.ent}}}
     {{{stat-view-card      "AGILITY"      "mm.ent.Pilot.MechSkills.Agi"      macro-actor=mm.ent}}}
     {{{stat-view-card      "SYSTEMS"      "mm.ent.Pilot.MechSkills.Sys"      macro-actor=mm.ent}}}
     {{{stat-view-card      "ENGINEERING"  "mm.ent.Pilot.MechSkills.Eng"  macro-actor=mm.ent}}}
-    {{{stat-view-card      "GRIT"         "mm.ent.Pilot.Grit"  macro-actor=mm.ent}}}
 
+
+    {{{stat-edit-max-card  "STRUCTURE"          "mm.ent.CurrentStructure"         "mm.ent.MaxStructure" }}}
     {{{stat-edit-max-card  "HP"          "mm.ent.CurrentHP"         "mm.ent.MaxHP"              icon="mdi mdi-heart-outline" }}}
+    {{{stat-edit-card      "O.SHIELD"    "mm.ent.Overshield"                                    icon="mdi mdi-octagram" }}}
+    {{{stat-view-card      "EVASION"     "mm.ent.Evasion"           icon="cci cci-evasion" }}}
+
+    {{{stat-edit-max-card  "STRESS"      "mm.ent.Stress"    "mm.ent.MaxStress" }}}
     {{{stat-edit-max-card  "HEAT"        "mm.ent.CurrentHeat"       "mm.ent.HeatCapacity"       icon="cci cci-heat" }}}
     {{{stat-edit-card      "BURN"        "mm.ent.Burn"                                          icon="cci cci-burn" }}}
-    {{{stat-edit-card      "O.SHIELD"    "mm.ent.Overshield"                                    icon="mdi mdi-octagram" }}}
-    {{{stat-edit-max-card  "REPAIRS"     "mm.ent.CurrentRepairs"    "mm.ent.RepairCapacity"     icon="cci cci-repair" }}}
-
-    {{{stat-view-card      "SIZE"        "mm.ent.Size"                                          icon=(concat "cci " mm.ent.SizeIcon) }}}
-    {{{stat-view-card      "ARMOR"       "mm.ent.Armor"             icon="mdi mdi-shield-outline" }}}
-    {{{stat-view-card      "EVASION"     "mm.ent.Evasion"           icon="cci cci-evasion" }}}
     {{{stat-view-card      "E-DEF"       "mm.ent.EDefense"          icon="cci cci-edef" }}}
-    {{{stat-view-card      "SPEED"       "mm.ent.Speed"             icon="mdi mdi-arrow-right-bold-hexagon-outline" }}}
 
-    {{{stat-view-card      "TECH ATK"    "mm.ent.TechAttack"        icon="cci cci-tech-full" macro-actor=mm.ent }}}
+    {{{stat-view-card      "SPEED"       "mm.ent.Speed"             icon="mdi mdi-arrow-right-bold-hexagon-outline" }}}
+    {{{stat-view-card      "ARMOR"       "mm.ent.Armor"             icon="mdi mdi-shield-outline" }}}
     {{{stat-view-card      "SENSORS"     "mm.ent.SensorRange"       icon="cci cci-sensor" }}}
     {{{stat-view-card      "SAVE"        "mm.ent.SaveTarget"        icon="cci cci-save" }}}
-    {{{stat-view-card      "SYSPOINTS"  "mm.ent.MaxSP"             icon="cci cci-system" }}}
-    {{{stat-view-card      "ATTACK"      "mm.ent.AttackBonus"       icon="cci cci-heart" macro-actor=mm.ent }}}
 
+
+    {{{stat-edit-max-card  "REPAIRS"     "mm.ent.CurrentRepairs"    "mm.ent.RepairCapacity"     icon="cci cci-repair" }}}
+    {{{stat-view-card      "TECH ATK"    "mm.ent.TechAttack"        icon="cci cci-tech-full" macro-actor=mm.ent }}}
+    {{{stat-view-card      "SYSPOINTS"  "mm.ent.MaxSP"             icon="cci cci-system" }}}
     {{{overcharge-button   "mm.ent.CurrentOvercharge" macro-actor=mm.ent }}}
+
+    {{!-- {{{stat-view-card      "GRIT"         "mm.ent.Pilot.Grit"  macro-actor=mm.ent}}} --}}
+    {{!-- {{{stat-view-card      "SIZE"        "mm.ent.Size"                icon=(concat "cci " mm.ent.SizeIcon) }}} --}}
+    {{!-- {{{stat-view-card      "ATTACK"      "mm.ent.AttackBonus"       icon="cci cci-heart" macro-actor=mm.ent }}} --}}
+
 
     <div class="card clipped quadruple">
       <div class="lancer-header major">

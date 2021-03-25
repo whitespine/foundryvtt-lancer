@@ -46,8 +46,8 @@ import {
   Deployable,
   PilotGear,
 } from "machine-mind";
-import { FoundryReg, FoundryRegCat } from "./mm-util/foundry-reg";
-import { resolve_dotpath, resolve_helper_dotpath } from "./helpers/commons";
+import { FoundryReg } from "./mm-util/foundry-reg";
+import { resolve_dotpath } from "./helpers/commons";
 import { OVERCHARGE_SEQUENCE } from "./helpers/actor";
 import { enable_dragging } from "./helpers/dragdrop";
 import { bound_int } from "machine-mind/dist/funcs";
