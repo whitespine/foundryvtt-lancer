@@ -43,7 +43,7 @@ export function single_owned_deployable_preview(item_path: string, deployable_pa
             name: deployable.Name,
             icon: (deployable?.Flags as FoundryFlagData<EntryType.DEPLOYABLE>| undefined)?.orig_doc.img
         }
-        macro = `<a class="lancer-macro i--m cci cci-drone" ${macro_elt_params(macro_ctx)}> </a>`;
+        macro = `<a class="lancer-macro i--m cci cci-deployable" ${macro_elt_params(macro_ctx)}> </a>`;
     }
 
     if(collapse) {

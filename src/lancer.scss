@@ -990,6 +990,12 @@ input[type=string].lancer-input {
   background: rgba(0, 0, 0, 0.2);
 }
 
+/* Used to indicate locked talents */
+.lancer .locked {
+  filter: saturate(0) blur(2px);
+}
+
+/* Used for little action descriptor boxes */
 .compact-action-box {
   text-align: left;
   align-items: center;

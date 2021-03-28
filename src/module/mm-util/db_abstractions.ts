@@ -495,7 +495,7 @@ export class CompendiumWrapper<T extends EntryType> extends EntityCollectionWrap
   async enumerate(): Promise<GetResult<T>[]> {
     let content = await cached_get_pack_map(this.type);
     return Array.from(content.values())
-      .filter(e => e.data.type == this.type) // Sanity check
+      .filter(e => e && e.data.type == this.type) // Sanity check. I've seen nulls in here
       .map(e => ({
         id: (e.data as any)._id,
         item: e.data.data as RegEntryTypes<T>,

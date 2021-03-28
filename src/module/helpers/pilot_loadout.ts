@@ -197,7 +197,7 @@ export function pilot_gear_refview(gear_path: string, helper: HelperData): strin
 }
 
 // Shows an individual rank. Path is needed for macros
-function talent_rank_refview(talent: Talent, rank_index: number, macro_actor: AnyMMActor | null): string {
+function talent_rank_refview(talent: Talent, rank_index: number, macro_actor: AnyMMActor | null, unlocked: boolean): string {
   let rank = talent.Ranks[rank_index];
 
   // Macro if needed
@@ -214,7 +214,7 @@ function talent_rank_refview(talent: Talent, rank_index: number, macro_actor: An
   }
 
   // Retern the item
-  return `<div class="card">
+  return `<div class="card ${inc_if("locked", !unlocked)}" style="grid-area: 1/${rank_index + 1}/2/${rank_index + 2}">
     <div class="lancer-header">
       <i class="cci cci-rank-${rank_index + 1} i--s"></i>
       ${inc_if(`<a class="lancer-macro mdi mdi-message" ${macro}></a>`, macro)}
@@ -246,8 +246,8 @@ export function pilot_talent_refview(talent_path: string, helper: HelperData): s
 
   // Draw out each rank
   let ranks: string[] = [];
-  for(let i=0; i < talent.CurrentRank; i++) {
-    ranks.push(talent_rank_refview(talent, i, helper.hash["macro-actor"] ?? null));
+  for(let i=0; i < talent.Ranks.length; i++) {
+    ranks.push(talent_rank_refview(talent, i, helper.hash["macro-actor"] ?? null, talent.CurrentRank > i));
   }
 
   // Finally, render the whole box
@@ -258,7 +258,7 @@ export function pilot_talent_refview(talent_path: string, helper: HelperData): s
       <span>${talent.Name}</span>
       <a class="gen-control fas fa-trash" data-action="delete" data-path="${talent_path}"></a>
     </div>
-    <div class="flexcol">
+    <div  style="display: grid; grid-template: 1fr / repeat(${talent.Ranks.length}, 1fr);" >
       ${ranks.join("\n")}
     </div>
   </div>`;

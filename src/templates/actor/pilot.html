@@ -161,41 +161,38 @@
         </div>
       </div>
 
-      {{!-- Talents + Core Bonuses + Licenses --}}
-      <div class="flexrow">
-        {{!-- Talents --}}
-        <div class="card clipped">
-          <div class="lancer-header major clipped-top">
-            <span>TALENTS</span>
-          </div>
-          {{#each mm.ent.Talents as |skill index|}}
-            {{{pilot-talent-refview (concat "mm.ent.Talents." index) }}}
-          {{/each}}
+      {{!-- Talents --}}
+      <div class="card clipped">
+        <div class="lancer-header major clipped-top">
+          <span>TALENTS</span>
         </div>
+        {{#each mm.ent.Talents as |skill index|}}
+          {{{pilot-talent-refview (concat "mm.ent.Talents." index) }}}
+        {{/each}}
+      </div>
 
-        {{!-- Licenses --}}
-        <div class="card clipped">
-          <div class="lancer-header major clipped-top">
-            <span>
-              LICENSES
-            </span>
-          </div>
-          {{#each mm.ent.Licenses as |license index|}}
-            {{{ref-mm-controllable-item (concat "mm.ent.Licenses." index) "delete" }}}
-          {{/each}}
+      {{!-- Licenses --}}
+      <div class="card clipped">
+        <div class="lancer-header major clipped-top">
+          <span>
+            LICENSES
+          </span>
         </div>
+        {{#each mm.ent.Licenses as |license index|}}
+          {{{ref-mm-controllable-item (concat "mm.ent.Licenses." index) "delete" }}}
+        {{/each}}
+      </div>
 
-        {{!-- Core Bonuses --}}
-        <div class="card clipped">
-          <div class="lancer-header major clipped-top">
-            <span>
-              CORE BONUSES
-            </span>
-          </div>
-          {{#each mm.ent.CoreBonuses as |core_bonus index|}}
-            {{{ref-mm-controllable-item (concat "mm.ent.CoreBonuses." index) "delete" }}}
-          {{/each}}
+      {{!-- Core Bonuses --}}
+      <div class="card clipped">
+        <div class="lancer-header major clipped-top">
+          <span>
+            CORE BONUSES
+          </span>
         </div>
+        {{#each mm.ent.CoreBonuses as |core_bonus index|}}
+          {{{ref-mm-controllable-item (concat "mm.ent.CoreBonuses." index) "delete" }}}
+        {{/each}}
       </div>
   </section>
 </form>
