@@ -1,6 +1,6 @@
 import { LANCER } from "../config";
 import { LancerActorSheet } from "./lancer-actor-sheet";
-import { EntryType, funcs, MechWeapon, MountType, OpCtx, RegRef, SystemMount, WeaponMount, WeaponSlot } from "machine-mind";
+import { EntryType, funcs, MechWeapon, MountType, OpCtx, RegRef, SystemMount, WeaponMount, WeaponSlot, quick_relinker } from "machine-mind";
 import { MMEntityContext, mm_wrap_item } from "../mm-util/helpers";
 import { ResolvedNativeDrop } from "../helpers/dragdrop";
 import { resolve_dotpath } from "../helpers/commons";
@@ -67,7 +67,12 @@ export class LancerMechSheet extends LancerActorSheet<EntryType.MECH> {
     // Always add the item to the mech, now that we know it is a valid mech posession
     // Make a new ctx to hold the item and a post-item-add copy of our mech
     let new_ctx = new OpCtx();
-    let new_live_item = await item_mm.ent.insinuate(this_mm.reg, new_ctx);
+    let new_live_item = await item_mm.ent.insinuate(this_mm.reg, new_ctx, {
+      relinker: quick_relinker<any>({
+        key_pairs: [["ID", "id"], ["Name", "name"]],
+        blacklist: [item_mm.ent.OrigData.id] // If they dragged in the item, they probably don't want to relink it. Everything else is fair game
+      })
+    });
 
     // Update this, to re-populate arrays etc to reflect new item
     let new_live_this = (await this_mm.ent.refreshed(new_ctx))!;

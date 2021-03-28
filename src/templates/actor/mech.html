@@ -111,7 +111,7 @@
 
   <div class="card clipped">
     <span class="lancer-header major ">WEAPONS</span>
-    <div class="wraprow quadruple">
+    <div class="wraprow double">
       {{#each mm.ent.OwnedWeapons as |weapon index|}}
         {{{ref-mm-controllable-item (concat "mm.ent.OwnedWeapons." index) "delete" }}}
       {{/each}}
@@ -120,7 +120,7 @@
   
   <div class="card clipped">
     <span class="lancer-header major ">SYSTEMS</span>
-    <div class="wraprow quadruple">
+    <div class="wraprow double">
       {{#each mm.ent.OwnedSystems as |system index|}}
         {{{ref-mm-controllable-item (concat "mm.ent.OwnedSystems." index) "delete" }}}
       {{/each}}
@@ -129,7 +129,7 @@
 
   <div class="card clipped">
     <span class="lancer-header major ">MODS</span>
-    <div class="wraprow quadruple">
+    <div class="wraprow double">
       {{#each mm.ent.OwnedWeaponMods as |mod index|}}
         {{{ref-mm-controllable-item (concat "mm.ent.OwnedWeaponMods." index) "delete" }}}
       {{/each}}

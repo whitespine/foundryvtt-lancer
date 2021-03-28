@@ -1,6 +1,6 @@
 import { LANCER } from "../config";
 import { LancerActorSheet } from "./lancer-actor-sheet";
-import { EntryType, OpCtx } from "machine-mind";
+import { EntryType, OpCtx, quick_relinker } from "machine-mind";
 import { FoundryFlagData , FoundryReg } from "../mm-util/foundry-reg";
 import { MMEntityContext, mm_wrap_item } from "../mm-util/helpers";
 import { funcs } from "machine-mind";
@@ -128,7 +128,12 @@ export class LancerPilotSheet extends LancerActorSheet<EntryType.PILOT> {
     // Always add the item to the pilot inventory, now that we know it is a valid pilot posession
     // Make a new ctx to hold the item and a post-item-add copy of our mech
     let new_ctx = new OpCtx();
-    let new_live_item = await item_mm.ent.insinuate(this_mm.reg, new_ctx);
+    let new_live_item = await item_mm.ent.insinuate(this_mm.reg, new_ctx, {
+      relinker: quick_relinker<any>({
+        key_pairs: [["ID", "id"], ["Name", "name"]],
+        blacklist: [item_mm.ent.OrigData.id] // If they dragged in the item, they probably don't want to relink it. Everything else is fair game
+      })
+    });
 
     // Update this, to re-populate arrays etc to reflect new item
     let new_live_this = (await this_mm.ent.refreshed(new_ctx))!;
