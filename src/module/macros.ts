@@ -454,7 +454,6 @@ export async function renderMacro(actor: Actor, template: string, templateData: 
   };
   let cm = await ChatMessage.create(chat_data);
   cm.render();
-  return Promise.resolve();
 }
 
 async function buildAttackRollString(
@@ -582,7 +581,7 @@ async function rollStatMacro(actor: Actor, data: Lancer20Roll) {
     resolve => (acc = resolve),
     () => (abort = true)
   );
-  if (abort) return Promise.resolve();
+  if (abort) return;
 
   // Do the roll
   let acc_str = acc != 0 ? ` + ${acc}d6kh1` : "";
@@ -1284,7 +1283,7 @@ function roll_item_heat(item: AnyMMItem | MechWeaponProfile, action?: Action): n
     return 0;
   }
 
-  let self_heat_tag = crude_get_tags(item).find(t => t.Tag.Name == "tg_heat_self");
+  let self_heat_tag = crude_get_tags(item).find(t => t.Tag.ID == "tg_heat_self");
   if(self_heat_tag?.Value) {
      return (new Roll(self_heat_tag.Value.toString())).roll().total;
   } else {

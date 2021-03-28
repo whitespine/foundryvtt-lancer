@@ -85,7 +85,7 @@ function all_system_mount_view(mech_path: string, loadout_path: string, helper: 
         <a class="gen-control fas fa-plus" data-action="append" data-path="${loadout_path}.SysMounts" data-action-value="(struct)sys_mount"></a>
         <a class="gen-control fas fa-trash" data-action="set" data-path="${loadout_path}.SysMounts" data-action-value="(struct)empty_array"></a>
     </span>
-    <div class="wraprow quadruple">
+    <div class="wraprow double">
       ${system_slots.join("")}
     </div>
     `;
@@ -217,7 +217,7 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string, help
       actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref()
       // Should we specify profile? Or just use selected? Opting with the latter for now
     }
-    macro = `<a class="lancer-macro i--s fas fa-dice-d20" ${macro_elt_params(macro_ctx)}> </a>`;
+    macro = `<a class="lancer-macro i--m fas fa-dice-d20" ${macro_elt_params(macro_ctx)}> </a>`;
   }
 
 
@@ -311,6 +311,8 @@ export function mech_system_refview(system_path: string, mech_path: string, help
     uses = uses_control(`${system_path}.Uses`, max_uses + lb, helper);
   }
 
+  let actions = action_list_display(system_path, "Actions", ext_helper_hash(helper, {card: false, collapse: false}));
+  let deployables = deployable_list_display(system_path, "Deployables", ext_helper_hash(helper, {card: false, collapse: false}));
 
   return `
   <div class="valid ${EntryType.MECH_SYSTEM} ref drop-settable double-click-ref flexcol clipped-top"
@@ -328,8 +330,8 @@ export function mech_system_refview(system_path: string, mech_path: string, help
       <div class="effect-text">
         ${system.Effect}
       </div>
-      ${inc_if(action_list_display(system_path, "Actions", helper), system.Actions.length)}
-      ${inc_if(deployable_list_display(system_path, "Deployables", helper), system.Deployables.length)}
+      ${inc_if(actions, system.Actions.length)}
+      ${inc_if(deployables, system.Deployables.length)}
     </div>
   </div>`
 };

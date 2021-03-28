@@ -10,7 +10,7 @@ import {
 import { is_actor_type, LancerActor } from "../actor/lancer-actor";
 import { TypeIcon } from "../config";
 import { is_item_type, LancerItem, LancerItemType } from "../item/lancer-item";
-import { FlagData, FoundryReg } from "../mm-util/foundry-reg";
+import { FoundryFlagData, FoundryReg } from "../mm-util/foundry-reg";
 import { check_double as check_double_click, gentle_merge, HelperData, resolve_dotpath, resolve_helper_dotpath, temp_apply_class } from "./commons";
 import { convert_ref_to_native, enable_dragging, enable_simple_ref_dragging, enable_simple_ref_dropping } from "./dragdrop";
 
@@ -28,7 +28,7 @@ export function ref_commons<T extends EntryType>(
   }
 
   // Grab flags to retrieve original entity
-  let flags = item.flags as FlagData<T>;
+  let flags = item.Flags as FoundryFlagData<T>;
 
   // Declare our results
   let ref = item.as_ref();
@@ -38,12 +38,12 @@ export function ref_commons<T extends EntryType>(
   // best to know what we are working with
   if (is_actor_type(item.Type)) {
     // 'tis an actor, sire
-    let actor = flags.orig_entity as LancerActor<any>;
+    let actor = flags.orig_doc as LancerActor<any>;
     img = actor.img;
     name = actor.name;
   } else if (is_item_type(item.Type)) {
     // 'tis an item, m'lord
-    let item = flags.orig_entity as LancerItem<any>;
+    let item = flags.orig_doc as LancerItem<any>;
     img = item.img;
     name = item.name;
   } else {
@@ -120,7 +120,7 @@ export function simple_mm_ref<T extends EntryType>(
 // The hook to handle clicks on refs. Opens/focuses the clicked item's window
 // $(html).find(".ref.valid").on("click", HANDLER_onClickRef);
 // The .double-click-ref class will require double click to open
-export async function HANDLER_click_open_ref<T extends EntryType>(html: JQuery) {
+export async function HANDLER_activate_click_open_ref<T extends EntryType>(html: JQuery) {
   html.find(".ref.valid").on("click", async (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -137,7 +137,7 @@ export async function HANDLER_click_open_ref<T extends EntryType>(html: JQuery) 
 
     // We didn't really need the fully resolved class but, hwatever
     // open that link
-    let sheet = (found_entity.flags as FlagData<T>).orig_entity.sheet;
+    let sheet = (found_entity.Flags as FoundryFlagData<T>).orig_doc.sheet;
 
     temp_apply_class($(element), "double-click-success", 1000);
 

@@ -39,15 +39,15 @@ import {
   InsinuationRecord,
   InventoriedRegEntry,
 } from "machine-mind";
-import { is_actor_type, LancerActor, LancerActorType } from "../actor/lancer-actor";
-import { is_item_type, LancerItem, LancerItemType } from "../item/lancer-item";
+import { AnyLancerActor, is_actor_type, LancerActor, LancerActorType } from "../actor/lancer-actor";
+import { AnyLancerItem, is_item_type, LancerItem, LancerItemType } from "../item/lancer-item";
 import {
   EntityCollectionWrapper,
   CompendiumWrapper,
   WorldActorsWrapper,
   ActorInventoryWrapper,
   WorldItemsWrapper,
-  EntFor,
+  EntFor as DocFor,
   GetResult,
   cached_get_pack_map,
   TokensActorsWrapper as TokenActorsWrapper,
@@ -70,9 +70,9 @@ const ITEMS_COMP_INV = "compendium_inv";
 const ITEMS_TOKEN_INV = "token";
 
 // Sources of actors
-const ACTORS_COMP = "compendium"
-const ACTORS_WORLD = "world"
-const ACTORS_TOKEN = "token"
+const ACTORS_COMP = "compendium";
+const ACTORS_WORLD = "world";
+const ACTORS_TOKEN = "token";
 
 ///////////////////////////////// UTILITY TYPES ///////////////////////////////////////
 // This is what an item-data for machine-mind compatible items looks like in foundry.
@@ -84,7 +84,7 @@ export interface FoundryRegItemData<T extends EntryType> {
       mmec: MMEntityContext<T>;
       mmec_promise: Promise<MMEntityContext<T>>; // The above, in promise form. More robust
       // Include other details as appropriate to the entity
-    }
+    };
   };
   type: T;
   img: string;
@@ -98,15 +98,24 @@ export interface FoundryRegActorData<T extends EntryType> extends FoundryRegItem
   token: Token;
 }
 
-export interface FlagData<T extends EntryType> {
-  orig_entity: EntFor<T>;
+// This flag data will, as best as possible, be placed on every item
+export interface FoundryFlagData<T extends EntryType> {
+  // The foundry document that this document corresponds to
+  orig_doc: DocFor<T>;
+
+  // Will be included in any create/update calls. Merged in after the real data. Should/must be in flat key format (please!)
+  top_level_data: { [key: string]: any };
 }
 
 /**
  * Possible configurations for our registry, depending on where we intend to lookup ids
  */
 interface RegArgs {
-  item_source: [typeof ITEMS_WORLD, null] | [typeof ITEMS_COMP, null] | [typeof ITEMS_TOKEN_INV, Token] | [typeof ITEMS_ACTOR_INV, Actor]; // Default "world", null
+  item_source:
+    | [typeof ITEMS_WORLD, null]
+    | [typeof ITEMS_COMP, null]
+    | [typeof ITEMS_TOKEN_INV, Token]
+    | [typeof ITEMS_ACTOR_INV, Actor]; // Default "world", null
   actor_source: typeof ACTORS_WORLD | typeof ACTORS_COMP | typeof ACTORS_TOKEN; // Default "world"
 }
 
@@ -114,7 +123,7 @@ interface RegArgs {
 /**
  * Format of registry names:
  * <item_source>|<actor_source>
- * 
+ *
  * Where <item_source> is one of:
  * compendium                     // The general compendium registry
  * compendium_inv:{{actor_id}}    // The inventory of an actor in the compendium
@@ -122,11 +131,11 @@ interface RegArgs {
  * world_inv:{{actor_id}}         // The inventory of an actor in the world
  * token_inv:{{actor_id}}         // The inventory of an unlinked token in the token layer
  *  -- token is not included because items cannot exist on the token layer
- * 
+ *
  * And <actor_source> is one of
  * compendium               // The general compendium registry
  * world                    // The general world registry
- * token                    // The token layer 
+ * token                    // The token layer
  */
 const cached_regs = new Map<string, FoundryReg>(); // Since regs are stateless, we can just do this
 export class FoundryReg extends Registry {
@@ -137,20 +146,18 @@ export class FoundryReg extends Registry {
     let new_reg: Registry | null = null;
     let id = for_inv_item.RegistryID;
 
-    if(reg.config.actor_source == ACTORS_COMP) {
-      let comp_key = `${ITEMS_COMP_INV}:${id}|${ACTORS_COMP}`; 
+    if (reg.config.actor_source == ACTORS_COMP) {
+      let comp_key = `${ITEMS_COMP_INV}:${id}|${ACTORS_COMP}`;
       new_reg = await this.switch_reg(comp_key);
-    } 
-    else if(reg.config.actor_source == ACTORS_TOKEN) {
-      let token_key = `${ITEMS_TOKEN_INV}:${id}|${ACTORS_TOKEN}`; 
+    } else if (reg.config.actor_source == ACTORS_TOKEN) {
+      let token_key = `${ITEMS_TOKEN_INV}:${id}|${ACTORS_TOKEN}`;
       new_reg = await this.switch_reg(token_key);
-    } 
-    else if(reg.config.actor_source == ACTORS_WORLD) {
-      let world_key = `${ITEMS_WORLD_INV}:${id}|${ACTORS_WORLD}`; 
+    } else if (reg.config.actor_source == ACTORS_WORLD) {
+      let world_key = `${ITEMS_WORLD_INV}:${id}|${ACTORS_WORLD}`;
       new_reg = await this.switch_reg(world_key);
     }
 
-    if(!new_reg) {
+    if (!new_reg) {
       throw new Error("Failed to switch reg.... hmmmmmm");
     } else {
       return new_reg;
@@ -162,7 +169,7 @@ export class FoundryReg extends Registry {
   name(): string {
     // First generate the item side, in accordance with our config
     let items: string;
-    switch(this.config.item_source[0]) {
+    switch (this.config.item_source[0]) {
       case ITEMS_COMP:
         items = ITEMS_COMP; // Items from the compendium
         break;
@@ -175,22 +182,22 @@ export class FoundryReg extends Registry {
         break;
       case "actor":
         let actor = this.config.item_source[1];
-        if(actor.compendium) {
+        if (actor.compendium) {
           items = `${ITEMS_COMP_INV}:${actor.id}`; // Inventory of a compendium actor
         } else {
           items = `${ITEMS_WORLD_INV}:${actor.id}`; // Inventory of a world actor
         }
         break;
-      }
+    }
 
-      // Actor source is much simpler
-      let actors = this.config.actor_source;
-      return `${items}|${actors}`
+    // Actor source is much simpler
+    let actors = this.config.actor_source;
+    return `${items}|${actors}`;
   }
 
   async switch_reg(reg_id: string): Promise<Registry | null> {
     // Generally handles data that just hasn't got what we need
-    if(!reg_id || !reg_id.includes("|")) {
+    if (!reg_id || !reg_id.includes("|")) {
       return null;
     }
 
@@ -206,7 +213,7 @@ export class FoundryReg extends Registry {
     let item_src_id: string | null = split_items.length > 1 ? split_items[1] : null;
 
     // Quickly validate actors
-    if(![ACTORS_WORLD, ACTORS_COMP, ACTORS_TOKEN].includes(raw_actors)) {
+    if (![ACTORS_WORLD, ACTORS_COMP, ACTORS_TOKEN].includes(raw_actors)) {
       console.error(`Invalid actor source "${raw_actors}" from "${reg_id}"`);
       return null;
     }
@@ -214,86 +221,153 @@ export class FoundryReg extends Registry {
 
     // The only remaining task is to find the appropriate item/token if needed
     let reg: FoundryReg;
-    if(item_src_id) {
+    if (item_src_id) {
       // Id is found, which means this is an inventory
-      if(item_src == ITEMS_TOKEN_INV) {
+      if (item_src == ITEMS_TOKEN_INV) {
         // Recover the token. Only works on current scene, unfortunately
         let token: Token | null | undefined = canvas.tokens.get(item_src_id);
-        if(token) {
+        if (token) {
           reg = new FoundryReg({
             actor_source: actors,
-            item_source: [ITEMS_TOKEN_INV, token]
+            item_source: [ITEMS_TOKEN_INV, token],
           });
         } else {
           console.error(`Unable to find token actor ${item_src_id}`);
           return null;
         }
-
-      } else if(item_src == ITEMS_WORLD_INV) {
+      } else if (item_src == ITEMS_WORLD_INV) {
         // Recover the world actor
         let world_actor = game.actors.get(item_src_id);
-        if(world_actor) {
+        if (world_actor) {
           reg = new FoundryReg({
             actor_source: actors,
-            item_source: [ITEMS_ACTOR_INV, world_actor]
+            item_source: [ITEMS_ACTOR_INV, world_actor],
           });
         } else {
           console.error(`Unable to find world actor ${item_src_id}`);
           return null;
         }
-
-      } else if(item_src == ITEMS_COMP_INV) {
+      } else if (item_src == ITEMS_COMP_INV) {
         // Recover the compendium actor
-        // A bit kludgey, but we check all actor packs for a matching item. 
+        // A bit kludgey, but we check all actor packs for a matching item.
         // Caching makes this less onerous than it otherwise might be
-        let comp_actor = (
-                  (await cached_get_pack_map(EntryType.DEPLOYABLE)).get(item_src_id)
-                ??(await cached_get_pack_map(EntryType.NPC)).get(item_src_id)
-                ??(await cached_get_pack_map(EntryType.MECH)).get(item_src_id)
-                ??(await cached_get_pack_map(EntryType.PILOT)).get(item_src_id)
-                ?? null);
-        if(comp_actor) {
+        let comp_actor =
+          (await cached_get_pack_map(EntryType.DEPLOYABLE)).get(item_src_id) ??
+          (await cached_get_pack_map(EntryType.NPC)).get(item_src_id) ??
+          (await cached_get_pack_map(EntryType.MECH)).get(item_src_id) ??
+          (await cached_get_pack_map(EntryType.PILOT)).get(item_src_id) ??
+          null;
+        if (comp_actor) {
           reg = new FoundryReg({
             actor_source: actors,
-            item_source: [ITEMS_ACTOR_INV, comp_actor]
+            item_source: [ITEMS_ACTOR_INV, comp_actor],
           });
         } else {
-          console.error(`Unable to find compendium actor ${item_src_id}`);
+          console.error(`Unable to find compendium actor ${item_src_id} from reg_id=${reg_id}`);
           return null;
         }
-
       } else {
         // We got an inventory id but we couldn't figure out what it was for
         console.warn(`Invalid actor inventory type ${item_src}`);
         return null;
       }
-
     } else {
       // No inventory ID - it's either a world or compendium item source. Either way, pretty simple
-      if(item_src == ITEMS_WORLD) { 
+      if (item_src == ITEMS_WORLD) {
         reg = new FoundryReg({
           actor_source: actors,
-          item_source: [ITEMS_WORLD, null]
+          item_source: [ITEMS_WORLD, null],
         });
-      } else if(item_src == ITEMS_COMP) {
+      } else if (item_src == ITEMS_COMP) {
         reg = new FoundryReg({
           actor_source: actors,
-          item_source: [ITEMS_COMP, null]
+          item_source: [ITEMS_COMP, null],
         });
       } else {
         // If it somehow wasn't either of those types, report back
         console.error(`Invalid item source type ${item_src}`);
-        return null; 
+        return null;
       }
     }
 
     // Set cache and return
     cached_regs.set(reg_id, reg);
-    return reg;   
+    return reg;
   }
 
   // The configuration we were provided
   config: RegArgs;
+
+  // Quick function for generating an item/actor wrapper depending on if we have an actor / depending if the type is an actor type
+  protected make_wrapper<T extends EntryType>(
+    config: RegArgs,
+    for_type: T
+  ): EntityCollectionWrapper<T> {
+    if (is_actor_type(for_type)) {
+      // Use the actor source for this
+      if (config.actor_source == ACTORS_WORLD) {
+        return new WorldActorsWrapper(for_type);
+      } else if (config.actor_source == ACTORS_COMP) {
+        return new CompendiumWrapper(for_type);
+      } else {
+        return new TokenActorsWrapper(for_type);
+      }
+    } else if (is_item_type(for_type)) {
+      if (config.item_source[0] == ITEMS_WORLD) {
+        return new WorldItemsWrapper(for_type);
+      } else if (config.item_source[0] == ITEMS_COMP) {
+        return new CompendiumWrapper(for_type);
+      } else if (config.item_source[0] == ITEMS_ACTOR_INV) {
+        return new ActorInventoryWrapper(for_type, config.item_source[1]);
+      } else if (config.item_source[0] == ITEMS_TOKEN_INV) {
+        return new TokenInventoryWrapper(for_type, config.item_source[1]);
+      }
+    }
+    throw new Error(`Unhandled item type: ${for_type}`);
+  }
+
+  // Our reviver function-maker. Revivers are responsible for converting reg entry data into full fledged objects, and managing OpCtx state
+  protected make_revive_func<T extends EntryType>(
+    for_type: T,
+    clazz: EntryConstructor<T>
+  ): ReviveFunc<T> {
+    return async (reg, ctx, id, raw, flags) => {
+      // Our actual builder function shared between all cats.
+      // First check for existing item in ctx
+      let pre = ctx.get(id);
+      if (pre) {
+        await pre.ready();
+        return pre as LiveEntryTypes<T>;
+      }
+
+      // Otherwise create
+      let new_item = new clazz(for_type, reg, ctx, id, raw);
+      new_item.Flags = flags;
+      ctx.set(id, new_item);
+      await new_item.ready();
+
+      // And we're done
+      return new_item;
+    };
+  }
+
+  // A quick helper to rapidly setup cats by combining the above two functions
+  protected make_cat<T extends EntryType>(
+    config: RegArgs,
+    for_type: T,
+    clazz: EntryConstructor<T>,
+    defaulter: () => RegEntryTypes<T>
+  ) {
+    this.init_set_cat(
+      new FoundryRegCat(
+        this,
+        for_type,
+        defaulter,
+        this.make_revive_func(for_type, clazz),
+        this.make_wrapper(config, for_type)
+      )
+    );
+  }
 
   // By default world scope. Can specify either that this is in a compendium, or is in an actor
   constructor(config?: Partial<RegArgs>) {
@@ -308,155 +382,94 @@ export class FoundryReg extends Registry {
     let _config = config as Required<RegArgs>;
     this.config = _config;
 
-    // Quick function for generating an item/actor wrapper depending on if we have an actor / depending if the type is an actor type
-    function quick_wrapper<T extends EntryType>(for_type: T): EntityCollectionWrapper<T> {
-      if(is_actor_type(for_type)) {
-        // Use the actor source for this
-        if(_config.actor_source == ACTORS_WORLD) {
-          return new WorldActorsWrapper(for_type)
-        } else if(_config.actor_source == ACTORS_COMP) {
-          return new CompendiumWrapper(for_type)
-        } else {
-          return new TokenActorsWrapper(for_type)
-        }
-      } else if(is_item_type(for_type)) {
-        if(_config.item_source[0] == ITEMS_WORLD) {
-          return new WorldItemsWrapper(for_type);
-        } else if(_config.item_source[0] == ITEMS_COMP) {
-          return new CompendiumWrapper(for_type);
-        } else if(_config.item_source[0] == ITEMS_ACTOR_INV) {
-          return new ActorInventoryWrapper(for_type, _config.item_source[1]);
-        } else if(_config.item_source[0] == ITEMS_TOKEN_INV) {
-          return new TokenInventoryWrapper(for_type, _config.item_source[1]);
-        }
-      }
-      throw new Error(`Unhandled item type: ${for_type}`);
-    }
-
-    // Our reviver function-maker. Revivers are responsible for converting reg entry data into full fledged objects, and managing OpCtx state
-    function quick_reviver<T extends EntryType>(
-      for_type: T,
-      clazz: EntryConstructor<T>
-    ): ReviveFunc<T> {
-      return async (reg, ctx, id, raw) => {
-        // Our actual builder function shared between all cats.
-        // First check for existing item in ctx
-        let pre = ctx.get(id);
-        if (pre) {
-          await pre.ready();
-          return pre as LiveEntryTypes<T>;
-        }
-
-        // Otherwise create
-        let new_item = new clazz(for_type, reg, ctx, id, raw);
-        ctx.set(id, new_item);
-        await new_item.ready();
-
-        // And we're done
-        return new_item;
-      };
-    }
-
-    // A quick helper to rapidly setup cats by combining the above two functions
-    const do_cat = <T extends EntryType>(
-      for_type: T,
-      clazz: EntryConstructor<T>,
-      defaulter: () => RegEntryTypes<T>
-    ) => {
-      this.init_set_cat(
-        new FoundryRegCat(
-          this,
-          for_type,
-          defaulter,
-          quick_reviver(for_type, clazz),
-          quick_wrapper(for_type)
-        )
-      );
-    };
-
     // Aand now we do it
-    do_cat(EntryType.CORE_BONUS, CoreBonus, defaults.CORE_BONUS);
-    do_cat(EntryType.DEPLOYABLE, Deployable, defaults.DEPLOYABLE);
-    do_cat(EntryType.ENVIRONMENT, Environment, defaults.ENVIRONMENT);
-    do_cat(EntryType.FACTION, Faction, defaults.FACTION);
-    do_cat(EntryType.FRAME, Frame, defaults.FRAME);
-    do_cat(EntryType.LICENSE, License, defaults.LICENSE);
-    do_cat(EntryType.MANUFACTURER, Manufacturer, defaults.MANUFACTURER);
-    do_cat(EntryType.MECH, Mech, defaults.MECH);
-    do_cat(EntryType.MECH_SYSTEM, MechSystem, defaults.MECH_SYSTEM);
-    do_cat(EntryType.MECH_WEAPON, MechWeapon, defaults.MECH_WEAPON);
-    do_cat(EntryType.NPC, Npc, defaults.NPC);
-    do_cat(EntryType.NPC_CLASS, NpcClass, defaults.NPC_CLASS);
-    do_cat(EntryType.NPC_TEMPLATE, NpcTemplate, defaults.NPC_TEMPLATE);
-    do_cat(EntryType.NPC_FEATURE, NpcFeature, defaults.NPC_FEATURE);
-    do_cat(EntryType.ORGANIZATION, Organization, defaults.ORGANIZATION);
-    do_cat(EntryType.PILOT, Pilot, defaults.PILOT);
-    do_cat(EntryType.PILOT_ARMOR, PilotArmor, defaults.PILOT_ARMOR);
-    do_cat(EntryType.PILOT_GEAR, PilotGear, defaults.PILOT_GEAR);
-    do_cat(EntryType.PILOT_WEAPON, PilotWeapon, defaults.PILOT_WEAPON);
-    do_cat(EntryType.QUIRK, Quirk, defaults.QUIRK);
-    do_cat(EntryType.RESERVE, Reserve, defaults.RESERVE);
-    do_cat(EntryType.SITREP, Sitrep, defaults.SITREP);
-    do_cat(EntryType.SKILL, Skill, defaults.SKILL);
-    do_cat(EntryType.STATUS, Status, defaults.STATUS);
-    do_cat(EntryType.TAG, TagTemplate, defaults.TAG_TEMPLATE);
-    do_cat(EntryType.TALENT, Talent, defaults.TALENT);
-    do_cat(EntryType.WEAPON_MOD, WeaponMod, defaults.WEAPON_MOD);
-    this.init_finalize();
-  }
+    this.make_cat(_config, EntryType.CORE_BONUS, CoreBonus, defaults.CORE_BONUS);
+    this.make_cat(_config, EntryType.DEPLOYABLE, Deployable, defaults.DEPLOYABLE);
+    this.make_cat(_config, EntryType.ENVIRONMENT, Environment, defaults.ENVIRONMENT);
+    this.make_cat(_config, EntryType.FACTION, Faction, defaults.FACTION);
+    this.make_cat(_config, EntryType.FRAME, Frame, defaults.FRAME);
+    this.make_cat(_config, EntryType.LICENSE, License, defaults.LICENSE);
+    this.make_cat(_config, EntryType.MANUFACTURER, Manufacturer, defaults.MANUFACTURER);
+    this.make_cat(_config, EntryType.MECH, Mech, defaults.MECH);
+    this.make_cat(_config, EntryType.MECH_SYSTEM, MechSystem, defaults.MECH_SYSTEM);
+    this.make_cat(_config, EntryType.MECH_WEAPON, MechWeapon, defaults.MECH_WEAPON);
+    this.make_cat(_config, EntryType.NPC, Npc, defaults.NPC);
+    this.make_cat(_config, EntryType.NPC_CLASS, NpcClass, defaults.NPC_CLASS);
+    this.make_cat(_config, EntryType.NPC_TEMPLATE, NpcTemplate, defaults.NPC_TEMPLATE);
+    this.make_cat(_config, EntryType.NPC_FEATURE, NpcFeature, defaults.NPC_FEATURE);
+    this.make_cat(_config, EntryType.ORGANIZATION, Organization, defaults.ORGANIZATION);
+    this.make_cat(_config, EntryType.PILOT, Pilot, defaults.PILOT);
+    this.make_cat(_config, EntryType.PILOT_ARMOR, PilotArmor, defaults.PILOT_ARMOR);
+    this.make_cat(_config, EntryType.PILOT_GEAR, PilotGear, defaults.PILOT_GEAR);
+    this.make_cat(_config, EntryType.PILOT_WEAPON, PilotWeapon, defaults.PILOT_WEAPON);
+    this.make_cat(_config, EntryType.QUIRK, Quirk, defaults.QUIRK);
+    this.make_cat(_config, EntryType.RESERVE, Reserve, defaults.RESERVE);
+    this.make_cat(_config, EntryType.SITREP, Sitrep, defaults.SITREP);
+    this.make_cat(_config, EntryType.SKILL, Skill, defaults.SKILL);
+    this.make_cat(_config, EntryType.STATUS, Status, defaults.STATUS);
+    this.make_cat(_config, EntryType.TAG, TagTemplate, defaults.TAG_TEMPLATE);
+    this.make_cat(_config, EntryType.TALENT, Talent, defaults.TALENT);
+    this.make_cat(_config, EntryType.WEAPON_MOD, WeaponMod, defaults.WEAPON_MOD);
 
-  // Hook - carries over additional data when insinuating from an item
-  async hook_post_insinuate<T extends EntryType>(record: InsinuationRecord<T>) {
-    // Check if we have an original entity
-    let orig = record.new_item.flags?.orig_entity;
-    if (record.new_item.flags?.orig_entity) {
+    // Insinuation hook - carries over additional data when insinuating from an item
+    this.hooks.pre_final_write = async record => {
+      // Pending is an odd thing, because though it claims to be from the destination register, that is just a ruse (a deliberate one, mind you)
+      // Conveniently, this means that all of its associations etc have their original entities flagged, and also that the top level name/img data
+      // is fixed up properly already as well.
+      let orig = record.pending.Flags.orig_doc;
+      /*
       if (is_actor_type(orig.type)) {
         // 'tis an actor
-        let orig_entity = record.new_item.flags.orig_entity as LancerActor<T & LancerActorType>;
-        let img = orig_entity.data?.img;
-        let name = orig_entity.data?.name;
-        let token = orig_entity.data?.token;
-        await orig_entity.update({ img, name, token });
+        let orig_actor = orig as AnyLancerActor;
+        let img = orig_actor.data?.img;
+        let name = orig_actor.data?.name;
+        let token = orig_actor.data?.token;
+        await orig_actor.update({ img, name, token });
       } else {
-        // 'tis an item
-        let orig_entity = record.new_item.flags.orig_entity as LancerItem<T & LancerItemType>;
+        // 'tis an item. Update its img and name
+        let orig_entity = orig as AnyLancerItem;
         let img = orig_entity.data?.img;
         let name = orig_entity.data?.name;
         await orig_entity.update({ img, name }, {});
       }
-    }
-  }
+      */
+    };
 
+    this.init_finalize();
+  }
   // Mirror implementation of the same function on the base reg, but don't actually make entities.
-  async resolve_to_foundry_doc<T extends EntryType>(ref: RegRef<T>): Promise<EntFor<T> | null> {
+  async resolve_to_foundry_doc<T extends EntryType>(ref: RegRef<T>): Promise<DocFor<T> | null> {
     // Switch pass
-    if(ref.reg_name != this.name()) {
+    if (ref.reg_name != this.name()) {
       return ((await this.switch_reg(ref.reg_name)) as FoundryReg).resolve_to_foundry_doc(ref);
     }
 
     // If we have a type, simple. Otherwise must iterate
-    if(ref.type) {
+    if (ref.type) {
       let cat = this.get_cat(ref.type) as FoundryRegCat<T>;
-      return cat.get_foundry_entity(ref.id) ?? cat.get_foundry_entity_by_name_or_mmid(ref.fallback_mmid) ?? null;
+      return (
+        cat.get_foundry_entity(ref.id) ??
+        cat.get_foundry_entity_by_name_or_mmid(ref.fallback_mmid) ??
+        null
+      );
     } else {
       // First look for by id
-      for(let type of Object.values(EntryType)) {
+      for (let type of Object.values(EntryType)) {
         let cat = this.get_cat(type) as FoundryRegCat<EntryType>;
         let by_id = await cat.get_foundry_entity(ref.id);
-        if(by_id) return by_id as EntFor<T>;
+        if (by_id) return by_id as DocFor<T>;
       }
 
       // Then by fallback
-      for(let type of Object.values(EntryType)) {
+      for (let type of Object.values(EntryType)) {
         let cat = this.get_cat(type) as FoundryRegCat<EntryType>;
         let by_id = await cat.get_foundry_entity_by_name_or_mmid(ref.fallback_mmid);
-        if(by_id) return by_id as EntFor<T>;
+        if (by_id) return by_id as DocFor<T>;
       }
-      
+
       // I yield
       return null;
     }
-
   }
 }
 
@@ -479,13 +492,14 @@ export class FoundryRegCat<T extends EntryType> extends RegCat<T> {
   }
 
   // Look through all entries
-  async lookup_mmid(ctx: OpCtx, mmid: string): Promise<LiveEntryTypes<T> | null> {
+  async lookup_raw(
+    criteria: (x: RegEntryTypes<T>) => boolean
+  ): Promise<{ id: string; val: RegEntryTypes<T> } | null> {
     // lil' a bit janky, but serviceable. O(N) lookup
     for (let wrapper of await this.handler.enumerate()) {
-      let reg_mmid = (wrapper.item as any).id;
-      if (reg_mmid == mmid) {
+      if (criteria(wrapper.item)) {
         // return this.revive_func(this.parent, ctx, wrapper.id, wrapper.item);
-        return this.revive_and_flag(wrapper, ctx);
+        return { id: wrapper.id, val: wrapper.item };
       }
     }
     return null;
@@ -500,7 +514,7 @@ export class FoundryRegCat<T extends EntryType> extends RegCat<T> {
   // Return the 'entries' array
   async raw_map(): Promise<Map<string, RegEntryTypes<T>>> {
     let map = new Map<string, RegEntryTypes<T>>();
-    for(let gr of await this.handler.enumerate()) {
+    for (let gr of await this.handler.enumerate()) {
       map.set(gr.id, gr.item);
     }
     return map;
@@ -508,11 +522,14 @@ export class FoundryRegCat<T extends EntryType> extends RegCat<T> {
 
   // Converts a getresult into an appropriately flagged live item
   private async revive_and_flag(g: GetResult<T>, ctx: OpCtx): Promise<LiveEntryTypes<T>> {
-    let result = await this.revive_func(this.parent, ctx, g.id, g.item);
-    let flags: FlagData<T> = {
-      orig_entity: g.entity,
+    let flags: FoundryFlagData<T> = {
+      orig_doc: g.entity,
+      top_level_data: {
+        name: g.entity.name,
+        img: g.entity.img,
+      },
     };
-    result.flags = flags;
+    let result = await this.revive_func(this.parent, ctx, g.id, g.item, flags);
     return result;
   }
 
@@ -536,13 +553,8 @@ export class FoundryRegCat<T extends EntryType> extends RegCat<T> {
   }
 
   // Use our update function
-  async update_many_raw(items: Array<{ id: string; data: RegEntryTypes<T> }>): Promise<void> {
-    // Actor.update({_id: exp._id, name:" Help"})
-    let pending: Promise<any>[] = [];
-    for (let i of items) {
-      pending.push(this.handler.update(i.id, i.data));
-    }
-    await Promise.all(pending);
+  async update(...items: Array<LiveEntryTypes<T>>): Promise<void> {
+    return this.handler.update(items);
   }
 
   // Use our delete function
@@ -586,21 +598,21 @@ export class FoundryRegCat<T extends EntryType> extends RegCat<T> {
   // Just delegate above
   async create_default(ctx: OpCtx): Promise<LiveEntryTypes<T>> {
     return this.create_many_live(ctx, this.defaulter()).then(a => a[0]);
-  }  
-  
+  }
+
   // For if we just want to get the entity by its id
-  async get_foundry_entity(id: string): Promise<EntFor<T> | null> {
+  async get_foundry_entity(id: string): Promise<DocFor<T> | null> {
     return (await this.handler.get(id))?.entity ?? null;
-  }  
-  
+  }
+
   // Look through all entries, picking first by mmid and, failing that, by name
-  async get_foundry_entity_by_name_or_mmid(id: string): Promise<EntFor<T> | null> {
+  async get_foundry_entity_by_name_or_mmid(id: string): Promise<DocFor<T> | null> {
     let all = await this.handler.enumerate();
 
     // Look for mmid
     for (let gotten of all) {
       let mmid = (gotten.item as any).id;
-      if(id == mmid) {
+      if (id == mmid) {
         return gotten.entity;
       }
     }
@@ -608,7 +620,7 @@ export class FoundryRegCat<T extends EntryType> extends RegCat<T> {
     // Look for name
     for (let gotten of all) {
       let name = gotten.entity.name;
-      if(id == name) {
+      if (id == name) {
         return gotten.entity;
       }
     }

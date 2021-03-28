@@ -1,15 +1,10 @@
-import {
-  LancerMechWeapon,
-  LancerPilotWeapon,
-} from "../item/lancer-item";
 import { LANCER } from "../config";
 import { LancerActorSheet } from "./lancer-actor-sheet";
-import { EntryType, MountType, OpCtx } from "machine-mind";
-import { FlagData, FoundryReg } from "../mm-util/foundry-reg";
+import { EntryType, OpCtx } from "machine-mind";
+import { FoundryFlagData , FoundryReg } from "../mm-util/foundry-reg";
 import { MMEntityContext, mm_wrap_item } from "../mm-util/helpers";
 import { funcs } from "machine-mind";
 import { ResolvedNativeDrop } from "../helpers/dragdrop";
-import { prepareFrameMacro } from "../macros";
 
 const lp = LANCER.log_prefix;
 
@@ -80,7 +75,7 @@ export class LancerPilotSheet extends LancerActorSheet<EntryType.PILOT> {
           });
 
           for(let mech of synced_data.pilot_mechs) {
-            let mech_actor = (mech.flags as FlagData<EntryType.MECH>).orig_entity;
+            let mech_actor = (mech.Flags as FoundryFlagData<EntryType.MECH>).orig_doc;
             await mech_actor.update({
               name: mech.Name || mech_actor.name,
               img: mech.CloudPortrait || mech_actor.img

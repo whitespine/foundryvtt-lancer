@@ -246,7 +246,7 @@ export function pilot_talent_refview(talent_path: string, helper: HelperData): s
 
   // Draw out each rank
   let ranks: string[] = [];
-  for(let i=0; i < talent.CurrentRank - 1; i++) {
+  for(let i=0; i < talent.CurrentRank; i++) {
     ranks.push(talent_rank_refview(talent, i, helper.hash["macro-actor"] ?? null));
   }
 
@@ -254,7 +254,7 @@ export function pilot_talent_refview(talent_path: string, helper: HelperData): s
   return `<div class="valid ${EntryType.TALENT} ref card"
                 ${ref_params(cd.ref, talent_path)} >
     <div class="lancer-header">
-      <i class="cci cci-generic-item i--m"> </i>
+      <i class="cci cci-rank-${talent.CurrentRank} i--m"> </i>
       <span>${talent.Name}</span>
       <a class="gen-control fas fa-trash" data-action="delete" data-path="${talent_path}"></a>
     </div>

@@ -271,7 +271,7 @@ button {
   flex-grow: 0;
 }
 
-.tag {
+.lancer .tag {
   display: grid;
   grid-template: 1em 1fr / 50px 1fr 50px;
   align-items: center;
@@ -978,6 +978,7 @@ input[type=string].lancer-input {
   }
 }
 
+/* Used for longer descriptive text regions */
 .desc-text {
   text-align: left;
   padding: 0.5em;
@@ -989,6 +990,19 @@ input[type=string].lancer-input {
   background: rgba(0, 0, 0, 0.2);
 }
 
+.compact-action-box {
+  text-align: left;
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  border-width: 1px;
+  border-radius: 8px;
+  border-color: black;
+  border-style: solid;
+  margin-top: 10px;
+}
+
+/* Used to wrap larger onhit/oncrit/whatever effect boxes */
 .effect-box {
   text-align: left;
   align-items: flex-start;
@@ -1001,6 +1015,7 @@ input[type=string].lancer-input {
   margin-top: 10px;
 }
 
+/* Used to title effect boxes with a neat in-line effect */
 .effect-title {
   text-transform: uppercase;
   letter-spacing: .13em !important;

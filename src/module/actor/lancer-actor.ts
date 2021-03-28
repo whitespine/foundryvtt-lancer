@@ -266,8 +266,8 @@ export class LancerActor<T extends LancerActorType> extends Actor {
    * On the result of an update, we want to cascade derived data.
    */
   _onUpdate(...args: any) {
-    // Upon ourselves being updated, trigger any listener hooks
-    super._onUpdate(args[0], args[1], args[2], args[3]);
+    //@ts-ignore Incorrect typings
+    super._onUpdate(...args);
     LancerHooks.call(this);
   }
 
@@ -276,6 +276,16 @@ export class LancerActor<T extends LancerActorType> extends Actor {
     //@ts-ignore Incorrect typings
     super._onModifyEmbeddedEntity(...args);
     LancerHooks.call(this);
+  }
+
+  _onDelete(...args: any) {
+    //@ts-ignore Incorrect typings
+    super._onDelete(...args);
+
+    this.subscriptions?.forEach(subscription => {
+      subscription.unsubscribe();
+    });
+    this.subscriptions = [];
   }
 
   setupLancerHooks() {

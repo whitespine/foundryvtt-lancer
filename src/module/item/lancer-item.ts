@@ -1,7 +1,7 @@
 import { LANCER, TypeIcon } from "../config";
 import { EntryType, License, LiveEntryTypes, MechSystem, MechWeapon, NpcFeatureType, OpCtx, PilotArmor, PilotGear, PilotWeapon, RegRef, WeaponMod } from "machine-mind";
 import { FoundryRegActorData, FoundryRegItemData } from "../mm-util/foundry-reg";
-import { LancerActor, LancerActorType, LancerMech, LancerPilot } from "../actor/lancer-actor";
+import { AnyMMActor, LancerActor, LancerActorType, LancerMech, LancerPilot } from "../actor/lancer-actor";
 import { system_ready } from "../../lancer";
 import { find_license_for, MMEntityContext, mm_wrap_item } from "../mm-util/helpers";
 
@@ -114,7 +114,6 @@ export class LancerItem<T extends LancerItemType> extends Item {
             if(this.actor) {
               let actor_mmec: MMEntityContext<LancerActorType> = await this.actor.data.data.derived.mmec_promise;
               if(actor_mmec.ent.Type == EntryType.MECH || actor_mmec.ent.Type == EntryType.PILOT) {
-                console.log(`Item fetched actor mmec. Actor mmec has lb${actor_mmec.ent.LimitedBonus}. Up from base${base_limit} to now ${base_limit + actor_mmec.ent.LimitedBonus}`);
                 // Add pilot/mech lim bonus
                 dr.max_uses += actor_mmec.ent.LimitedBonus;
               }
@@ -394,5 +393,9 @@ export function is_item_type(type: LancerActorType | LancerItemType): type is La
 
 export function has_uses(item: AnyMMItem): item is PilotArmor | PilotWeapon | PilotGear | MechSystem | MechWeapon | WeaponMod {
   return item.Type == EntryType.PILOT_ARMOR || item.Type == EntryType.PILOT_GEAR || item.Type == EntryType.PILOT_WEAPON || item.Type == EntryType.MECH_SYSTEM || item.Type == EntryType.MECH_WEAPON || item.Type == EntryType.WEAPON_MOD;
+}
+
+export function has_mmid<T extends AnyMMItem | AnyMMActor>(item: AnyMMItem | AnyMMActor): item is T & {ID: string} {
+  return (item as any).ID != undefined;
 }
 
