@@ -5,6 +5,7 @@ import { FoundryFlagData , FoundryReg } from "../mm-util/foundry-reg";
 import { MMEntityContext, mm_wrap_item } from "../mm-util/helpers";
 import { funcs } from "machine-mind";
 import { ResolvedNativeDrop } from "../helpers/dragdrop";
+import { pilot_armor_slot } from "../helpers/pilot_loadout";
 
 const lp = LANCER.log_prefix;
 
@@ -52,6 +53,11 @@ export class LancerPilotSheet extends LancerActorSheet<EntryType.PILOT> {
       let download = html.find('.cloud-control[data-action*="download"]');
       download.on("click", async (ev) => {
         ev.stopPropagation();
+
+        // Disable the button
+        if($(ev.target).hasClass("locked")) return;
+        $(ev.target).addClass("locked");
+
         // Get the data
         try {
           ui.notifications.info("Importing character...");
@@ -67,7 +73,11 @@ export class LancerPilotSheet extends LancerActorSheet<EntryType.PILOT> {
             item_source: ["compendium", null],
             actor_source: "compendium"
           });
-          let synced_data = await funcs.cloud_sync(raw_pilot_data, self.mm.ent, [ps1, ps2]);
+          let synced_data = await funcs.cloud_sync(raw_pilot_data, self.mm.ent, [ps1, ps2], {
+            relinker: quick_relinker<any>({
+              key_pairs: [["ID", "id"], ["Name", "name"]]
+            })
+          });
           if(!synced_data) {
             throw new Error("Pilot was somehow destroyed by the sync");
           }
@@ -101,6 +111,10 @@ export class LancerPilotSheet extends LancerActorSheet<EntryType.PILOT> {
             "Failed to update pilot, likely due to missing LCP data: " + e.message
           );
         }
+
+
+        // Re-enable the button
+        $(ev.target).removeClass("locked");
       });
     }
   }

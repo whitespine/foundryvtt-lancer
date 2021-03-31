@@ -291,7 +291,7 @@ export class FoundryReg extends Registry {
     }
 
     // Set cache and return
-    cached_regs.set(reg_id, reg);
+    // cached_regs.set(reg_id, reg); // CACHING DISABLED UNTIL REGISTRYS ARE MADE STATELESS ONCE MORE - currently hooks interferes with this
     return reg;
   }
 

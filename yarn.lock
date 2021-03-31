@@ -2970,10 +2970,10 @@ lru-cache@^5.1.1:
   dependencies:
     yallist "^3.0.2"
 
-machine-mind@0.2.0-beta.73:
-  version "0.2.0-beta.73"
-  resolved "https://registry.yarnpkg.com/machine-mind/-/machine-mind-0.2.0-beta.73.tgz#10a73593346cd583cc75e1eb7608ad828791b19b"
-  integrity sha512-F/iBJzS78vomHhcisJxn07Aew6XXWtCRP2gjnBfh+ADx6+FlAkMH7nPVuo7RMXQJfW2s1d8/X9MzrvGbBCeJvg==
+machine-mind@0.2.0-beta.79:
+  version "0.2.0-beta.79"
+  resolved "https://registry.yarnpkg.com/machine-mind/-/machine-mind-0.2.0-beta.79.tgz#677ef06e9db0a277917878b414691ea6674a8a39"
+  integrity sha512-3FC7nzuVJHWCZKyqeS+gbGg1B4AjwoLyoo2toOnOFCLpjP3v4iyyU2gNf3CFx4ftoKZQuWLelDBqzPEXpAY3Fw==
   dependencies:
     axios "^0.19.2"
     filtrex "^2.1.0"
