@@ -117,7 +117,7 @@ export function single_action_preview(item_path: string, action_path: string, he
             name,
             icon: icon_spec ? `/systems/lancer/assets/icons/${icon_spec.replace(/-/g, "_")}.svg` : undefined
         }
-        let action_class = icon_spec ? `cci cci-${icon_spec}` : "fa-dice-d20";
+        let action_class = icon_spec ? `cci cci-${icon_spec}` : "fas fa-dice-d20";
         macro = `<a class="lancer-macro i--m ${action_class}" ${macro_elt_params(macro_ctx)}> </a>`;
     }
 
