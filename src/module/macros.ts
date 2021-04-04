@@ -204,7 +204,6 @@ export interface Lancer20Roll {
  * Generic macro preparer for any macro ctx.
  */
 export async function prepareMacro(any_macro: AnyMacroCtx) {
-  console.log("PREPARING MACRO: ", any_macro);
   // Attempt to use more specific options
   if (any_macro.type == "action") {
     return prepareActionMacro(any_macro);
@@ -318,7 +317,7 @@ export async function prepareMacro(any_macro: AnyMacroCtx) {
       }
       break;
     default:
-      console.log("No macro exists for that item type");
+      console.error("No macro exists for that item type", item.Type);
       return ui.notifications.error(`Error - No macro exists for that item type`);
   }
 }
@@ -430,7 +429,6 @@ export async function renderMacro(actor: Actor, template: string, templateData: 
   let d20_roll = 0;
   let d20s: Die[] | undefined = roll?.dice.filter((d: Die) => (d as any).faces == 20);
   if (d20s?.length) {
-    console.log("d20s", d20s);
     //@ts-ignore Dice result type is wrong
     d20_roll = d20s[0].results[0]?.result;
   }
@@ -1137,9 +1135,6 @@ export async function promptAccDiffModifier(
             let accuracy = <string>$(dlg).find(".accuracy").first().val();
             let difficulty = <string>$(dlg).find(".difficulty").first().val();
             let total = parseInt(accuracy) - parseInt(difficulty);
-            console.log(
-              `${lp} Dialog returned ${accuracy} accuracy and ${difficulty} difficulty resulting in a modifier of ${total}d6`
-            );
             resolve(total);
           },
         },

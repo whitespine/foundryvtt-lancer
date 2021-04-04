@@ -233,7 +233,6 @@ export async function resolve_native_drop(
     // Case 1 - Item is from a Compendium pack
     if (data.pack) {
       item = (await game.packs.get(data.pack)!.getEntity(data.id)) as LancerItem<any>;
-      console.log(`Item native dropped from compendium: `, item);
     } else if (data.actorId) {
       // Case 2 - Item is an owned entity (blech). Further distinguish if token or actor. We don't bother with owned compendium items, because like, just don't
       if (data.tokenId) {
@@ -250,7 +249,6 @@ export async function resolve_native_drop(
     } else {
       // Case 3 - Item is a World entity
       item = game.items.get(data.id) as AnyLancerItem;
-      console.log(`Item native dropped from world: `, item);
     }
 
     if (item) {
@@ -266,13 +264,11 @@ export async function resolve_native_drop(
     // Case 1 - Actor is from a Compendium pack
     if (data.pack) {
       actor = (await game.packs.get(data.pack)!.getEntity(data.id)) as LancerActor<any>;
-      console.log(`Actor native dropped from compendium: `, actor);
     }
 
     // Case 2 - Actor is a World entity
     else {
       actor = game.actors.get(data.id) as LancerActor<any>;
-      console.log(`Actor native dropped from world: `, actor);
     }
 
     if (actor) {
@@ -288,13 +284,11 @@ export async function resolve_native_drop(
     // Case 1 - JournalEntry is from a Compendium pack
     if (data.pack) {
       journal = (await game.packs.get(data.pack)!.getEntity(data.id)) as JournalEntry;
-      console.log(`JournalEntry native dropped from compendium: `, journal);
     }
 
     // Case 2 - JournalEntry is a World entity
     else {
       journal = game.journals.get(data.id) as JournalEntry;
-      console.log(`JournalEntry native dropped from world: `, journal);
     }
 
     if (journal) {

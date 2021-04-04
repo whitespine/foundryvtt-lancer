@@ -1,6 +1,6 @@
 import { LancerItemSheetData } from "../interfaces";
 import { LANCER } from "../config";
-import { LancerItem, LancerItemType } from "./lancer-item";
+import { AnyLancerItem, LancerItem, LancerItemType } from "./lancer-item";
 import {
   HANDLER_activate_general_controls,
   gentle_merge,
@@ -96,7 +96,6 @@ export class LancerItemSheet<T extends LancerItemType> extends ItemSheet {
 
     // Everything below here is only needed if the sheet is editable
     if (!this.options.editable) {
-      console.log("Not editable!"); // TODO: remove
       return;
     }
 
@@ -195,12 +194,10 @@ export class LancerItemSheet<T extends LancerItemType> extends ItemSheet {
   async getData(): Promise<LancerItemSheetData<T>> {
     // If a compendium, wait 50ms to avoid most race conflicts. TODO: Remove this when foundry fixes compendium editing to not be so awful
     if (this.item.compendium) {
-      //@ts-ignore
       this.object = await new Promise(s => setTimeout(s, 50))
-        .then(() => get_pack(this.item.type))
+        .then(() => get_pack((this.item as AnyLancerItem).type))
         .then(p => p.getEntity(this.item.id));
     }
-    console.log("Item sheet getting data");
     const data = super.getData() as LancerItemSheetData<T>; // Not fully populated yet!
 
     // Get the prepared MM item data asynchronously
@@ -235,7 +232,6 @@ export class LancerItemSheet<T extends LancerItemType> extends ItemSheet {
   // Write back our currently cached _currData, then refresh this sheet
   // Useful for when we want to do non form-based alterations
   async _commitCurrMM() {
-    console.log("Committing");
     let cd = this._currData;
     this._currData = null;
     (await cd?.mm.ent.writeback()) ?? null;

@@ -243,9 +243,15 @@ export class TokensActorsWrapper<T extends LancerActorType> extends EntityCollec
     for (let item of items) {
       console.log("Updating a token actor. Could this be done faster?");
       let id = item.RegistryID;
-      let fi = this.subget(id);
-      if (fi) {
-        await fi.actor.update(as_document_blob(item), {});
+      let found_token = this.subget(id);
+      if (found_token) {
+        if(found_token.data.actorLink) {
+          // Just treat it like a normal actor
+          await found_token.actor.update(as_document_blob(item));
+        } else {
+          // Need to update 
+
+        }
       } else {
         console.error(`Failed to update actor ${id} of type ${this.type} - actor not found`);
       }
@@ -418,7 +424,6 @@ export class CompendiumWrapper<T extends EntryType> extends EntityCollectionWrap
   // Handles type checking and stuff
   private async subget(id: string): Promise<EntFor<T> | null> {
     let map = await PackContentMapCache.fetch(this.type);
-    // console.log(`Compendium wrapper looking up ${this.type} ${id} in map `, map);
     let retrieved = map.get(id);
 
     if (retrieved && retrieved.data.type == this.type) {
@@ -439,7 +444,6 @@ export class CompendiumWrapper<T extends EntryType> extends EntityCollectionWrap
     })) as EntFor<T>;
 
     // Add it to the currently cached version
-    // console.log("Compendium wrapper used to create ", name, new_item._id);
     PackContentMapCache.soft_fetch(this.type)?.set(new_item._id, new_item);
 
     // TODO: Try to remove this, as it should be unnecessary once we have proper template.json

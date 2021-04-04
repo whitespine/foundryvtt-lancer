@@ -204,10 +204,8 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
         }
       }
       // await this.actor.update(top_update, {});
-      console.log("Do top", top_update);
       await this.actor.update(top_update);
     } else {
-      console.log("Do mm", formData);
       gentle_merge(ct, formData);
       await this._commitCurrMM();
     }
@@ -237,7 +235,6 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
   // Write back our currently cached _currData, then refresh this sheet
   // Useful for when we want to do non form-based alterations
   async _commitCurrMM() {
-    console.log("Committing ", this._currData);
     let cd = this._currData;
     this._currData = null;
     (await cd?.mm.ent.writeback()) ?? null;

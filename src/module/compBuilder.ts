@@ -34,41 +34,6 @@ type PilotItemEntryType =
 
 type ItemEntryType = MechItemEntryType | PilotItemEntryType;
 
-// Unlock all packs
-async function unlock_all() {
-  // Unlock all the packs
-  // @ts-ignore We ignore here because foundry-pc-types does not have the Compendium static var "CONFIG_SETTING"
-  const config = game.settings.get("core", Compendium.CONFIG_SETTING);
-  console.log(`${lp} Pre-unlock config:`, config);
-  for (let p of Object.values(EntryType)) {
-    const key = `world.${p}`;
-    if (!config[key]) {
-      config[key] = { private: false, locked: false };
-    } else {
-      config[key] = mergeObject(config[key], { locked: false });
-    }
-  }
-  // @ts-ignore We ignore here because foundry-pc-types does not have the Compendium static var "CONFIG_SETTING"
-  await game.settings.set("core", Compendium.CONFIG_SETTING, config);
-}
-
-// Lock all packs
-async function lock_all() {
-  // Lock all the packs
-  // @ts-ignore We ignore here because foundry-pc-types does not have the Compendium static var "CONFIG_SETTING"
-  const config = game.settings.get("core", Compendium.CONFIG_SETTING);
-  console.log(`${lp} Pre-lock config:`, config);
-  for (let p of Object.values(EntryType)) {
-    const key = `world.${p}`;
-    if (!config[key]) {
-      config[key] = { private: false, locked: true };
-    }
-    config[key] = mergeObject(config[key], { locked: true });
-  }
-  //@ts-ignore
-  await game.settings.set("core", Compendium.CONFIG_SETTING, config);
-}
-
 // Clear all packs
 export async function clear_all(): Promise<void> {
   // await unlock_all();

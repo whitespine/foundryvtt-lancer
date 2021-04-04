@@ -20,9 +20,6 @@ import { renderMacro } from "../macros";
 const lp = LANCER.log_prefix;
 
 export function lancerActorInit(data: any) {
-  // Some subtype of ActorData
-  console.log(`${lp} Initializing new ${data.type}`);
-
   // Produce our default data
   let default_data: any = {};
   let display_mode: number = CONST.TOKEN_DISPLAY_MODES.ALWAYS;
@@ -60,8 +57,6 @@ export function lancerActorInit(data: any) {
     "token.name": data.name ?? default_data.name, // Set token name to match internal
     "token.actorLink": [EntryType.PILOT, EntryType.MECH].includes(data.type), // Link the token to the Actor for pilots and mechs, but not for NPCs or deployables
   });
-
-  console.log(data);
 }
 
 // Use for HP, etc
@@ -318,7 +313,6 @@ export class LancerActor<T extends LancerActorType> extends Actor {
     // Make a subscription for each
     if (dependency) {
       let sub = LancerHooks.on(dependency, async (_: any) => {
-        console.log("Triggering subscription-based update on " + this.name);
         // We typically don't need to actually .update() ourselves when a dependency updates
         // Each client will individually prepareDerivedData in response to the update, and so there is no need for DB communication
         // Only exception is for cases like changes in max hp changing current HP - a tangible change in what data should be stored on this.

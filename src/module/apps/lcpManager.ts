@@ -14,10 +14,6 @@ function addLCPManager(app: Application, html: any) {
           permanent: true,
         }
       );
-      console.log(
-        `${lp} Unable to add LCP Manager button - Compendium Tab buttons not found!`,
-        buttons
-      );
       return;
     }
     const button = document.createElement("button");
@@ -78,7 +74,6 @@ class LCPManager extends Application {
     this.coreVersion = game.settings.get(LANCER.sys_name, LANCER.setting_core_data);
     // TODO: pull available core version from machine-mind
     this.coreUpdate = "2.0.35";
-    console.log(`${lp} Lancer Data version:`, this.coreVersion);
     this.lcpIndex = new LCPIndex(game.settings.get(LANCER.sys_name, LANCER.setting_lcps).index);
   }
 
@@ -97,7 +92,6 @@ class LCPManager extends Application {
     data.core_update = this.coreUpdate;
     data.manifest = this.manifest;
     data.lcps = this.lcpIndex;
-    console.log(`${lp} LCP Manager template data:`, data);
     return data;
   }
 
@@ -112,7 +106,6 @@ class LCPManager extends Application {
 
   async clearCompendiums() {
     ui.notifications.info(`Clearing all LANCER Compendium data. Please wait.`);
-    console.log(`${lp} Clearing all LANCER Compendium data.`);
     await game.settings.set(LANCER.sys_name, LANCER.setting_core_data, "0.0.0");
     await game.settings.set(LANCER.sys_name, LANCER.setting_lcps, new LCPIndex(null));
     await clear_all();
@@ -146,7 +139,6 @@ class LCPManager extends Application {
     if (!ev.currentTarget || !this.coreUpdate) return;
     ui.notifications.info(`Updating Lancer Core data to v${this.coreUpdate}. Please wait.`);
 
-    console.log(`${lp} Updating Lancer Core data to v${this.coreUpdate}`);
     await import_cp(mm.funcs.get_base_content_pack(), (x, y) => this.update_progress_bar(x, y));
 
     ui.notifications.info(`Lancer Core data update complete.`);
@@ -181,7 +173,6 @@ class LCPManager extends Application {
     if (files) this.lcpFile = files[0];
     if (!this.lcpFile) return;
 
-    console.log(`${lp} Selected file changed`, this.lcpFile);
     const fr = new FileReader();
     fr.readAsBinaryString(this.lcpFile);
     fr.addEventListener("load", (ev: ProgressEvent) => {
@@ -206,7 +197,6 @@ class LCPManager extends Application {
       npc_templates: this.cp.data.npcTemplates.length,
       npc_features: this.cp.data.npcFeatures.length,
     };
-    console.log(`${lp} Manifest of selected LCP:`, this.manifest);
     this.render();
   }
 
@@ -227,11 +217,8 @@ class LCPManager extends Application {
     ui.notifications.info(
       `Starting import of ${cp.manifest.name} v${cp.manifest.version}. Please wait.`
     );
-    console.log(`${lp} Starting import of ${cp.manifest.name} v${cp.manifest.version}.`);
-    console.log(`${lp} Parsed content pack:`, cp);
     await import_cp(cp, (x, y) => this.update_progress_bar(x, y));
     ui.notifications.info(`Import of ${cp.manifest.name} v${cp.manifest.version} complete.`);
-    console.log(`Import of ${cp.manifest.name} v${cp.manifest.version} complete.`);
 
     this.updateLcpIndex(manifest);
   }

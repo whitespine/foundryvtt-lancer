@@ -27,8 +27,6 @@ import { find_license_for, MMEntityContext, mm_wrap_item } from "../mm-util/help
 const lp = LANCER.log_prefix;
 
 export function lancerItemInit(data: any) {
-  console.log(`${lp} Initializing new ${data.type}`);
-
   // Select default image
   let img = TypeIcon(data.type as LancerItemType);
 

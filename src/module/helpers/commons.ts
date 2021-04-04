@@ -65,8 +65,6 @@ export function gentle_merge(dest: any, flat_data: any) {
     if (curr instanceof Object && curr[tail] !== undefined) {
       // Implicitly hits array as well
       curr[tail] = v;
-    } else {
-      // console.log(`Gentlemerge skipped key "${k}" while merging `, dest, flat_data);
     }
   }
 }
