@@ -82,6 +82,7 @@ export function ref_commons<T extends EntryType>(
  * @argument `native-drag` If native-drag is true, will produce foundry-native drag/drop data when dragged. Default false.
  * @argument `fallback` If fallback is provided, it will be used in place of the default "Empty" text
  * @argument `readonly` If set, cannot be dropped to
+ * @argument `no-img` If set, no icon will be added
  */
 export function simple_mm_ref<T extends EntryType>(
   types: T | T[],
@@ -94,6 +95,7 @@ export function simple_mm_ref<T extends EntryType>(
   let native_drop = helper.hash["native-drop"] ?? false;
   let native_drag = helper.hash["native-drag"] ?? false;
   let readonly = helper.hash["readonly"] || false;
+  let no_img = helper.hash["no-img"] || false;
 
   // Flatten types
   if (!Array.isArray(types)) {
@@ -123,14 +125,14 @@ export function simple_mm_ref<T extends EntryType>(
   // Body depends on what we were given
   if (!cd) {
     // Show an icon for each potential type
-    let icons = types.map(t => `<img class="ref-icon" src="${TypeIcon(t)}"></img>`);
+    let icons = no_img ? [] : types.map(t => `<img class="ref-icon" src="${TypeIcon(t)}"></img>`);
 
     // Make an empty ref. Note that it still has path stuff if we are going to be dropping things here
     return card.render(`${icons.join(" ")} <span class="submajor">${fallback}</span>`);
   } else {
     // Show the item icon and its name
     return card.render(`
-         <img class="ref-icon" src="${cd.img}"></img>
+         ${inc_if(`<img class="ref-icon" src="${cd.img}"></img>`, !no_img)}
          <span class="submajor">${cd.name}</span>
          `);
   }

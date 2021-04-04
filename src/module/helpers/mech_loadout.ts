@@ -396,13 +396,7 @@ export function mech_weapon_refview(
   let on_crit = profile.OnCrit ? effect_box("On Crit", profile.OnCrit, helper) : "";
 
   // Finish up with controls and body
-  return card.with_prop("style", "max-height: fit-content;").control({
-    action: "null",
-    context: true,
-    confirm: true,
-    path: weapon_path,
-    commit_override: weapon_path
-  }).render(`
+  return card.with_prop("style", "max-height: fit-content;").render(`
     <div class="lancer-header">
       <i class="cci cci-weapon i--m"> </i>
       <span class="minor">${

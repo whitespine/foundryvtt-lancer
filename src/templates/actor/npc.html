@@ -16,8 +16,7 @@
       <span class="major">CLASS:</span>
       <span class="submajor">
         {{#if mm.ent.ActiveClass}}
-          {{mm.ent.ActiveClass.Name}}
-          {{{simple-mm-ref "npc_class" "class" "delete" }}}
+          {{{simple-ref "npc_class" mm.ent.ActiveClass native-drop=true no-img=true }}}
         {{else}}
           NO CLASS FOUND
         {{/if}}
