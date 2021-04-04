@@ -105,7 +105,7 @@ export async function import_cp(
   cp: IContentPack,
   progress_callback?: (done: number, out_of: number) => void
 ): Promise<void> {
-  // await unlock_all(); // TODO: re-enable i guess?
+  await set_all_lock(false);
 
   // Stub in a progress callback so we don't have to null check it all the time
   if (!progress_callback) {
@@ -165,4 +165,24 @@ export async function import_cp(
   }
 
   progress_callback(transmit_count, total_items);
+  await set_all_lock(true);
+}
+
+// Lock/Unlock all packs
+async function set_all_lock(lock: boolean ) {
+  // Unlock all the packs
+  // @ts-ignore We ignore here because foundry-pc-types does not have the Compendium static var "CONFIG_SETTING"
+  const config = game.settings.get("core", Compendium.CONFIG_SETTING);
+  console.log(`${lp} Pre-unlock config:`, config);
+
+  for (let p of Object.values(EntryType)) {
+    const key = `world.${p}`;
+    if (!config[key]) {
+      config[key] = { private: false, locked: lock };
+    } else {
+      config[key] = mergeObject(config[key], { locked: lock });
+    }
+  }
+  // @ts-ignore We ignore here because foundry-pc-types does not have the Compendium static var "CONFIG_SETTING"
+  await game.settings.set("core", Compendium.CONFIG_SETTING, config);
 }
