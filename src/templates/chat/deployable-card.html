@@ -4,9 +4,9 @@
     <div class="card clipped" style="padding: 5px">
         {{{effect-box "EFFECT" deployable.Detail}}}
         <!-- Then the GM only stuff -->
-        <button class="deployable-button hidden" {{{deployable_ref_params}}}>
-            Deploy Token
-        </button>
+        <div class="gm-only">
+            {{{simple-ref "deployable" deployable native-drag=true}}}
+        </div> 
 
         {{{ mm-tag-list "tags" }}}
     </div>

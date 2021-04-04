@@ -68,7 +68,7 @@ export type LancerItemSheetData<T extends LancerItemType> = {
   license: License | null;
 };
 
-export type LancerActorSheetData<T extends LancerActorType> = {
+export interface LancerActorSheetData<T extends LancerActorType> extends ActorSheetData {
   actor: FoundryRegActorData<T>;
   data: LancerActor<T>["data"];
   items: Item[];

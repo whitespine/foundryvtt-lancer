@@ -380,7 +380,7 @@ export function has_struct_stress(actor: AnyMMActor): actor is Mech | Npc  {
  * Performs structure on the mech
  * For now, just rolls on table. Eventually we can include configuration to do automation
  */
-export async function structure_mech(mech: Mech | Npc) {
+export async function structure_mech(speaker: AnyLancerActor, mech: Mech | Npc) {
   // Table of descriptions
   function structTableD(roll: number, remStruct: number) {
     switch (roll) {
@@ -477,11 +477,10 @@ export async function structure_mech(mech: Mech | Npc) {
     };
   }
   const template = `systems/lancer/templates/chat/structure-card.html`;
-  const actor: Actor = game.actors.get(ChatMessage.getSpeaker().actor);
-  return renderMacro(actor, template, templateData);
+  return renderMacro(speaker, template, templateData);
 }
 
-export async function overheat_mech(mech: Mech | Npc) {
+export async function overheat_mech(speaker: AnyLancerActor, mech: Mech | Npc) {
     // Table of descriptions
     function stressTableD(roll: number, remStress: number) {
       switch (roll) {
@@ -581,6 +580,5 @@ export async function overheat_mech(mech: Mech | Npc) {
       };
     }
     const template = `systems/lancer/templates/chat/overheat-card.html`;
-    const actor: Actor = game.actors.get(ChatMessage.getSpeaker().actor);
-    return renderMacro(actor, template, templateData);
+    return renderMacro(speaker, template, templateData);
   }

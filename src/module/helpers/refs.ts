@@ -68,15 +68,23 @@ export function ref_params(ref: RegRef<any>, path?: string) {
   }
 }
 
-// A multiplexer-helper on machine-mind objects, to create actor/item ref items
-// If a slot_path is provided, then this will additionally be a valid drop-settable location for items of this type
+/* A multiplexer-helper on machine-mind objects, to create actor/item ref items
+* @argument `slot-path` If a slot_path is provided, then this will additionally be a valid drop-settable location for items of this type
+* @argument `native-drop` If native-drop is true, will have the native-refdrop slot, and will support dropping of native items (e.x. from sidebar, from compendium). Default false
+* @argument `native-drag` If native-drag is true, will produce foundry-native drag/drop data when dragged. Default false.
+* @argument `fallback` If fallback is provided, it will be used in place of the default "Empty" text
+*/
 export function simple_mm_ref<T extends EntryType>(
   types: T | T[],
   item: RegEntry<T> | null,
-  fallback: string = "Empty",
-  slot_path: string = "",
-  native: boolean = false
+  helper: HelperData
 ) {
+  // Get helper data
+  let fallback = helper.hash.fallback ?? "Empty";
+  let slot_path = helper.hash["slot-path"] ?? "";
+  let native_drop = helper.hash["native-drop"] ?? false;
+  let native_drag = helper.hash["native-drag"] ?? false;
+
   // Flatten types
   if(!Array.isArray(types)) {
     types = [types];
@@ -93,7 +101,8 @@ export function simple_mm_ref<T extends EntryType>(
   }
 
   // Generate native drop snippet if we want one
-  let native_drop_snippet = native ? " native-refdrop " : "";
+  let native_drop_snippet = native_drop ? " native-refdrop " : "";
+  let native_drag_snippet = native_drag ? " native-drag " : "";
 
   if (!cd) {
     // Show an icon for each potential type
@@ -109,7 +118,7 @@ export function simple_mm_ref<T extends EntryType>(
   }
 
   // The data-type
-  return `<div class="valid ${cd.ref.type} ref list-card ${native_drop_snippet} ${settable_snippet}" 
+  return `<div class="valid ${cd.ref.type} ref list-card ${native_drop_snippet} ${native_drag_snippet} ${settable_snippet}" 
                 ${ref_params(cd.ref)}
                 data-path="${slot_path}" >
          <img class="ref-icon" src="${cd.img}"></img>
@@ -356,7 +365,7 @@ export function HANDLER_activate_ref_drop_setting<T>(
 
 // Allow every ".ref.drop-settable" spot to be double-right-click cleared
 // Uses same getter/commit func scheme as other callbacks
-
+// Assumes that clearing means setting as null
 export function HANDLER_activate_ref_drop_clearing<T>(
   html: JQuery,
   data_getter: () => Promise<T> | T,
@@ -376,11 +385,20 @@ export function HANDLER_activate_ref_drop_clearing<T>(
       let data = await data_getter();
 
       // Check there's anything there before doing anything
-      if(!resolve_dotpath(data, path)) return;
+      let resolved = resolve_dotpath(data, path);
+      if(!path || !resolved) return;
 
-      // Merge in as null and commit
-      gentle_merge(data, { [path]: null });
-      await commit_func(data);
+      // Confirm, then merge in as null and commit
+      Dialog.confirm({
+        title: "CONFIRM REMOVAL",
+        content: resolved.Name ? `Unequip ${resolved.Name}`: "Unequip Slot",
+        defaultYes: true,
+        yes: async () => {
+          gentle_merge(data, { [path!]: null });
+          await commit_func(data);
+        },
+        no: () => {}
+      });
     }
   });
 }

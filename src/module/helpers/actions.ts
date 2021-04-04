@@ -86,6 +86,9 @@ export function single_action_preview(item_path: string, action_path: string, he
             case ActivationType.QuickTech:
                 icon_spec = "tech-quick";
                 break;
+            case ActivationType.Invade:
+                icon_spec = "nested-hexagons";
+                break;
             case ActivationType.Full:
                 icon_spec = "activation-full";
                 break;
@@ -118,7 +121,7 @@ export function single_action_preview(item_path: string, action_path: string, he
             icon: icon_spec ? `/systems/lancer/assets/icons/${icon_spec.replace(/-/g, "_")}.svg` : undefined
         }
         let action_class = icon_spec ? `cci cci-${icon_spec}` : "fas fa-dice-d20";
-        macro = `<a class="lancer-macro i--m ${action_class}" ${macro_elt_params(macro_ctx)}> </a>`;
+        macro = `<a class="lancer-macro i--m ${action_class}" title="${action.Activation}" ${macro_elt_params(macro_ctx)}> </a>`;
     }
 
     if(collapse) {
@@ -131,13 +134,13 @@ export function single_action_preview(item_path: string, action_path: string, he
                     ${inc_if(edit_button, editable)}
                     ${inc_if(delete_button, editable)}
                 </div>
-                <div class="collapse-item flexrow flex-center" collapse-id="${collapsible_id}">
+                <div class="collapse-item flexrow flexcenter" collapse-id="${collapsible_id}">
                     ${macro}
                     <span>${action.Detail}</span>
                 </div>
             </div>`;
     } else {
-        return `<div class="flexrow flex-center compact-action-box">
+        return `<div class="flexrow flexcenter compact-action-box">
                     ${macro}
                     <span>${action.Detail}</span>
                 </div>`

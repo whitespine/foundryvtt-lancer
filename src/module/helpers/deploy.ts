@@ -55,13 +55,13 @@ export function single_owned_deployable_preview(item_path: string, deployable_pa
                     </span>
                     ${inc_if(delete_button, editable)}
                 </div>
-                <div class="collapse-item flexrow flex-center" collapse-id="${collapsible_id}">
+                <div class="collapse-item flexrow flexcenter" collapse-id="${collapsible_id}">
                     ${macro}
                     <span>${deployable.Detail}</span>
                 </div>
             </div>`;
     } else {
-        return `<div class="flexrow flex-center compact-action-box">
+        return `<div class="flexrow flexcenter compact-action-box">
             ${macro}
             <span>${deployable.Detail}</span>
         </div>`

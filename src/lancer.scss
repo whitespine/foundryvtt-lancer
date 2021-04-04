@@ -128,7 +128,7 @@ button {
 
 } */
 
-.flex-center {
+.flexcenter {
   align-items: center;
   /* justify-content: center; */
 }
@@ -137,6 +137,9 @@ button {
 /* For if you just want a single item left */
 .self-left {
   align-self: flex-start;
+}
+.self-right {
+  align-self: flex-end;
 }
 
 /* ---------- */
@@ -937,7 +940,11 @@ input[type=string].lancer-input {
   margin: 5px;
 }
 
-
+.frame-preview-row {
+  display: grid;
+  align-items: center;
+  grid-template: 1fr / 120px 1fr 40px;
+}
 
 .size-icon {
   color: var(--main-theme-color, fuchsia);
@@ -1094,6 +1101,15 @@ code.horus:hover {
 .horus--subtle {
   animation: distort-subtle 5s infinite;
 }
+
+
+.heat-distortion {
+  animation-name: superheated;
+  animation-duration: 1.4s;
+  animation-iteration-count: infinite;
+}
+
+
 
 @keyframes distort-subtle {
   25% {
@@ -1433,7 +1449,24 @@ input.core-power-toggle:not(:checked)::before
   }
 }
 
+/* Used for HOT text */
+$superheat-color: #da802c;
+@include keyframes(superheated) {
+  0%, 50%, 100% {
+    text-shadow: 0px 0px $superheat-color;
+    transform: translate(0px, 0px);
+  }
+  25% {
+    text-shadow: 3px 3px $superheat-color;
+    transform: translate(-1px, -1px);
+  }
+  75% {
+    text-shadow: -3px -3px $superheat-color;
+    transform: translate(1px, 1px);
+  }
+}
+
 /* We remove this when you're a GM, but it otherwise serves as a convenient "don't look here" */
-.deployable-button .hidden {
+.gm-only {
   display: none;
 }

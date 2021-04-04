@@ -69,7 +69,7 @@ export function range_editor(path: string, helper: HelperData) {
   let value_options = ext_helper_hash(helper, {"value": range.Value});
   let value_input = std_string_input(path + ".Value", value_options);
 
-  return `<div class="flexrow flex-center" style="padding: 5px;">
+  return `<div class="flexrow flexcenter" style="padding: 5px;">
     ${icon_html}
     ${range_type_selector}
     ${value_input}
@@ -93,7 +93,7 @@ export function damage_editor(path: string, helper: HelperData) {
   let value_options = ext_helper_hash(helper, {"value": damage.Value});
   let value_input = std_string_input(path + ".Value", value_options);
 
-  return `<div class="flexrow flex-center" style="padding: 5px;">
+  return `<div class="flexrow flexcenter" style="padding: 5px;">
     ${icon_html}
     ${damage_type_selector}
     ${value_input}
@@ -179,7 +179,7 @@ export function uses_control(uses_path: string, max_uses: number, helper: Helper
     let commit_item = helper.hash["override"] ? `data-commit-item=${helper.hash["override"]}` : "";
     cells.push(`<a class="gen-control ${icon}" data-action="set" data-action-value="(int)${set_to}" data-path="${uses_path}" ${commit_item}></a>`);
   }
-  return `<div class="flexrow flex-center"> USES: ${cells.join(" ")} </div>`;
+  return `<div class="flexrow flexcenter"> USES: ${cells.join(" ")} </div>`;
 }
 
 // A specific MM ref helper focused on displaying manufacturer info.

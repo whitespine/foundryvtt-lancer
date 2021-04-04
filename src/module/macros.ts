@@ -134,9 +134,11 @@ export interface TextMacroCtx extends MacroCtx {
 // For rolling struct and stress
 export interface StructMacroCtx extends MacroCtx {
   type: "struct";
+  subtract: boolean; // Whether to subtract a struct when rolled
 }
 export interface StressMacroCtx extends MacroCtx {
   type: "stress";
+  subtract: boolean; // Whether to subtract a struct when rolled
 }
 
 export interface OverchargeMacroCtx extends MacroCtx {
@@ -427,7 +429,7 @@ export async function renderMacro(actor: Actor, template: string, templateData: 
 
   // Find the d20 result if we can. Currently assumes a single dice. Augment the template with this if available
   let d20_roll = 0;
-  let d20s: Die[] | undefined = roll?.dice.filter((d: Die) => d.faces == 20);
+  let d20s: Die[] | undefined = roll?.dice.filter((d: Die) => (d as any).faces == 20);
   if(d20s?.length) {
     console.log("d20s", d20s);
     //@ts-ignore Dice result type is wrong
@@ -1197,8 +1199,13 @@ export async function prepareOverheatMacro(macro: StressMacroCtx) {
 
   // Verify type
   if (has_struct_stress(actor)) {
+    // Subtract if we plan on doing so. The overheat_mech call will writeback
+    if(macro.subtract) {
+      actor.CurrentStress = funcs.bound_int(actor.CurrentStress - 1, 0, 99);
+    }
+
     // Hand it off to the actor to overheat
-    await overheat_mech(actor);
+    await overheat_mech(raw_actor, actor);
   } else {
     ui.notifications.warn(
       `Only mechs and npcs can overcharge. Ensure you have selected the right token.`
@@ -1216,9 +1223,15 @@ export async function prepareStructureMacro(macro: StructMacroCtx) {
   let actor = (await raw_actor.data.data.derived.mmec_promise).ent;
 
   // Verify type
-  if (has_struct_stress(actor)) {
+  if (has_struct_stress(actor)) {  
+    // Subtract if we plan on doing so. The overheat_mech call will writeback
+    if(macro.subtract) {
+      actor.CurrentStructure = funcs.bound_int(actor.CurrentStructure - 1, 0, 99);
+    }
+
+
     // Hand it off to the actor to overheat
-    await structure_mech(actor);
+    await structure_mech(raw_actor, actor);
   } else {
     ui.notifications.warn(
       `Only mechs and npcs can be structured. Ensure you have selected the right token.`
@@ -1226,9 +1239,17 @@ export async function prepareStructureMacro(macro: StructMacroCtx) {
   }
 }
 
+function any_to_b64( dat: any ): string {
+    return window.btoa(encodeURIComponent(JSON.stringify(dat)));
+}
+
+function b64_to_any( str: string ): any {
+    return JSON.parse(decodeURIComponent(window.atob( str )));
+}
+
 // Converts an ActionMacroCtx into the appropriate parameters
 export function macro_elt_params(ctx: AnyMacroCtx): string {
-  let encoded = btoa(JSON.stringify(ctx));
+  let encoded = any_to_b64(ctx);
   return `data-macro-info=${encoded} `;
 }
 
@@ -1236,8 +1257,7 @@ export function macro_elt_params(ctx: AnyMacroCtx): string {
 export function recover_macro_from_elt(elt: HTMLElement): AnyMacroCtx {
   let encoded = elt.dataset.macroInfo;
   if (encoded) {
-    let decoded = atob(encoded);
-    return JSON.parse(decoded) as AnyMacroCtx;
+    return b64_to_any(encoded) as AnyMacroCtx;
   } else {
     throw Error("Couldn't find macro info on the specified element");
   }

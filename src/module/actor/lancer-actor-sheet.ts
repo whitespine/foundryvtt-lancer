@@ -206,7 +206,7 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
    */
   // @ts-ignore Foundry-pc-types does not properly acknowledge that sheet `getData` functions can be/are asynchronous
   async getData(): Promise<LancerActorSheetData<T>> {
-    const data = super.getData() as LancerActorSheetData<T>; // Not fully populated yet!
+    const data = (await super.getData()) as unknown as LancerActorSheetData<T>; // Not fully populated yet!
 
     // Drag up the mm context (when ready) to a top level entry in the sheet data
     data.mm = await (this.actor.data as LancerActor<T>["data"]).data.derived.mmec_promise;

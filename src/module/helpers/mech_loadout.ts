@@ -1,9 +1,9 @@
 import { EntryType, Mech, MechLoadout, SystemMount, Pilot, Frame, Damage, DamageType, FittingSize, MechWeapon, WeaponMount, Range, MechSystem, funcs  } from "machine-mind";
 import { AnyMMActor } from "../actor/lancer-actor";
 import { TypeIcon } from "../config";
-import { WeaponMacroCtx, macro_elt_params, ActionMacroCtx, ItemMacroCtx } from "../macros";
+import { WeaponMacroCtx, macro_elt_params, ActionMacroCtx, ItemMacroCtx, FrameMacroCtx } from "../macros";
 import { action_list_display } from "./actions";
-import { effect_box, ext_helper_hash, HelperData, inc_if, resolve_helper_dotpath } from "./commons";
+import { effect_box, ext_helper_hash, HelperData, icon_class_to_path, inc_if, resolve_helper_dotpath } from "./commons";
 import { deployable_list_display } from "./deploy";
 import { show_damage_array, show_range_array, uses_control } from "./item";
 import { ref_commons, ref_params, simple_mm_ref } from "./refs";
@@ -114,17 +114,137 @@ export function mech_loadout(mech_path: string, helper: HelperData): string {
 export function pilot_slot(data_path: string, helper: HelperData): string {
   // get the existing
   let existing = resolve_helper_dotpath<Pilot | null>(helper, data_path, null);
-  return simple_mm_ref(EntryType.PILOT, existing, "No Pilot", data_path, true);
+  return simple_mm_ref(EntryType.PILOT, existing, ext_helper_hash(helper, {
+    fallback: "No Pilot",
+    "slot-path": data_path, 
+    "native-drop": true
+  }));
 }
 
 // A drag-drop slot for a frame. TODO: fancify, giving basic stats or something???
+/**
+ * Handlebars helper for a frame preview card. Doubles as a slot. 
+ * @argument "macro-actor" If supplied in hash, this MM actor entry will be used as the macro's actor
+ */
 export function frame_refview(frame_path: string, helper: HelperData): string {
+  /*
   let frame = resolve_helper_dotpath<Frame | null>(helper, frame_path, null);
+  let ref = simple_mm_ref(EntryType.FRAME, frame, ext_helper_hash(helper, {
+            fallback: "No Frame", 
+            "slot-path": frame_path
+          }));
   return `<div class="lancer-header loadout-category submajor">
             <span>CURRENT FRAME</span>
           </div>
-          ${simple_mm_ref(EntryType.FRAME, frame, "No Frame", frame_path)}
+          ${ref}
           `;
+          */
+  let frame_ = resolve_helper_dotpath<Frame | null>(helper, frame_path, null);
+
+  // Generate commons
+  let cd = ref_commons(frame_);
+
+  if (!cd) {
+    // Make an empty ref slot
+    return `
+      <div class="${EntryType.FRAME} ref drop-settable card flexrow" 
+                        data-path="${frame_path}" 
+                        data-type="${EntryType.FRAME}">
+        <img class="ref-icon" src="${TypeIcon(EntryType.FRAME)}"></img>
+        <span class="major">Please Select a Frame</span>
+      </div>`;
+  }
+
+  let frame = frame_!;
+
+  // Generate traits
+  let traits: string[] = [];
+  for(let i=0; i<frame.Traits.length; i++) {
+    let trait = frame.Traits[i];
+    let macro = "";
+
+    // Gen macro if possible
+    if(helper.hash["macro-actor"]) {
+      let macro_ctx: FrameMacroCtx = {
+        actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref(),
+        name: trait.Name,
+        type: "frame",
+        subtype: "trait",
+        trait_index: i
+      };
+      macro = `<a class="lancer-macro i--sm mdi mdi-message" ${macro_elt_params(macro_ctx)}></a>`;
+    }
+    // traits.push(effect_box(trait.Name, `
+    traits.push(`
+      <div class="frame-preview-row">
+        <span class="major">${trait.Name}</span> 
+        ${effect_box("CORE PASSIVE", trait.Description, helper)}
+        ${macro} 
+      </div>`);
+  }
+
+  // Generate core details
+  let cs = frame.CoreSystem;
+  let core_passive = ``;
+  if(cs.PassiveEffect.trim()) {
+    let macro = "";
+    if(helper.hash["macro-actor"]) {
+      let macro_ctx: FrameMacroCtx = {
+        name: cs.PassiveName,
+        subtype: "passive",
+        type: "frame",
+        actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref(),
+        icon: icon_class_to_path("corebonus")
+      };
+      macro = `<a class="lancer-macro i--sm cci cci-corebonus" ${macro_elt_params(macro_ctx)}></a>`;
+    }
+    core_passive = `
+      <div class="frame-preview-row">
+        <span class="major">${cs.PassiveName}</span>
+        <div class="desc-text">Core Passive: ${cs.PassiveEffect}</div>
+        ${macro}
+      </div>`;
+  }
+  
+  
+  let core_active = ``;
+  if(cs.ActiveName.trim()) {
+    let macro = "";
+    if(helper.hash["macro-actor"]) {
+      let macro_ctx: FrameMacroCtx = {
+        name: cs.ActiveName,
+        subtype: "active",
+        type: "frame",
+        actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref(),
+        icon: icon_class_to_path("corebonus")
+      };
+      macro = `<a class="lancer-macro i--sm cci cci-corebonus" ${macro_elt_params(macro_ctx)}></a>`;
+    }
+    core_active = `
+      <div class="frame-preview-row">
+        <span class="major">${cs.ActiveName}</span>
+        ${effect_box("CORE ACTIVE", `${cs.Activation}: ${cs.ActiveEffect}`, helper)}
+        ${macro}
+      </div>`;
+  }
+
+
+  return `
+    <div class="${EntryType.FRAME} ref drop-settable card">
+      <div class="lancer-header major">
+        <span>${frame.Name} FRAME</span>
+      </div>          
+      <div class="lancer-header submajor frame-preview-row">
+        <span>FEATURE</span>
+        <span>DESCRIPTION</span>
+        <span></span>
+      </div>
+
+      ${traits.join(" ")}
+      ${core_passive}
+      ${core_active}
+    </div>
+  `;
 }
 
 /**
@@ -238,7 +358,7 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string, help
       <a class="gen-control fas fa-trash" data-action="null" data-path="${weapon_path}"></a>
     </div> 
     <div class="lancer-body">
-      <div class="flexrow flex-center" style="text-align: left; white-space: nowrap;">
+      <div class="flexrow flexcenter" style="text-align: left; white-space: nowrap;">
         ${macro}
         <hr class="vsep--m">
         ${show_range_array(ranges, helper)}

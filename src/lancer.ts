@@ -69,8 +69,8 @@ import {
   manufacturer_ref,
   uses_control,
 } from "./module/helpers/item";
-import { clicker_num_input, clicker_stat_card, compact_stat_edit, compact_stat_view, deployer_slot, npc_clicker_stat_card, npc_tier_selector, overcharge_button, stat_edit_card, stat_edit_card_max, stat_view_card, } from "./module/helpers/actor";
-import { editable_mm_ref_list_item, simple_mm_ref, mm_ref_portrait, mm_ref_list_append_slot, editable_mm_ref_list_item_native, resolve_ref_element } from "./module/helpers/refs";
+import { clicker_num_input, clicker_stat_card, compact_stat_edit, compact_stat_view, deployer_slot, npc_clicker_stat_card, npc_tier_selector, overcharge_button, stat_edit_card, stat_edit_card_max, stat_view_card, stress_macro_button, struct_macro_button, } from "./module/helpers/actor";
+import { editable_mm_ref_list_item, simple_mm_ref, mm_ref_portrait, mm_ref_list_append_slot, editable_mm_ref_list_item_native, resolve_ref_element, HANDLER_activate_native_ref_dragging } from "./module/helpers/refs";
 import { mech_loadout, mech_system_refview, mech_weapon_refview, pilot_slot } from "./module/helpers/mech_loadout";
 import { LancerNPCSheet } from "./module/actor/npc-sheet";
 import { bonus_list_display } from "./module/helpers/bonuses";
@@ -349,6 +349,8 @@ Hooks.once("init", async function () {
   // Mech stuff
   Handlebars.registerHelper("overcharge-button", overcharge_button);
   Handlebars.registerHelper("mech-loadout", mech_loadout);
+  Handlebars.registerHelper("struct-button", struct_macro_button);
+  Handlebars.registerHelper("stress-button", stress_macro_button);
 
   // ------------------------------------------------------------------------
   // NPC stuff
@@ -494,23 +496,11 @@ Hooks.on("renderChatMessage", async (cm: ChatMessage, html: JQuery<HTMLElement>,
     }
   }
 
-  // now do deployables if gm
+  // now do gm only stuff
   if(game.user.isGM) {
-    const deploy_buttons = html.find(".deployable-button");
-    for(let _button of deploy_buttons) {
-      let button = $(_button);
-      button.removeClass("hidden"); // Show that shit!
-      // Make it do shit!
-      button.on("click", async () => {
-        let resolved_deployable = await resolve_ref_element(button[0]);
-        if(!resolved_deployable || resolved_deployable.Type != EntryType.DEPLOYABLE) {
-          console.error("Deployable button is broken!");
-        } else {
-          // Place a token
-          console.log("TODO: place token for this deployable");
-        }
-      });
-    }
+    let gm_zones = html.find(".gm-only");
+    gm_zones.removeClass("gm-only");
+    HANDLER_activate_native_ref_dragging(gm_zones);
   }
 });
 

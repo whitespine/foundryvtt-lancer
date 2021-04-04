@@ -50,7 +50,7 @@ export function action_type_icon(a_type: string) {
  */
 export function action_type_selector(a_type: string, data_target: string) {
   const a = a_type ? a_type.toLowerCase() : ActivationType.None.toLowerCase();
-  let html = '<div class="flexrow flex-center" style="padding: 5px; flex-wrap: nowrap;">';
+  let html = '<div class="flexrow flexcenter" style="padding: 5px; flex-wrap: nowrap;">';
   html += action_type_icon(a_type);
   html += `<select name="${data_target}" data-dtype="String" style="height: 2em;float: right" >
     <option value="${ActivationType.None}" ${
@@ -282,7 +282,7 @@ export function npc_weapon_effect_preview(
     npc_feature,
     `
     <div class="lancer-body flex-col">
-      <div class="flexrow no-wrap flex-center">
+      <div class="flexrow no-wrap flexcenter">
         ${subheader_items.join(sep)}
       </div>
       <div>

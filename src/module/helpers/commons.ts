@@ -112,17 +112,24 @@ export function array_path_edit(target: any, flat_path: string, value: any, mode
   }
 }
 
-// Common to many feature/weapon/system previews. Auto-omits on empty body
-// Supply `add_classes` to augment the effect box
+/** Common to many feature/weapon/system previews. Auto-omits on empty body
+ * @argument `outer-classes` to augment the entire effect box
+ * @argument `inner-classes` to augment the inner effect box contents
+ */
 export function effect_box(title: string, text: string, helper: HelperData): string {
-  let add_classes:string = helper.hash.add_classes ?? "";
+  let outer_classes:string = helper.hash["outer-classes"] ?? "";
+  let inner_classes:string = helper.hash["inner-classes"] ?? "";
+
   if (text) {
     return `
-      <div class="effect-box ${add_classes}">
+      <div class="effect-box ${outer_classes}">
         <span class="effect-title">${title}</span>
-        <span class="effect-text" style="padding: 0 5px ">${text}</span>
+        <div class="effect-text ${inner_classes}" style="padding: 0 5px">
+          ${text}
+        </div>
       </div>
       `;
+        // <span class="effect-text" style="padding: 0 5px ">${text}</span>
   } else {
     return "";
   }
@@ -431,7 +438,7 @@ export function std_num_input(path: string, helper: HelperData) {
 
 // Shows a [X] / Y display, where X is an editable value and Y is some total (e.x. max hp)
 export function std_x_of_y(x_path: string, x: number, y: number, add_classes: string = "") {
-  return ` <div class="flexrow flex-center no-wrap ${add_classes}">
+  return ` <div class="flexrow flexcenter no-wrap ${add_classes}">
               <input class="lancer-stat lancer-invisible-input" type="number" name="${x_path}" value="${x}" data-dtype="Number" style="justify-content: left"/>
               <span>/</span>
               <span class="lancer-stat" style="justify-content: left"> ${y}</span>
@@ -467,7 +474,7 @@ export function std_checkbox(path: string, helper: HelperData) {
   let input = `<input class="${input_classes}" name="${path}" ${inc_if("checked", value)} type="checkbox" />`;
   if(label) {
   return `
-    <label class="flexrow flex-center ${label_classes}">
+    <label class="flexrow flexcenter ${label_classes}">
       <span class="no-grow" style="padding: 2px 5px;">${label}</span>
       ${input}
     </label>`;
@@ -656,4 +663,11 @@ export function temp_apply_class(to: JQuery, classname: string, time: number): P
       succ();
     }, time);
   });
+}
+
+
+// Converts a CSS icon specifier to an icon resource path. Ex: cci-status-exposed -> /systems/lancer/assets/icons/status_exposed
+export function icon_class_to_path(icon: string): string {
+  icon = icon.replace(/(cci )?cci-/, ""); // Get rid of cci junkh
+  return `/systems/lancer/assets/icons/${icon.replace(/-/g, "_")}.svg`;
 }

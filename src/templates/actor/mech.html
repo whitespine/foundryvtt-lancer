@@ -60,13 +60,26 @@
     {{{stat-view-card      "ENGINEERING"  "mm.ent.Pilot.MechSkills.Eng"  macro-actor=mm.ent}}}
 
 
-    {{{stat-edit-max-card  "STRUCTURE"          "mm.ent.CurrentStructure"         "mm.ent.MaxStructure" }}}
+    {{#stat-edit-max-card  "STRUCTURE"   "mm.ent.CurrentStructure"  "mm.ent.MaxStructure" }}
+      <span>STRUCTURE</span> {{{struct-button "mm.ent"}}}
+    {{/stat-edit-max-card}}
     {{{stat-edit-max-card  "HP"          "mm.ent.CurrentHP"         "mm.ent.MaxHP"              icon="mdi mdi-heart-outline" }}}
     {{{stat-edit-card      "O.SHIELD"    "mm.ent.Overshield"                                    icon="mdi mdi-octagram" }}}
     {{{stat-view-card      "EVASION"     "mm.ent.Evasion"           icon="cci cci-evasion" }}}
 
-    {{{stat-edit-max-card  "STRESS"      "mm.ent.Stress"    "mm.ent.MaxStress" }}}
-    {{{stat-edit-max-card  "HEAT"        "mm.ent.CurrentHeat"       "mm.ent.HeatCapacity"       icon="cci cci-heat" }}}
+    {{#stat-edit-max-card  "STRESS"      "mm.ent.CurrentStress"    "mm.ent.MaxStress" }}
+      <span>STRESS</span> {{{stress-button "mm.ent"}}}
+    {{/stat-edit-max-card}}
+
+    {{#stat-edit-max-card  "HEAT"        "mm.ent.CurrentHeat"       "mm.ent.HeatCapacity"  }}
+      {{#if mm.ent.IsInDangerZone}}
+        <i class="i--m cci cci-status-danger-zone heat-distortion"></i>
+        <span class="heat-distortion">HEAT</span> 
+      {{else}}
+        <i class="i--m cci cci-heat"></i>
+        <span>HEAT</span> 
+      {{/if}}
+    {{/stat-edit-max-card}}
     {{{stat-edit-card      "BURN"        "mm.ent.Burn"                                          icon="cci cci-burn" }}}
     {{{stat-view-card      "E-DEF"       "mm.ent.EDefense"          icon="cci cci-edef" }}}
 

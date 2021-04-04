@@ -1,6 +1,7 @@
+import { HelperOptions } from "handlebars";
 import { EntryType,funcs, Mech, Npc, Pilot  } from "machine-mind";
 import { AnyMMActor, LancerActorType } from "../actor/lancer-actor";
-import { macro_elt_params, OverchargeMacroCtx, StatMacroCtx } from "../macros";
+import { macro_elt_params, OverchargeMacroCtx, StatMacroCtx, StressMacroCtx, StructMacroCtx } from "../macros";
 import { MMEntityContext } from "../mm-util/helpers";
 import { ext_helper_hash, HelperData, inc_if, resolve_helper_dotpath, selected, std_num_input, std_x_of_y } from "./commons";
 import { simple_mm_ref } from "./refs";
@@ -8,15 +9,26 @@ import { simple_mm_ref } from "./refs";
 // Some simple stat editing thingies
 
 // Shows an X / MAX clipped card
-export function stat_edit_card_max(title: string, data_path: string, max_path: string, helper: HelperData): string {
+/**
+ * Shows an X / MAX clipped card
+ * @argument `icon` if provided, will be displayed alongside
+ */
+export function stat_edit_card_max(title: string, data_path: string, max_path: string, helper: HelperOptions): string {
   let data_val = resolve_helper_dotpath(helper, data_path, 0);
   let max_val = resolve_helper_dotpath(helper, max_path, 0);
   let icon = helper.hash["icon"] ?? "";
+
+  // If provided with a nested block, use that for title content
+  let full_title: string;
+  //@ts-ignore Typescript isn't a fan of handlebars "this" contexts
+  full_title = helper.fn ? helper.fn(this) : "";
+  if(!full_title) {
+    full_title = `${inc_if(`<i class="${icon} i--m"> </i>`, icon)} <span>${title}</span>`;
+  }
   return `
     <div class="card clipped">
       <div class="lancer-header major">
-        ${inc_if(`<i class="${icon} i--m"> </i>`, icon)}
-        <span>${title}</span>
+      ${full_title}
       </div>
       ${std_x_of_y(data_path, data_val, max_val, "lancer-stat major")}
     </div>
@@ -209,6 +221,37 @@ export function npc_tier_selector(tier_path: string, helper: HelperData) {
 export function deployer_slot(data_path: string, helper: HelperData): string {
   // get the existing
   let existing = resolve_helper_dotpath<Pilot | Mech | Npc | null>(helper, data_path, null);
-  return simple_mm_ref([EntryType.PILOT, EntryType.MECH, EntryType.NPC], existing, "No Deployer", data_path, true);
+  return simple_mm_ref([EntryType.PILOT, EntryType.MECH, EntryType.NPC], existing, ext_helper_hash(helper, {
+    fallback: "No Deployer", 
+    aa: data_path, 
+    native: true
+  }));
 }
 
+// Create a button for structing/stressing a mech (or npc)
+export function struct_macro_button(robo_path: string, helper: HelperData): string {
+  let robot = resolve_helper_dotpath<Mech | Npc | null>(helper, robo_path, null);
+  if(!robot) return "ERROR";
+  let macro_ctx: StructMacroCtx = {
+    name: "STRUCTURE DAMAGE",
+    type: "struct",
+    actor: robot.as_ref(),
+    icon: "/systems/lancer/assets/icons/condition_stunned.svg",
+    subtract: true
+  }
+  return `<a class="lancer-macro i--sm cci cci-condition-stunned" style="max-width: min-content;"  ${macro_elt_params(macro_ctx)}> </a>`;
+}
+
+
+export function stress_macro_button(robo_path: string, helper: HelperData): string {
+  let robot = resolve_helper_dotpath<Mech | Npc | null>(helper, robo_path, null);
+  if(!robot) return "ERROR";
+  let macro_ctx: StressMacroCtx = {
+    name: "REACTOR OVERHEAT",
+    type: "stress",
+    actor: robot.as_ref(),
+    icon: "/systems/lancer/assets/icons/status_exposed.svg",
+    subtract: true
+  }
+  return `<a class="lancer-macro i--sm cci cci-status-exposed" style="max-width: min-content;"  ${macro_elt_params(macro_ctx)}> </a>`;
+}

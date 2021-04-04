@@ -113,7 +113,7 @@ export function pilot_weapon_refview(weapon_path: string, helper: HelperData): s
       <a class="gen-control fas fa-trash" data-action="null" data-path="${weapon_path}"></a>
     </div>
     <div class="flexcol">
-      <div class="flexrow flex-center">
+      <div class="flexrow flexcenter">
         ${macro}
         ${show_range_array(weapon.Range, helper)}
         <hr class="vsep--m">
