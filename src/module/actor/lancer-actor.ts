@@ -1,4 +1,4 @@
-import { LANCER } from "../config";
+import { LANCER, TypeIcon } from "../config";
 import {
   EntryType,
   funcs,
@@ -22,11 +22,12 @@ const lp = LANCER.log_prefix;
 export function lancerActorInit(data: any) {
   // Produce our default data
   let default_data: any = {};
-  let display_mode: number = CONST.TOKEN_DISPLAY_MODES.ALWAYS;
+  let display_mode: number = CONST.TOKEN_DISPLAY_MODES.HOVER;
   let disposition: number = CONST.TOKEN_DISPOSITIONS.FRIENDLY;
   switch (data.type) {
     case EntryType.NPC:
       default_data = funcs.defaults.NPC();
+      display_mode = CONST.TOKEN_DISPLAY_MODES.OWNER_HOVER;
       disposition = CONST.TOKEN_DISPOSITIONS.HOSTILE;
       break;
     case EntryType.PILOT:
@@ -47,7 +48,7 @@ export function lancerActorInit(data: any) {
   // Put in the basics
   mergeObject(data, {
     data: default_data,
-    img: `systems/lancer/assets/icons/${data.type}.svg`,
+    img: TypeIcon(data.type),
     "token.bar1": { attribute: "derived.current_hp" }, // Default Bar 1 to HP
     "token.bar2": { attribute: "derived.current_heat" }, // Default Bar 2 to Heat
     "token.displayName": display_mode,
@@ -224,12 +225,18 @@ export class LancerActor<T extends LancerActorType> extends Actor {
         this.prior_max_hp = dr.current_hp.max;
 
         // Now that data is set properly, force token to draw its bars
-        if (this.token && (this.token as any).bars) {
-          (this.token as any).drawBars();
+        if (this.isToken && (this.token as any).bars) {
+          // Just redraw self
+          try {
+            (this.token as any).drawBars();
+          } catch (e) {}
         } else {
+          // Redraw all active tokens
           for (let token of this.getActiveTokens()) {
             if ((token as any).bars) {
-              (token as any).drawBars();
+              try {
+                (token as any).drawBars();
+              } catch (e) {}
             }
           }
         }
@@ -520,7 +527,7 @@ export async function overheat_mech(speaker: AnyLancerActor, mech: Mech | Npc) {
     game.settings.get(LANCER.sys_name, LANCER.setting_automation) &&
     game.settings.get(LANCER.sys_name, LANCER.setting_auto_structure)
   ) {
-    if (mech.CurrentHeat > mech.HeatCapacity) {
+    while (mech.CurrentHeat > mech.HeatCapacity && mech.CurrentStress > 0) {
       // https://discord.com/channels/426286410496999425/760966283545673730/789297842228297748
       mech.CurrentHeat -= mech.HeatCapacity;
       mech.CurrentStress -= 1;
@@ -530,6 +537,9 @@ export async function overheat_mech(speaker: AnyLancerActor, mech: Mech | Npc) {
     ui.notifications.info("The mech is at full Stress, no overheating check to roll.");
     return;
   }
+
+  // Save the damage we just tookn
+  await mech.writeback();
 
   // await this.update(this.data);
   let templateData = {};

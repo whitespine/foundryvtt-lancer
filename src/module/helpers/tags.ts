@@ -1,6 +1,7 @@
 import { EntryType, TagInstance, typed_lancer_data } from "machine-mind";
 import {
   array_path_edit,
+  DOMTag,
   HelperData,
   inc_if,
   resolve_dotpath,
@@ -12,78 +13,19 @@ import {
   enable_native_dropping_mm_wrap,
   enable_simple_ref_dropping,
 } from "./dragdrop";
-import { ref_params } from "./refs";
 
-const TAGS = typed_lancer_data.tags;
-
-/**
- * Search for a tag template in lancer-data.
- * @param id The tag's lancer-data id string.
- * @returns The full tag data.
- */
-/*
-function findTag(id: string): TagData | null {
-  // Only check if we actually got something.
-  if (id) {
-    // Find the tag id in lancer-data
-    for (let i = 0; i < TAGS.length; i++) {
-      const t = TAGS[i];
-      if (t.id === id) {
-        return t;
-      }
-    }
-  }
-  return null;
-}
-
-/**
- * Prepares a tag's name, description, and value.
- * @param tag The tag to prepare.
- */
-/*
-function prepareTag(tag: TagData | null): TagData {
-  // Initialize if we need to
-  const default_tag = { name: "", description: "", id: "", brew: "n/a", counters: [] };
-  tag = tag || default_tag;
-
-  // If we have a pre-defined tag, insert info. Otherwise, leave it as-is.
-  if (tag["id"]) {
-    // Look up values
-    const tagdata = findTag(tag["id"]);
-    if (tagdata) {
-      tag["name"] = tagdata["name"];
-      tag["description"] = tagdata["description"];
-
-      let val: string | number = 0;
-      if (tag.val) {
-        val = tag.val;
-      } else if (tagdata.val) {
-        val = tagdata.val;
-      }
-      // If the tag has a value, insert it into the text.
-      if (val !== 0) {
-        tag["val"] = val;
-        tag["name"] = tag["name"].replace("{VAL}", String(tag["val"]));
-        tag["description"] = tag["description"].replace("{VAL}", String(tag["val"]));
-      }
-    } else {
-      tag = default_tag;
-    }
-  }
-  return tag;
-}
-*/
 
 // A small tag display containing just the label and value
 export function compact_tag(tag_path: string, tag: TagInstance): string {
   // Format the {VAL} out of the name
   let formatted_name = tag.Tag.Name.replace("{VAL}", `${tag.Value ?? "?"}`);
-  return `<div class="editable-tag-instance valid ref compact-tag flexrow" data-path="${tag_path}" ${ref_params(
-    tag.Tag.as_ref()
-  )}>
+  let div = new DOMTag("div").ref({
+    path: tag_path,
+    ref: tag.Tag.as_ref()
+  }).with_class("editable-tag-instance", "compact-tag", "flexrow");
+  return div.render(`
       <i class="mdi mdi-label i--s i--light"></i>
-      <span style="margin: 3px;" >${formatted_name}</span>
-    </div>`;
+      <span style="margin: 3px;" >${formatted_name}</span>`);
 }
 
 // The above, but on an array, filtering out hidden as appropriate

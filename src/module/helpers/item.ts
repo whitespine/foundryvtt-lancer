@@ -11,15 +11,11 @@ import {
   SystemType,
   Range,
   EntryType,
-  PilotArmor,
-  PilotWeapon,
-  PilotGear,
   Manufacturer,
   License,
 } from "machine-mind";
-import { TypeIcon } from "../config";
-import { compact_tag_list } from "./tags";
 import {
+  DOMTag,
   ext_helper_hash,
   HelperData,
   resolve_dotpath,
@@ -28,9 +24,7 @@ import {
   std_string_input,
   std_x_of_y,
 } from "./commons";
-import { ref_commons, ref_params } from "./refs";
-import { macro_elt_params, WeaponMacroCtx } from "../macros";
-import { AnyMMActor } from "../actor/lancer-actor";
+import { ref_commons } from "./refs";
 
 // Generic item utilities ahred across several other categories
 
@@ -208,25 +202,21 @@ export function uses_control(uses_path: string, max_uses: number, helper: Helper
 export function manufacturer_ref(source_path: string, helper: HelperData): string {
   let source_: Manufacturer | null = resolve_helper_dotpath(helper, source_path);
   let cd = ref_commons(source_);
+  let card = new DOMTag("div").ref({
+    allow_type: EntryType.MANUFACTURER,
+    path: source_path,
+    ref: cd?.ref
+  }).with_class("list-card");
+
   // TODO? maybe do a little bit more here, aesthetically speaking
   if (cd) {
     let source = source_!;
-    return `<div class="valid ${EntryType.MANUFACTURER} ref list-card drop-settable" ${ref_params(
-      cd.ref,
-      source_path
-    )}> 
-              <h3 class="mfr-name" style="color: ${source!.GetColor(false)};">
-                <i class="i--m cci ${source.Logo}"></i>
-                ${source!.ID}
-              </h3>
-                
-            </div>
-        `;
+    return card.render(`<h3 class="mfr-name" style="color: ${source!.GetColor(false)};">
+                          <i class="i--m cci ${source.Logo}"></i>
+                          ${source!.ID}
+                        </h3>`);
   } else {
-    return `<div class="ref list-card drop-settable ${EntryType.MANUFACTURER}">
-              <h3 class="mfr-name">No source specified</h3>
-            </div>
-        `;
+    return card.render(`<h3 class="mfr-name">No source specified</h3>`);
   }
 }
 
@@ -234,16 +224,15 @@ export function manufacturer_ref(source_path: string, helper: HelperData): strin
 // This if for display purposes and does not provide editable fields
 export function license_ref(license: License | null, level: number): string {
   let cd = ref_commons(license);
-  // TODO? maybe do a little bit more here, aesthetically speaking
+  let card = new DOMTag("div").ref({
+    allow_type: EntryType.LICENSE,
+    ref: cd?.ref
+  }).with_class("list-card");
+
+ // TODO? maybe do a little bit more here, aesthetically speaking
   if (cd) {
-    return `<div class="valid ${EntryType.LICENSE} ref list-card" ${ref_params(cd.ref)}> 
-              <h3 class="license-name">${license!.Name} ${level}</h3>
-            </div>
-        `;
+    return card.render(`<h3 class="license-name">${license!.Name} ${level}</h3>`);
   } else {
-    return `<div class="ref list-card">
-              <h3 class="license-name">No license specified</h3>
-            </div>
-        `;
+    return card.render(`<h3 class="license-name">No license specified</h3>`);
   }
 }

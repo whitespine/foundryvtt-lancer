@@ -13,8 +13,10 @@ import { is_item_type, LancerItem, LancerItemType } from "../item/lancer-item";
 import { FoundryFlagData, FoundryReg } from "../mm-util/foundry-reg";
 import {
   check_double as check_double_click,
+  DOMTag,
   gentle_merge,
   HelperData,
+  inc_if,
   resolve_dotpath,
   resolve_helper_dotpath,
   temp_apply_class,
@@ -72,19 +74,14 @@ export function ref_commons<T extends EntryType>(
 }
 
 // Creates the params common to all refs, essentially just the html-ified version of a RegRef
-export function ref_params(ref: RegRef<any>, path?: string) {
-  if (path) {
-    return ` data-id="${ref.id}" data-type="${ref.type}" data-reg-name="${ref.reg_name}" data-path="${path}" `;
-  } else {
-    return ` data-id="${ref.id}" data-type="${ref.type}" data-reg-name="${ref.reg_name}" `;
-  }
-}
+
 
 /* A multiplexer-helper on machine-mind objects, to create actor/item ref items
- * @argument `slot-path` If a slot_path is provided, then this will additionally be a valid drop-settable location for items of this type
- * @argument `native-drop` If native-drop is true, will have the native-refdrop slot, and will support dropping of native items (e.x. from sidebar, from compendium). Default false
+ * @argument `slot-path` If a slot_path is provided, then this will additionally be a valid drop location for items of this type
+ * @argument `native-drop` If native-drop is true, will have the native-drop class, and will support dropping of native items (e.x. from sidebar, from compendium). Default false
  * @argument `native-drag` If native-drag is true, will produce foundry-native drag/drop data when dragged. Default false.
  * @argument `fallback` If fallback is provided, it will be used in place of the default "Empty" text
+ * @argument `readonly` If set, cannot be dropped to
  */
 export function simple_mm_ref<T extends EntryType>(
   types: T | T[],
@@ -93,51 +90,50 @@ export function simple_mm_ref<T extends EntryType>(
 ) {
   // Get helper data
   let fallback = helper.hash.fallback ?? "Empty";
-  let slot_path = helper.hash["slot-path"] ?? "";
+  let slot_path = helper.hash["slot-path"] || null;
   let native_drop = helper.hash["native-drop"] ?? false;
   let native_drag = helper.hash["native-drag"] ?? false;
+  let readonly = helper.hash["readonly"] || false;
 
   // Flatten types
   if (!Array.isArray(types)) {
     types = [types];
   }
-  let flat_types = types.join(" ");
 
   // Generate commons
   let cd = ref_commons(item);
 
   // Generate path snippet
-  let settable_snippet = "";
-  if (slot_path) {
-    settable_snippet = ` drop-settable `;
-  }
+  let card = new DOMTag("div").with_class("list-card").ref({
+    ref: cd?.ref,
+    allow_type: types,
+    allow_drop: !readonly && !!slot_path,
+    path: slot_path,
+    native_drag: !!native_drag,
+    native_drop: !!native_drop,
+    draggable: true
+  }).control({
+    // Double-right-click clearing
+    context: true,
+    action: "null",
+    path: slot_path,
+  });
 
-  // Generate native drop snippet if we want one
-  let native_drop_snippet = native_drop ? " native-refdrop " : "";
-  let native_drag_snippet = native_drag ? " native-drag " : "";
-
+  
+  // Body depends on what we were given
   if (!cd) {
     // Show an icon for each potential type
     let icons = types.map(t => `<img class="ref-icon" src="${TypeIcon(t)}"></img>`);
 
     // Make an empty ref. Note that it still has path stuff if we are going to be dropping things here
-    return `<div class="ref list-card ${native_drop_snippet} ${settable_snippet} ${flat_types}" 
-                        data-path="${slot_path}" 
-                        data-type="${flat_types}">
-          ${icons.join(" ")}
-          <span class="submajor">${fallback}</span>
-      </div>`;
-  }
-
-  // The data-type
-  return `<div class="valid ${
-    cd.ref.type
-  } ref list-card ${native_drop_snippet} ${native_drag_snippet} ${settable_snippet}" 
-                ${ref_params(cd.ref)}
-                data-path="${slot_path}" >
+    return card.render(`${icons.join(" ")} <span class="submajor">${fallback}</span>`);
+  } else {
+    // Show the item icon and its name
+    return card.render(`
          <img class="ref-icon" src="${cd.img}"></img>
          <span class="submajor">${cd.name}</span>
-     </div>`;
+         `);
+  }
 }
 
 // The hook to handle clicks on refs. Opens/focuses the clicked item's window
@@ -240,24 +236,30 @@ export function mm_ref_portrait<T extends EntryType>(
   img_path: string,
   item: RegEntry<T>,
   helper: HelperData
-) {
-  // Fetch the image
-  return `<img class="profile-img ref valid ${
-    item.Type
-  }" src="${img}" data-edit="${img_path}" ${ref_params(
-    item.as_ref()
-  )} width="100" height="100"></img>`;
+): string {
+  return new DOMTag("img")
+  .ref({
+    ref: item.as_ref(),
+    draggable: true
+  })
+  .with_prop("src", img)
+  .with_prop("data-edit", img_path)
+  .with_class("profile-img")
+  .with_prop("width", 100)
+  .with_prop("height", 100).render("");
 }
 
 // Use this slot callback to add items of certain kind(s) to a list.
 
-// A helper suitable for showing lists of refs that can be deleted/spliced out, or slots that can be nulled
-// trash_actions controls what happens when the trashcan is clicked. Delete destroys an item, splice removes it from the array it is found in, and null replaces with null
+/** A helper suitable for showing lists of refs that can be deleted/spliced out, or slots that can be nulled
+ * trash_actions controls what happens when the trashcan is clicked. Delete destroys an item, splice removes it from the array it is found in, and null replaces with null
+ * @argument `native-drag` If set, will be draggable as native items instead
+ */
 export function editable_mm_ref_list_item<T extends LancerItemType>(
   item_path: string,
   trash_action: "delete" | "splice" | "null",
   helper: HelperData
-) {
+): string {
   // Fetch the item
   let item_: RegEntry<T> | null = resolve_helper_dotpath(helper, item_path);
 
@@ -267,22 +269,25 @@ export function editable_mm_ref_list_item<T extends LancerItemType>(
   if (!cd) {
     // This probably shouldn't be happening
     console.error(`Unable to resolve ${item_path}`);
-    return "ERR: Devs, don't try and show null things in a list. this ain't a slot (but it could be if you did some magic)";
+    return "ERR: Devs, don't try and show null things in a list. this ain't a slot";
   }
 
   let item = item_!; // cd truthiness implies item truthiness
 
-  // Basically the same as the simple ref card, but with control assed
-  return `
-    <div class="valid ${cd.ref.type} ref list-card" 
-            ${ref_params(cd.ref)}>
+  // Basically the same as the simple ref card, but with control added
+  let card = new DOMTag("div").with_class("list-card").ref({
+    ref: cd.ref,
+    path: item_path,
+    draggable: true,
+    native_drag: !!helper.hash["native-drag"]
+  });
+  return card.render(`
       <img class="ref-icon" src="${cd.img}"></img>
       <span>${cd.name}</span>
       <div class="ref-list-controls">
         <hr class="vsep--m"> 
         <a class="gen-control fas fa-trash" data-action="${trash_action}" data-path="${item_path}"></a>
-      </div>
-    </div>`;
+      </div>`);
 }
 
 // Exactly as above, but drags as a native when appropriate handlers called
@@ -290,7 +295,7 @@ export function editable_mm_ref_list_item_native<T extends LancerItemType>(
   item_path: string,
   trash_action: "delete" | "splice" | "null",
   helper: HelperData
-) {
+): string {
   return editable_mm_ref_list_item(item_path, trash_action, helper).replace(
     "ref list-card",
     "ref list-card native-drag"
@@ -304,8 +309,10 @@ export function mm_ref_list_append_slot(
   allowed_types: string,
   helper: HelperData
 ) {
+  // Fix up allowed types
+  let allowed_types_classes = allowed_types.split(" ").map(t => t.trim()).filter(x => x).map(s => "allow-" + s).join(" ");
   return `
-    <div class="ref list-card ref-list-append ${allowed_types}" 
+    <div class="ref list-card ref-list-append ${allowed_types_classes}" 
             data-path="${item_array_path}" 
             data-type="${allowed_types}">
       <span class="major">Add an item</span>
@@ -336,15 +343,16 @@ export function HANDLER_add_ref_to_list_on_drop<T>(
 }
 
 // Enables dragging of ref cards (or anything with .ref.valid and the appropriate fields)
-// Highlights anything labeled with classes "ref drop-settable ${type}" where ${type} is the type of the dragged item
+// Highlights anything labeled with classes "ref drop ${type}" where ${type} is the type of the dragged item
 // This doesn't handle natives
 export function HANDLER_activate_ref_dragging(html: JQuery) {
   // Allow refs to be dragged arbitrarily
-  enable_simple_ref_dragging(html.find(".ref.valid:not(.native-drag)"), (start_stop, src, evt) => {
+  enable_simple_ref_dragging(html.find(".ref.valid.drag:not(.native-drag)"), (start_stop, src, evt) => {
     // Highlight valid drop points
-    let drop_set_target_selector = `.ref.drop-settable.${src[0].dataset.type}`;
-    let drop_append_target_selector = `.ref.ref-list-append.${src[0].dataset.type}`;
+    let drop_set_target_selector = `.ref.drop.allow-${src[0].dataset.type}`;
+    let drop_append_target_selector = `.ref.ref-list-append.allow-${src[0].dataset.type}`;
     let target_selector = `${drop_set_target_selector}, ${drop_append_target_selector}`;
+    console.log(target_selector);
 
     if (start_stop == "start") {
       $(target_selector).addClass("highlight-can-drop");
@@ -357,7 +365,7 @@ export function HANDLER_activate_ref_dragging(html: JQuery) {
 // Enables dragging of ref cards (or anything with .ref.valid and the appropriate fields) marked with ".native-drag", converting the dragged item to a native foundry ref
 export function HANDLER_activate_native_ref_dragging(html: JQuery) {
   // Allow refs to be dragged arbitrarily
-  enable_dragging(html.find(".ref.valid.native-drag"), drag_src => {
+  enable_dragging(html.find(".ref.valid.drag.native-drag"), drag_src => {
     // Drag a JSON ref
     let ref = recreate_ref_from_element(drag_src[0]);
     let native = ref ? convert_ref_to_native(ref) : null;
@@ -369,14 +377,15 @@ export function HANDLER_activate_native_ref_dragging(html: JQuery) {
   });
 }
 
-// Allow every ".ref.drop-settable" spot to be dropped onto, with a payload of a JSON RegRef
+// Allow every ".ref.drop" spot to be dropped onto, with a payload of a JSON RegRef
 // Uses same getter/commit func scheme as other callbacks
+// Note that we don't have to worry about natives here - we can handle both
 export function HANDLER_activate_ref_drop_setting<T>(
   html: JQuery,
   data_getter: () => Promise<T> | T,
   commit_func: (data: T) => void | Promise<void>
 ) {
-  enable_simple_ref_dropping(html.find(".ref.drop-settable"), async (entry, evt) => {
+  enable_simple_ref_dropping(html.find(".ref.drop"), async (entry, evt) => {
     let data = await data_getter();
     let path = evt[0].dataset.path;
     if (path) {
@@ -387,42 +396,3 @@ export function HANDLER_activate_ref_drop_setting<T>(
   });
 }
 
-// Allow every ".ref.drop-settable" spot to be double-right-click cleared
-// Uses same getter/commit func scheme as other callbacks
-// Assumes that clearing means setting as null
-export function HANDLER_activate_ref_drop_clearing<T>(
-  html: JQuery,
-  data_getter: () => Promise<T> | T,
-  commit_func: (data: T) => void | Promise<void>
-) {
-  html.find(".ref.drop-settable").on("contextmenu", async event => {
-    let path = event.currentTarget.dataset.path;
-
-    // Mandate path
-    if (!path) {
-      return;
-    }
-
-    /* First decide if we're going to do anything, based on if curr_path matches and time within bounds */
-    if (check_double_click("right", path)) {
-      // Set the item as null
-      let data = await data_getter();
-
-      // Check there's anything there before doing anything
-      let resolved = resolve_dotpath(data, path);
-      if (!path || !resolved) return;
-
-      // Confirm, then merge in as null and commit
-      Dialog.confirm({
-        title: "CONFIRM REMOVAL",
-        content: resolved.Name ? `Unequip ${resolved.Name}` : "Unequip Slot",
-        defaultYes: true,
-        yes: async () => {
-          gentle_merge(data, { [path!]: null });
-          await commit_func(data);
-        },
-        no: () => {},
-      });
-    }
-  });
-}

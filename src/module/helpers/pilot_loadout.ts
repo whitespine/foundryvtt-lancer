@@ -9,9 +9,10 @@ import {
   resolve_dotpath,
   inc_if,
   ext_helper_hash,
+  DOMTag,
 } from "./commons";
 import { show_range_array, show_damage_array, uses_control } from "./item";
-import { ref_commons, ref_params } from "./refs";
+import { ref_commons } from "./refs";
 import { compact_tag_list } from "./tags";
 
 // Helper for showing a piece of armor, or a slot to hold it (if path is provided)
@@ -22,14 +23,19 @@ export function pilot_armor_slot(armor_path: string, helper: HelperData): string
   // Generate commons
   let cd = ref_commons(armor_);
 
+  // Create outer card - used regardless of if filled yet
+  let card = new DOMTag("div").ref({
+    allow_type: EntryType.PILOT_ARMOR,
+    ref: cd?.ref,
+    path: armor_path,
+    allow_drop: true
+  }).with_class("card");
+
+
   if (!cd) {
     // Make an empty ref. Note that it still has path stuff if we are going to be dropping things here
-    return `<div class="${EntryType.PILOT_ARMOR} ref drop-settable card" 
-                        data-path="${armor_path}" 
-                        data-type="${EntryType.PILOT_ARMOR}">
-          <img class="ref-icon" src="${TypeIcon(EntryType.PILOT_ARMOR)}"></img>
-          <span class="major">Equip armor</span>
-      </div>`;
+    return card.with_class("flexrow").render(`<img class="ref-icon" src="${TypeIcon(EntryType.PILOT_ARMOR)}"></img>
+                                              <span class="major">Equip armor</span>`);
   }
 
   let armor = armor_!;
@@ -41,8 +47,7 @@ export function pilot_armor_slot(armor_path: string, helper: HelperData): string
   let eva_val = armor.Bonuses.find(b => b.ID == "pilot_evasion")?.Value ?? "0";
   let hp_val = armor.Bonuses.find(b => b.ID == "pilot_hp")?.Value ?? "0";
 
-  return `<div class="valid ${cd.ref.type} ref drop-settable card clipped" 
-                ${ref_params(cd.ref, armor_path)} >
+  return card.with_class("clipped").render(`
             <div class="lancer-header">
               <i class="mdi mdi-shield-outline i--m i--light"> </i>
               <span class="minor">${armor!.Name}</span>
@@ -73,8 +78,7 @@ export function pilot_armor_slot(armor_path: string, helper: HelperData): string
             <div class="desc-text" style=" padding: 5px">
               ${armor.Description}
             </div>
-            ${compact_tag_list(armor_path + ".Tags", helper)}
-          </div>`;
+            ${compact_tag_list(armor_path + ".Tags", helper)}`);
 }
 
 /** Helper for showing a pilot weapon, or a slot to hold it (if path is provided)
@@ -87,14 +91,20 @@ export function pilot_weapon_refview(weapon_path: string, helper: HelperData): s
   // Generate commons
   let cd = ref_commons(weapon_);
 
+  // Create outer card - used regardless of if filled yet
+  let card = new DOMTag("div").ref({
+    allow_type: EntryType.PILOT_WEAPON,
+    ref: cd?.ref,
+    path: weapon_path,
+    allow_drop: true,
+    draggable: true
+  }).with_class("card");
+
+
   if (!cd) {
     // Make an empty ref. Note that it still has path stuff if we are going to be dropping things here
-    return `<div class="${EntryType.PILOT_WEAPON} ref drop-settable card flexrow" 
-                        data-path="${weapon_path}" 
-                        data-type="${EntryType.PILOT_WEAPON}">
-          <img class="ref-icon" src="${TypeIcon(EntryType.PILOT_WEAPON)}"></img>
-          <span class="major">Equip weapon</span>
-      </div>`;
+    return card.with_class("flexrow").render(`<img class="ref-icon" src="${TypeIcon(EntryType.PILOT_WEAPON)}"></img> 
+                                              <span class="major">Equip weapon</span>`);
   }
 
   let weapon = weapon_!;
@@ -111,8 +121,7 @@ export function pilot_weapon_refview(weapon_path: string, helper: HelperData): s
     macro = `<a class="lancer-macro i--sm fas fa-dice-d20" ${macro_elt_params(macro_ctx)}> </a>`;
   }
 
-  return `<div class="valid ${EntryType.PILOT_WEAPON} ref drop-settable card clipped"
-                ${ref_params(cd.ref, weapon_path)} >
+  return card.with_class("clipped").render(`
     <div class="lancer-header">
       <i class="cci cci-weapon i--m"> </i>
       <span class="minor">${weapon.Name}</span>
@@ -127,8 +136,7 @@ export function pilot_weapon_refview(weapon_path: string, helper: HelperData): s
       </div>
 
       ${compact_tag_list(weapon_path + ".Tags", helper)}
-    </div>
-  </div>`;
+    </div>`);
 }
 
 /** Helper for showing a pilot gear, or a slot to hold it (if path is provided)
@@ -141,14 +149,19 @@ export function pilot_gear_refview(gear_path: string, helper: HelperData): strin
   // Generate commons
   let cd = ref_commons(gear_);
 
+  // Create outer card - used regardless of if filled yet
+  let card = new DOMTag("div").ref({
+    allow_type: EntryType.PILOT_GEAR,
+    ref: cd?.ref,
+    path: gear_path,
+    allow_drop: true,
+    draggable: true
+  }).with_class("card");
+
   if (!cd) {
     // Make an empty ref. Note that it still has path stuff if we are going to be dropping things here
-    return `<div class="${EntryType.PILOT_GEAR} ref drop-settable card flexrow" 
-                        data-path="${gear_path}" 
-                        data-type="${EntryType.PILOT_GEAR}">
-          <img class="ref-icon" src="${TypeIcon(EntryType.PILOT_GEAR)}"></img>
-          <span class="major">Equip gear</span>
-      </div>`;
+    return card.with_class("flexrow").render(`<img class="ref-icon" src="${TypeIcon(EntryType.PILOT_GEAR)}"></img>
+                                              <span class="major">Equip gear</span>`);
   }
 
   // Assert not null. Setup helper to intercept gen-controls
@@ -182,8 +195,7 @@ export function pilot_gear_refview(gear_path: string, helper: HelperData): strin
   }
 
   // Finally, render
-  return `<div class="valid ${EntryType.PILOT_GEAR} ref drop-settable card"
-                ${ref_params(cd.ref, gear_path)} >
+  return card.with_class("clipped").render(`
     <div class="lancer-header">
       <i class="cci cci-generic-item i--m"> </i>
       ${inc_if(`<a class="lancer-macro mdi mdi-message" ${macro}></a>`, macro)}
@@ -198,8 +210,7 @@ export function pilot_gear_refview(gear_path: string, helper: HelperData): strin
       </div>
 
       ${compact_tag_list(gear_path + ".Tags", helper)}
-    </div>
-  </div>`;
+    </div>`);
 }
 
 // Shows an individual rank. Path is needed for macros
@@ -250,8 +261,14 @@ export function pilot_talent_refview(talent_path: string, helper: HelperData): s
   // Generate commons
   let cd = ref_commons(talent_);
 
+  // Create outer card - used regardless of if filled yet
+  let card = new DOMTag("div").ref({
+    allow_type: EntryType.TALENT,
+    ref: cd?.ref,
+    path: talent_path
+  }).with_class("card");
+
   if (!cd) {
-    // Make an empty ref. Note that it still has path stuff if we are going to be dropping things here
     return `<span> Error: path failed to resolve talent </span>`;
   }
 
@@ -266,8 +283,12 @@ export function pilot_talent_refview(talent_path: string, helper: HelperData): s
   }
 
   // Finally, render the whole box
-  return `<div class="valid ${EntryType.TALENT} ref card"
-                ${ref_params(cd.ref, talent_path)} >
+  return card.control({
+    action: "delete",
+    context: true,
+    path: talent_path,
+    confirm: true
+  }).render(`
     <div class="lancer-header">
       <i class="cci cci-rank-${talent.CurrentRank} i--m"> </i>
       <span>${talent.Name}</span>
@@ -275,6 +296,5 @@ export function pilot_talent_refview(talent_path: string, helper: HelperData): s
     </div>
     <div  style="display: grid; grid-template: 1fr / repeat(${talent.Ranks.length}, 1fr);" >
       ${ranks.join("\n")}
-    </div>
-  </div>`;
+    </div>`);
 }

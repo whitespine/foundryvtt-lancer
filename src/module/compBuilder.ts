@@ -82,12 +82,14 @@ async function transfer_cat<T extends EntryType>(
           }
         }
 
-        // Then by name?
-        let by_name = await dest_cat.lookup_live(ctx, cand => cand.name == src_item.Name);
-        if (by_name) {
-          new_v = false;
-          linked_items.push(by_name as any);
-          return by_name;
+        // Then by name, but only if not an npc feature
+        if (dest_cat.cat != EntryType.NPC_FEATURE) {
+          let by_name = await dest_cat.lookup_live(ctx, cand => cand.name == src_item.Name);
+          if (by_name) {
+            new_v = false;
+            linked_items.push(by_name as any);
+            return by_name;
+          }
         }
 
         // We give up! Make a new thing

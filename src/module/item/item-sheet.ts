@@ -10,7 +10,6 @@ import {
 import {
   HANDLER_activate_native_ref_dragging,
   HANDLER_activate_ref_dragging,
-  HANDLER_activate_ref_drop_clearing,
   HANDLER_activate_ref_drop_setting,
   HANDLER_add_ref_to_list_on_drop,
   HANDLER_activate_click_open_ref,
@@ -124,7 +123,6 @@ export class LancerItemSheet<T extends LancerItemType> extends ItemSheet {
 
     // Allow set things by drop. Mostly we use this for manufacturer/license dragging
     HANDLER_activate_ref_drop_setting(html, getfunc, commitfunc);
-    HANDLER_activate_ref_drop_clearing(html, getfunc, commitfunc);
 
     // Enable bonus/action editors
     HANDLER_activate_edit_bonus(html, getfunc, commitfunc);

@@ -16,12 +16,15 @@ import {
   SerUtil,
   Action,
   ActivationType,
+  EntryType,
 } from "machine-mind";
 import { AnyMMActor } from "../actor/lancer-actor";
 import { HTMLEditDialog } from "../apps/text-editor";
 import { LancerActorSheetData, LancerItemSheetData } from "../interfaces";
 import { AnyMMItem } from "../item/lancer-item";
 import { MMEntityContext } from "../mm-util/helpers";
+
+export type AnySheetData = LancerActorSheetData<any> | LancerItemSheetData<any>;
 
 // A shorthand for only including the first string if the second value is truthy
 export function inc_if(val: string, test: any) {
@@ -152,7 +155,7 @@ export function safe_json_parse(str: string): any | null {
 
 // Check that a parsed result is probably a ref
 export function is_ref(v: any): v is RegRef<any> {
-  return (v as RegRef<any> | null)?.fallback_mmid !== undefined;
+  return (v as RegRef<any> | null)?.reg_name !== undefined;
 }
 
 // Check that a parsed result is probably an item
@@ -226,7 +229,7 @@ export function ext_helper_hash<T extends HelperData>(
   };
 }
 
-/** Enables controls that can perform any of the following `action`s:
+/** Enables controls designated by the `gen-control` class that can perform any of the following `action`s:
  * - "delete": delete() the item located at data-path
  * - "null": set as null the value at the specified path
  * - "splice": remove the array item at the specified path
@@ -243,6 +246,8 @@ export function ext_helper_hash<T extends HelperData>(
  * The data getter and commit func are used to retrieve the target data, and to save it back (respectively).
  *
  * If "data-commit-item" path is set, then we will attempt to call the "writeback()" function of the object specified by that path, instead of (or should it be as well as?) our commit func
+ * If "data-control-confirm" is set, then we will show a dialog before proceeding
+ * If using `gen-context-control`, it will instead by activated by double right clicking
  */
 export function HANDLER_activate_general_controls<
   T extends LancerActorSheetData<any> | LancerItemSheetData<any>
@@ -252,70 +257,125 @@ export function HANDLER_activate_general_controls<
   data_getter: () => Promise<T> | T,
   commit_func: (data: T) => void | Promise<void>
 ) {
-  html.find(".gen-control").on("click", async (event: any) => {
-    // Get the id/action
-    event.stopPropagation();
+  // Shared behavior between left clickables and contextables
+  const handle_control_elt = async (event: any) => {
     const elt = event.currentTarget;
     const path = elt.dataset.path;
     const action = elt.dataset.action;
     const data = await data_getter();
     const raw_val: string = elt.dataset.actionValue ?? "";
     const item_override: string = elt.dataset.commitItem ?? "";
+    const confirm: boolean = $(elt).hasClass("action-confirm");
+    return handle_gen_control(path, action, data, raw_val, item_override, commit_func, confirm);
+  };
 
-    if (!path || !data) {
-      console.error("Gen control failed: missing path");
-    } else if (!action) {
-      console.error("Gen control failed: missing action");
-    } else if (!data) {
-      console.error("Gen control failed: data could not be retrieved");
-    }
+  // Enable standard left-click buttons
+  html.find(".gen-control").on("click", async (event: any) => {
+    // Get the id/action
+    event.stopPropagation();
+    return handle_control_elt(event);
+  });
 
-    if (action == "delete") {
-      // Find and delete the item at that path
-      let item = resolve_dotpath(data, path) as RegEntry<any>;
-      return item.destroy_entry();
-    } else if (action == "splice") {
-      // Splice out the value at path dest, then writeback
-      array_path_edit(data, path, null, "delete");
-    } else if (action == "null") {
-      // Null out the target space
-      gentle_merge(data, { [path]: null });
-    } else if (["set", "append", "insert"].includes(action)) {
-      let result = await parse_control_val(raw_val, data.mm);
-      let success = result[0];
-      let value = result[1];
-      if (!success) {
-        console.warn(`Bad data-action-value: ${value}`);
-        return; // Bad arg - no effect
-      }
+  // Enable right-click functionality
+  html.find(".gen-context-control").on("contextmenu", async event => {
+    let path = event.currentTarget.dataset.path;
+    if(!path) return;
 
-      // Multiplex with our parsed actions
-      switch (action) {
-        case "set":
-          gentle_merge(data, { [path]: value });
-          break;
-        case "append":
-          array_path_edit(data, path + "[-1]", value, "insert");
-          break;
-        case "insert":
-          array_path_edit(data, path, value, "insert");
-          break;
-      }
-    }
-
-    // Handle writing back our changes
-    if (item_override) {
-      let item = resolve_dotpath(data, item_override);
-      try {
-        await item.writeback();
-      } catch (e) {
-        console.error(`Failed to writeback item at path "${item_override}"`);
-        return;
-      }
-    } else {
-      await commit_func(data);
+    /* First decide if we're going to do anything, based on if curr_path matches and time within bounds */
+    if (check_double("right", path)) {
+      event.preventDefault();
+      event.stopPropagation();
+      return handle_control_elt(event);
     }
   });
+}
+
+export type GenControlAction = "delete" | "null" | "splice" | "set" | "append" | "insert";
+export async function handle_gen_control<T extends AnySheetData>(
+  path: string,
+  action: GenControlAction,
+  data: T,
+  raw_val: string,
+  item_override: string,
+  commit_func: (data: T) => void | Promise<void>,
+  confirm: boolean = false
+): Promise<void> {
+  if (!path || !data) {
+    console.error("Gen control failed: missing path");
+  } else if (!action) {
+    console.error("Gen control failed: missing action");
+  } else if (!data) {
+    console.error("Gen control failed: data could not be retrieved");
+  }
+
+  // Confirm if we want to do that
+  if(confirm) {
+    let phrase = "REMOVAL" ;
+    if(action == "delete") {
+      phrase = "DELETION";
+    } else if(action == "append" || action == "insert") {
+      phrase = "ADDITION";
+    }
+
+    let confirmation = await Dialog.confirm({
+      title: "CONFIRMATION REQUIRED",
+      content: `CONFIRM ${phrase}?`,
+      defaultYes: true,
+      yes: async () => true,
+      no: () => null,
+    }) as unknown as Promise<boolean | null>;
+    if(!confirmation) {
+      return;
+    }
+  }
+
+  if (action == "delete") {
+    // Find and delete the item at that path
+    let item = resolve_dotpath(data, path) as RegEntry<any>;
+    return item.destroy_entry();
+  } else if (action == "splice") {
+    // Splice out the value at path dest, then writeback
+    array_path_edit(data, path, null, "delete");
+  } else if (action == "null") {
+    // Null out the target space
+    gentle_merge(data, { [path]: null });
+  } else if (["set", "append", "insert"].includes(action)) {
+    let result = await parse_control_val(raw_val, data.mm);
+    let success = result[0];
+    let value = result[1];
+    if (!success) {
+      console.warn(`Bad data-action-value: ${value}`);
+      return; // Bad arg - no effect
+    }
+
+    // Multiplex with our parsed actions
+    switch (action) {
+      case "set":
+        gentle_merge(data, { [path]: value });
+        break;
+      case "append":
+        array_path_edit(data, path + "[-1]", value, "insert");
+        break;
+      case "insert":
+        array_path_edit(data, path, value, "insert");
+        break;
+    }
+  } else {
+    console.error("Unhandled action: " + action);
+  }
+
+  // Handle writing back our changes
+  if (item_override) {
+    let item = resolve_dotpath(data, item_override);
+    try {
+      await item.writeback();
+    } catch (e) {
+      console.error(`Failed to writeback item at path "${item_override}"`);
+      return;
+    }
+  } else {
+    await commit_func(data);
+  }
 }
 
 // Used by above to figure out how to handle "set"/"append" args
@@ -415,6 +475,18 @@ async function control_structs(key: string, ctx: MMEntityContext<any>): Promise<
 
   // Didn't find a match
   return [false, null];
+}
+
+// Basically just the same as gen-control, except hooks on right clicks
+// Uses same getter/commit func scheme as other callbacks
+// Assumes that clearing means setting as null
+// Must supply a "type" that is either "null" | "splice" | "delete", depending on what clearing means in this context
+export function HANDLER_context_gen_controls<T extends AnySheetData>(
+  html: JQuery,
+  data_getter: () => Promise<T> | T,
+  commit_func: (data: T) => void | Promise<void>
+) {
+
 }
 
 // Our standardized functions for making simple key-value input pair
@@ -707,4 +779,120 @@ export function temp_apply_class(to: JQuery, classname: string, time: number): P
 export function icon_class_to_path(icon: string): string {
   icon = icon.replace(/(cci )?cci-/, ""); // Get rid of cci junkh
   return `/systems/lancer/assets/icons/${icon.replace(/-/g, "_")}.svg`;
+}
+
+
+// Helper object for building up dom tags that have a lot of conditional classes etc.
+export class DOMTag {
+  classes: string[] = []; 
+  properties: {[key: string]: string} = {};
+  constructor(readonly tag: string) {}
+
+  // Add one ore more classes
+  with_class(...class_name: Array<string | null | undefined>): this {
+    for(let c of class_name) {
+      if(c) {
+        this.classes.push(c);
+      }
+    }
+    return this;
+  }
+
+  // Add a class iff second arg truthy
+  with_class_if(class_name: string, predicate: any): this {
+    if(predicate) {
+      this.classes.push(class_name);
+    }
+    return this;
+  }
+
+  // Add a prop. Omitted if provided value is null or undefined
+  with_prop(prop_name: string, prop_val: string | number | boolean | null | undefined): this {
+    if(prop_val == null || prop_val == "") return this;
+
+    this.properties[prop_name] = prop_val.toString();
+    return this;
+  }
+
+  /** Add ref params - this makes the entire thing function as a valid ref.
+   */
+ ref(opts: {
+    ref?: RegRef<any> | null, // The current ref'd item, if it exists.  Will be used to set data-type, data-reg-name, and data-id, and add the "valid" class as well as the entry type as a class.
+    allow_type?: EntryType | Array<EntryType>, // What type(s) are allowed here. Will be used to set data-allowed-type. Will also be added to the classes on the ref as "allow-${type}"
+    path?: string | null, // The path to where this item exists/would exist. Used for dropping, deleting, etc. Will be used for data-path
+    double_click?: boolean, // If set to true, will set the "double-click-ref" class, which as the name suggests requires a double click to open the ref. Otherwise it is a single click.
+    allow_drop?: boolean, // If set to true, will allow dropping to replace this ref.
+    native_drag?: boolean, // If set to true, when dragged will produce a foundry native payload. Useful for actors so they can be dragged to canvas
+    native_drop?: boolean, // If set to true, then will attempt to process dropped items as native items (in addition to normal processing). Only use this if you're ok with cross references and stuff!
+    draggable?: boolean // If set to true, then this ref can be dragged
+ }): this {
+    let flat_types = "";
+    let allowed_type_classes: string[] = [];
+    if(opts.allow_type) {
+      let as_array = Array.isArray(opts.allow_type) ? opts.allow_type : [opts.allow_type];
+      flat_types = as_array.join(" ");
+      allowed_type_classes = as_array.map(s => "allow-" + s);
+    }
+    return this
+        .with_class("ref")
+
+        // Allowed type classes for hoverdrop styling + data for actual event resolution
+        .with_class(...allowed_type_classes)
+        .with_prop("data-allowed-types", flat_types)
+
+        // Ref info
+        .with_class_if("valid", opts.ref)
+        .with_prop("data-id", opts.ref?.id)
+        .with_prop("data-type", opts.ref?.type)
+        .with_prop("data-reg-name", opts.ref?.reg_name)
+        .with_class(opts.ref?.type)
+
+        // Drag info
+        .with_class_if("native-drag", opts.native_drag)
+        .with_class_if("native-drop", opts.native_drop)
+        .with_class_if("drop", opts.allow_drop)
+        .with_class_if("drag", opts.draggable)
+
+        // Other stuff
+        .with_prop("data-path", opts.path)
+        .with_class_if("double-click-ref", opts.double_click);
+}
+
+  /** Configures this to act as a gen_control 
+   * Automatically adds the "gen-control"
+  */
+  control(opts: {
+    action: GenControlAction, 
+    path: string,
+    value?: string,
+    confirm?: boolean, // If true, will prompt to confirm
+    commit_override?: string, // If provided, is a path to a regentry that will be writeback()'d instead of whatever commit func is provided. Useful for previews
+    context?: boolean // If set, will instead by a "gen-context-control"
+  }): this {
+    // Add basics
+    if(opts.context) {
+      this.with_class("gen-context-control");
+    } else {
+      this.with_class("gen-control");
+    }
+
+    // Add values
+    return this .with_prop("data-path", opts.path)
+                .with_prop("data-action", opts.action)
+                .with_prop("data-action-value", opts.value)
+                .with_prop("data-commit-item", opts.commit_override)
+                .with_class_if("action-confirm", opts.confirm);
+  }
+
+  render(content: string) {
+    let classes = "";
+    if(this.classes.length) {
+      classes = ` class="${this.classes.join(' ')}"`;
+    }
+    let props = "";
+    for(let key in this.properties) {
+      props += ` ${key}="${this.properties[key]}"`;
+    }
+    return `<${this.tag}${classes}${props}>${content}</${this.tag}>`;
+  }
 }

@@ -25,6 +25,7 @@ import {
 } from "../macros";
 import { action_list_display } from "./actions";
 import {
+  DOMTag,
   effect_box,
   ext_helper_hash,
   HelperData,
@@ -34,7 +35,7 @@ import {
 } from "./commons";
 import { deployable_list_display } from "./deploy";
 import { show_damage_array, show_range_array, uses_control } from "./item";
-import { ref_commons, ref_params, simple_mm_ref } from "./refs";
+import { ref_commons, simple_mm_ref } from "./refs";
 import { compact_tag_list } from "./tags";
 
 // A drag-drop slot for a system mount. TODO: delete button, clear button
@@ -182,15 +183,16 @@ export function frame_refview(frame_path: string, helper: HelperData): string {
   // Generate commons
   let cd = ref_commons(frame_);
 
+  let card = new DOMTag("div").with_class("card").ref({
+      allow_drop: true,
+      allow_type: EntryType.FRAME,
+      path: frame_path
+    });
+    
   if (!cd) {
     // Make an empty ref slot
-    return `
-      <div class="${EntryType.FRAME} ref drop-settable card flexrow" 
-                        data-path="${frame_path}" 
-                        data-type="${EntryType.FRAME}">
-        <img class="ref-icon" src="${TypeIcon(EntryType.FRAME)}"></img>
-        <span class="major">Please Select a Frame</span>
-      </div>`;
+    return card.with_class("flexrow").render(`<img class="ref-icon" src="${TypeIcon(EntryType.FRAME)}"></img> 
+                                              <span class="major">Please Select a Frame</span>`);
   }
 
   let frame = frame_!;
@@ -265,8 +267,7 @@ export function frame_refview(frame_path: string, helper: HelperData): string {
       </div>`;
   }
 
-  return `
-    <div class="${EntryType.FRAME} ref drop-settable card">
+  return card.render(`
       <div class="lancer-header major">
         <span>${frame.Name} FRAME</span>
       </div>          
@@ -279,8 +280,7 @@ export function frame_refview(frame_path: string, helper: HelperData): string {
       ${traits.join(" ")}
       ${core_passive}
       ${core_active}
-    </div>
-  `;
+  `);
 }
 
 /**
@@ -302,15 +302,22 @@ export function mech_weapon_refview(
   // Generate commons
   let cd = ref_commons(weapon_);
 
+  // Create outer card - used regardless of if filled yet
+  let card = new DOMTag("div").ref({
+    allow_type: EntryType.MECH_WEAPON,
+    ref: cd?.ref,
+    path: weapon_path,
+    double_click: true,
+    allow_drop: true,
+    draggable: true
+  }).with_class("card");
+
+
   if (!cd) {
     // Make an empty ref. Note that it still has path stuff if we are going to be dropping things here
-    return `
-      <div class="${EntryType.MECH_WEAPON} ref drop-settable card flexrow" 
-                        data-path="${weapon_path}" 
-                        data-type="${EntryType.MECH_WEAPON}">
-        <img class="ref-icon" src="${TypeIcon(EntryType.MECH_WEAPON)}"></img>
-        <span class="major">Insert ${size ? size : "any"} weapon</span>
-      </div>`;
+    card.with_class("flexrow");
+    return card.render(`<img class="ref-icon" src="${TypeIcon(EntryType.MECH_WEAPON)}"></img> 
+                        <span class="major">Insert ${size ? size : "any"} weapon</span>`);
   }
 
   // Assert not null
@@ -388,11 +395,14 @@ export function mech_weapon_refview(
   let on_hit = profile.OnHit ? effect_box("On Hit", profile.OnHit, helper) : "";
   let on_crit = profile.OnCrit ? effect_box("On Crit", profile.OnCrit, helper) : "";
 
-  return `
-  <div class="valid ${EntryType.MECH_WEAPON} ref drop-settable double-click-ref flexcol clipped-top"
-                ${ref_params(cd.ref, weapon_path)}
-                data-commit-item="${weapon_path}"
-                style="max-height: fit-content;">
+  // Finish up with controls and body
+  return card.with_prop("style", "max-height: fit-content;").control({
+    action: "null",
+    context: true,
+    confirm: true,
+    path: weapon_path,
+    commit_override: weapon_path
+  }).render(`
     <div class="lancer-header">
       <i class="cci cci-weapon i--m"> </i>
       <span class="minor">${
@@ -419,8 +429,7 @@ export function mech_weapon_refview(
         ${on_crit}
         ${compact_tag_list(profile_path + ".Tags", helper)}
       </div>
-    </div>
-  </div>`;
+    </div>`);
 }
 
 /**
@@ -441,15 +450,21 @@ export function mech_system_refview(
   // Generate commons
   let cd = ref_commons(system_);
 
+  // Create outer card - used regardless of if filled yet
+  let card = new DOMTag("div").ref({
+    allow_type: EntryType.MECH_SYSTEM,
+    ref: cd?.ref,
+    path: system_path,
+    double_click: true,
+    allow_drop: true,
+    draggable: true
+  }).with_class("card");
+
+
   if (!cd) {
     // Make an empty ref. Note that it still has path stuff if we are going to be dropping things here
-    return `
-      <div class="${EntryType.MECH_SYSTEM} ref drop-settable card flexrow" 
-                        data-path="${system_path}" 
-                        data-type="${EntryType.MECH_SYSTEM}">
-        <img class="ref-icon" src="${TypeIcon(EntryType.MECH_SYSTEM)}"></img>
-        <span class="major">Insert system</span>
-      </div>`;
+    return card.with_class("flexrow").render(`<img class="ref-icon" src="${TypeIcon(EntryType.MECH_SYSTEM)}"></img>
+                                              <span class="major">Insert system</span>`);
   }
 
   // Assert not null
@@ -491,11 +506,8 @@ export function mech_system_refview(
     ext_helper_hash(helper, { card: false, collapse: false })
   );
 
-  return `
-  <div class="valid ${EntryType.MECH_SYSTEM} ref drop-settable double-click-ref flexcol clipped-top"
-                ${ref_params(cd.ref, system_path)}
-                data-commit-item="${system_path}"
-                style="max-height: fit-content;">
+
+  return card.with_prop("style", "max-height: fit-content;").with_class("card", "clipped-top").render(`
     <div class="lancer-header">
       <i class="cci cci-system i--m"> </i>
       ${macro}
@@ -509,6 +521,5 @@ export function mech_system_refview(
       </div>
       ${inc_if(actions, system.Actions.length)}
       ${inc_if(deployables, system.Deployables.length)}
-    </div>
-  </div>`;
+    </div>`);
 }

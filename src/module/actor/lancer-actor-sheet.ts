@@ -13,7 +13,6 @@ import {
 } from "../helpers/dragdrop";
 import {
   HANDLER_activate_ref_dragging,
-  HANDLER_activate_ref_drop_clearing,
   HANDLER_activate_ref_drop_setting,
   HANDLER_activate_click_open_ref as HANDLER_activate_ref_clicking,
 } from "../helpers/refs";
@@ -55,9 +54,6 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
 
     // Make refs droppable
     HANDLER_activate_ref_drop_setting(html, getfunc, commitfunc);
-
-    // Make refs clearable
-    HANDLER_activate_ref_drop_clearing(html, getfunc, commitfunc);
 
     // Enable collapses
     HANDLER_activate_collapsibles(html, this.collapse_handler);
@@ -102,7 +98,7 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
   // This is primarily useful for dropping actors onto sheets
   _activateNativeRefDropBoxes(html: JQuery) {
     enable_native_dropping_mm_wrap(
-      html.find(".native-refdrop"),
+      html.find(".native-drop"),
       async (item, dest, evt) => {
         // We trust that our outer handlers did all data validation.
         let path = dest[0].dataset.path!;

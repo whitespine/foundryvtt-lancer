@@ -342,9 +342,10 @@ export function convert_ref_to_native<T extends EntryType>(ref: RegRef<T>): Nati
   }
 }
 
-// Wraps a call to enable_dropping to specifically handle RegRef drops.
-// Convenient for if you really only care about the final resolved RegEntry result
-// Allows use of hover_handler for styling
+/** Wraps a call to enable_dropping to specifically handle RegRef drops.
+ * Automatically unwraps whatever is dropped on this into a real RegEntry
+ * Allows use of hover_handler for styling.
+ */
 export function enable_simple_ref_dropping(
   items: string | JQuery,
   on_drop: (entry: RegEntry<any>, dest: JQuery, evt: JQuery.DropEvent) => void,
@@ -354,7 +355,7 @@ export function enable_simple_ref_dropping(
     items,
     async (ref_json, dest, evt) => {
       let recon_ref: any = safe_json_parse(ref_json);
-      let dest_type = dest[0].dataset.type;
+      let dest_type = dest[0].dataset.allowedTypes;
 
       // If it isn't a ref, we don't handle
       if (!is_ref(recon_ref)) {
@@ -365,6 +366,7 @@ export function enable_simple_ref_dropping(
       if (dest_type && !dest_type.includes(recon_ref.type)) {
         return;
       }
+      console.log(`${recon_ref.type} fits in ${dest_type}`);
 
       // It is a ref, so we stop anyone else from handling the drop
       // (immediate props are fine)
@@ -384,7 +386,7 @@ export function enable_simple_ref_dropping(
       // Parse our drag data as a ref
       let recon_ref = safe_json_parse(data);
       if (is_ref(recon_ref)) {
-        let dest_type = dest[0].dataset.type;
+        let dest_type = dest[0].dataset.allowedTypes;
         return (dest_type || "").includes(recon_ref.type); // Simply confirm same type. Using includes allows for multiple types
       }
       return false;
@@ -442,7 +444,7 @@ export function enable_native_dropping(
       }
 
       // Get our actual allowed types, as it can be overriden by data-type
-      let dest_type = dest[0].dataset.type ?? (allowed_types ?? []).join(" ");
+      let dest_type = dest[0].dataset.allowedTypes ?? (allowed_types ?? []).join(" ");
 
       // Now, as far as whether it should really have any effect, that depends on the type
       if (!dest_type || dest_type.includes(type)) {

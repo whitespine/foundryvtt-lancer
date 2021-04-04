@@ -1,11 +1,9 @@
-import { NpcFeature, NpcFeatureType } from "machine-mind";
+import { EntryType, NpcFeature, NpcFeatureType } from "machine-mind";
 import { AnyMMActor, LancerActorType } from "../actor/lancer-actor";
 import { ActivationType } from "../enums";
 import { ItemMacroCtx, macro_elt_params, TechMacroCtx, WeaponMacroCtx } from "../macros";
-import { MMEntityContext } from "../mm-util/helpers";
-import { effect_box, HelperData, inc_if, resolve_helper_dotpath } from "./commons";
+import { DOMTag, effect_box, HelperData, inc_if, resolve_helper_dotpath } from "./commons";
 import { show_damage_array, show_range_array } from "./item";
-import { ref_params } from "./refs";
 import { compact_tag_list } from "./tags";
 
 export const EffectIcons = {
@@ -122,11 +120,14 @@ function npc_feature_scaffold(
     feature_icon = "cci cci-tech-quick";
   }
 
-  return `
-  <div class="valid ref card ${feature_class} double-click-ref" ${ref_params(npc_feature.as_ref())}>
-    <div class="flexrow lancer-header clipped-top collapse-ctrl" collapse-id="${
-      npc_feature.RegistryID
-    }" >
+  // Create card ref scaffolding
+  let card = new DOMTag("div").ref({
+    double_click: true,
+    allow_type: EntryType.NPC_FEATURE,
+    ref: npc_feature.as_ref()
+  }).with_class(feature_class);
+
+  return card.render(`<div class="flexrow lancer-header clipped-top collapse-ctrl" collapse-id="${npc_feature.RegistryID}">
       <i class="${feature_icon} i--m"> </i>
       ${inc_if(`<a class="lancer-macro mdi mdi-message" ${macro}></a>`, macro)}
       <span class="major grow">${npc_feature.Name}</span>
@@ -134,8 +135,7 @@ function npc_feature_scaffold(
     </div>
     <div class="collapse-item" collapse-id="${npc_feature.RegistryID}">
       ${body}
-    </div>
-  </div>`;
+    </div>`);
 }
 
 export function npc_reaction_effect_preview(path: string, helper: HelperData) {

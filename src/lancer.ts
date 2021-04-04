@@ -356,7 +356,6 @@ Hooks.once("init", async function () {
   // Refs
   Handlebars.registerHelper("simple-ref", simple_mm_ref);
   Handlebars.registerHelper("ref-mm-controllable-item", editable_mm_ref_list_item);
-  Handlebars.registerHelper("ref-mm-controllable-item-native", editable_mm_ref_list_item_native);
   Handlebars.registerHelper("ref-mm-list-item-append", mm_ref_list_append_slot);
   Handlebars.registerHelper("pilot-slot", pilot_slot);
   Handlebars.registerHelper("deployer-slot", deployer_slot); // Can be pilot, npc, or mech. Preferably mech, lol

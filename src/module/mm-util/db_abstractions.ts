@@ -28,15 +28,18 @@ export interface GetResult<T extends LancerItemType | LancerActorType> {
  * - includes an id appropriate to the item. This will allow for bulk .update()s, and has no effect on .create()s
  *  + Note that this ID is taken from the MM ent, not the original entity. This is because some techniques like insinuation rely on manually altering Registry info to propagate ref changes
  */
-function as_document_blob<T extends EntryType>(ent: LiveEntryTypes<T>): any {
+function as_document_blob<T extends EntryType>(
+  ent: LiveEntryTypes<T>,
+  include_id: boolean = true
+): any {
   let flags = ent.Flags as FoundryFlagData<T>;
-  return mergeObject(
-    {
-      _id: ent.RegistryID,
-      data: ent.save(),
-    },
-    flags.top_level_data
-  );
+  let data: any = {
+    data: ent.save(),
+  };
+  if (include_id) {
+    data._id = ent.RegistryID;
+  }
+  return mergeObject(data, flags.top_level_data);
 }
 
 // This can wrap an actors inventory, the global actor/item inventory, or a compendium
@@ -94,7 +97,7 @@ export class WorldItemsWrapper<T extends LancerItemType> extends EntityCollectio
   // Fetch and call .update()
   async update(items: Array<LiveEntryTypes<T>>): Promise<void> {
     //@ts-ignore Typings dont yet include mass update functions
-    return Item.update(items.map(as_document_blob));
+    return Item.update(items.map(x => as_document_blob(x)));
   }
 
   // Call game.items.get
@@ -175,7 +178,7 @@ export class WorldActorsWrapper<T extends LancerActorType> extends EntityCollect
 
   async update(items: Array<LiveEntryTypes<T>>): Promise<void> {
     //@ts-ignore Typings dont yet include mass update functions
-    return Actor.update(items.map(as_document_blob));
+    return Actor.update(items.map(x => as_document_blob(x)));
   }
 
   async get(id: string): Promise<GetResult<T> | null> {
@@ -245,12 +248,12 @@ export class TokensActorsWrapper<T extends LancerActorType> extends EntityCollec
       let id = item.RegistryID;
       let found_token = this.subget(id);
       if (found_token) {
-        if(found_token.data.actorLink) {
+        if (found_token.data.actorLink) {
           // Just treat it like a normal actor
           await found_token.actor.update(as_document_blob(item));
         } else {
-          // Need to update 
-
+          // Want to specifically not add id in as_document_blob, as it corrupts the token id
+          await found_token.actor.update(as_document_blob(item, false));
         }
       } else {
         console.error(`Failed to update actor ${id} of type ${this.type} - actor not found`);
@@ -345,7 +348,10 @@ export class ActorInventoryWrapper<T extends LancerItemType> extends EntityColle
     }
 
     // @ts-ignore Typings dont yet include mass update functions
-    return this.actor.updateEmbeddedEntity("OwnedItem", items.map(as_document_blob));
+    return this.actor.updateEmbeddedEntity(
+      "OwnedItem",
+      items.map(x => as_document_blob(x))
+    );
   }
 
   async get(id: string): Promise<GetResult<T> | null> {

@@ -260,7 +260,7 @@ export function deployer_slot(data_path: string, helper: HelperData): string {
     existing,
     ext_helper_hash(helper, {
       fallback: "No Deployer",
-      aa: data_path,
+      "slot-path": data_path,
       native: true,
     })
   );

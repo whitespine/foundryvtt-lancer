@@ -51,7 +51,6 @@ import { resolve_dotpath } from "./helpers/commons";
 import { OVERCHARGE_SEQUENCE } from "./helpers/actor";
 import { enable_dragging } from "./helpers/dragdrop";
 import { bound_int } from "machine-mind/dist/funcs";
-import { ref_params } from "./helpers/refs";
 
 const lp = LANCER.log_prefix;
 
@@ -952,7 +951,6 @@ export async function prepareDeployableMacro(macro: DeployableMacroCtx) {
   const template = `systems/lancer/templates/chat/deployable-card.html`;
   return renderMacro(raw_actor, template, {
     deployable,
-    deployable_ref_params: ref_params(deployable.as_ref()),
     tags: deployable.Tags,
   });
 }
@@ -1215,7 +1213,7 @@ export async function prepareOverheatMacro(macro: StressMacroCtx) {
   if (has_struct_stress(actor)) {
     // Subtract if we plan on doing so. The overheat_mech call will writeback
     if (macro.subtract) {
-      actor.CurrentStress = funcs.bound_int(actor.CurrentStress - 1, 0, 99);
+      // actor.CurrentStress = funcs.bound_int(actor.CurrentStress - 1, 0, 99);
     }
 
     // Hand it off to the actor to overheat
@@ -1240,7 +1238,7 @@ export async function prepareStructureMacro(macro: StructMacroCtx) {
   if (has_struct_stress(actor)) {
     // Subtract if we plan on doing so. The overheat_mech call will writeback
     if (macro.subtract) {
-      actor.CurrentStructure = funcs.bound_int(actor.CurrentStructure - 1, 0, 99);
+      // actor.CurrentStructure = funcs.bound_int(actor.CurrentStructure - 1, 0, 99);
     }
 
     // Hand it off to the actor to overheat
