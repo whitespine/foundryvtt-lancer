@@ -18,6 +18,7 @@ import {
 } from "../helpers/refs";
 import { LancerActorSheetData } from "../interfaces";
 import { HANDLER_activate_macros } from "../macros";
+import { FoundryFlagData } from "../mm-util/foundry-reg";
 import { LancerActor, LancerActorType } from "./lancer-actor";
 const lp = LANCER.log_prefix;
 
@@ -137,46 +138,43 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
     return native_drop;
   }
 
-  _propagateMMData(formData: any): boolean {
+  _propagateMMData(formData: any): any {
     // Pushes relevant field data down from the "actor" data block to the "mm.ent" data block
     // Also meant to encapsulate all of the behavior of _updateTokenImage
     // Returns true if any of these top level fields require updating (i.e. do we need to .update({img: ___, token: __, etc}))
     let token: any = this.actor.data["token"];
-    let needs_update = false;
+    let new_top: any = {};
+
+    // Get the basics
+    new_top["img"] = formData["img"];
+    new_top["name"] = formData["name"];
 
     // Set the prototype token image if the prototype token isn't initialized
     if (!token) {
-      formData["token.img"] = formData["img"];
-      formData["token.name"] = formData["name"];
-      needs_update = true;
+      new_top["token.img"] = formData["img"];
+      new_top["token.name"] = formData["name"];
     }
 
     // Update token image if it matches the old actor image - keep in sync
     // Ditto for name
     else {
       if (this.actor.data.img === token["img"] && this.actor.img !== formData["img"]) {
-        formData["token.img"] = formData["img"];
-        needs_update = true;
+        new_top["token.img"] = formData["img"];
       } // Otherwise don't update token
       if (this.actor.data.name === token["name"] && this.actor.name !== formData["name"]) {
-        formData["token.name"] = formData["name"];
-        needs_update = true;
+        new_top["token.name"] = formData["name"];
       }
     }
 
-    // Need to update if name changed
-    if (this.actor.name != formData["name"]) {
-      needs_update = true;
-    }
-
-    // Numeric selects are annoying
+    // Bound NPC tier as it is one of the most frequent sheet breakers. TODO: more general solution
     if ("npctier" in formData) {
       formData["mm.ent.Tier"] = Number.parseInt(formData["npctier"]) || 1;
     }
 
     // Do push down name changes
     formData["mm.ent.Name"] = formData["name"];
-    return needs_update;
+
+    return new_top;
   }
 
   /**
@@ -189,22 +187,12 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
     let ct = await this.getDataLazy();
 
     // Automatically propagate fields that should be set to multiple places, and determine if we need to update anything besides mm ent
-    let need_top_update = this._propagateMMData(formData);
+    let new_top = this._propagateMMData(formData);
 
     // Do a separate update depending on mm data
-    if (need_top_update) {
-      let top_update = {} as any;
-      for (let key of Object.keys(formData)) {
-        if (!key.includes("mm.ent")) {
-          top_update[key] = formData[key];
-        }
-      }
-      // await this.actor.update(top_update, {});
-      await this.actor.update(top_update);
-    } else {
-      gentle_merge(ct, formData);
-      await this._commitCurrMM();
-    }
+    gentle_merge(ct, formData);
+    mergeObject((ct.mm.ent.Flags as FoundryFlagData<any>).top_level_data, new_top);
+    await this._commitCurrMM();
   }
 
   /**

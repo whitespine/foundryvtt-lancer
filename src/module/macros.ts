@@ -698,7 +698,7 @@ async function prepareWeaponMacro(macro: WeaponMacroCtx) {
   } else if (item instanceof PilotWeapon) {
     damage.push(...item.Damage);
   } else if (item instanceof MechWeapon) {
-    damage.push(...item.Profiles[macro.profile ?? 0].BaseDamage); // TODO: Incorporate mods
+    damage.push(...item.Profiles[macro.profile ?? item.SelectedProfileIndex].BaseDamage); // TODO: Incorporate mods
   }
 
   // Get reliable

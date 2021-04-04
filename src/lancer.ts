@@ -602,3 +602,17 @@ Hooks.on("modifyTokenAttribute", (_: any, data: any) => {
     }
   }
 });
+
+/*
+// Make token data preparations more stable by re-doing when canvas ready
+let pending_canvas: Promise<any> = Promise.resolve();
+Hooks.on("canvasReady", (canvas: any) => {
+  for(let t of canvas.tokens.placeables) {
+    if(t.actor?.isToken && t.actor._wait_canvas) { 
+      t.actor.prepareDerivedData();
+      t.actor._wait_canvas = false;
+      console.log("Re-preparing canvas token");
+    }
+  }
+});
+*/
