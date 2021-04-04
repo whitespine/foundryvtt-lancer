@@ -1,9 +1,8 @@
 import { EntryType, LiveEntryTypes, RegEntryTypes } from "machine-mind";
 import { is_actor_type, LancerActor, LancerActorType } from "../actor/lancer-actor";
 import { FriendlyTypeName, LANCER } from "../config";
-import { gentle_merge } from "../helpers/commons";
 import { LancerItem, LancerItemType } from "../item/lancer-item";
-import { FoundryFlagData, HACKJOB_TOKEN_CACHE } from "./foundry-reg";
+import { FoundryFlagData } from "./foundry-reg";
 
 const lp = LANCER.log_prefix;
 
@@ -228,7 +227,7 @@ export class TokensActorsWrapper<T extends LancerActorType> extends EntityCollec
 
   // Handles type checking
   private subget(id: string): Token | null {
-    let fi: Token | undefined = HACKJOB_TOKEN_CACHE[id] || canvas.tokens.get(id);
+    let fi: Token | undefined = canvas.tokens.get(id);
     if (fi && fi.actor.data.type == this.type) {
       return fi;
     } else {

@@ -2,7 +2,7 @@ import { EntryType, License, LiveEntryTypes, OpCtx, Pilot, Registry, RegRef } fr
 import type { LancerActor, LancerActorType, LancerMech, LancerPilot } from "../actor/lancer-actor";
 import type { LancerItem, LancerItemType } from "../item/lancer-item";
 import { FetcherCache } from "./db_abstractions";
-import { FoundryReg, FoundryRegCat, HACKJOB_TOKEN_CACHE } from "./foundry-reg";
+import { FoundryReg, FoundryRegCat } from "./foundry-reg";
 
 // Provides an environment for interacting with a provided item.
 // The registry is whatever registry is most sensibly "local" for the given item. If the item is from a compendium, the reg will be compendium local.
@@ -73,7 +73,6 @@ export async function mm_wrap_actor<T extends EntryType & LancerActorType>(
   let reg: FoundryReg;
   let id: string;
   if (actor.isToken) {
-    HACKJOB_TOKEN_CACHE[actor.token.id] = actor.token;
     reg = new FoundryReg({
       actor_source: "token",
       item_source: ["token", actor.token],
@@ -94,9 +93,9 @@ export async function mm_wrap_actor<T extends EntryType & LancerActorType>(
   }
   let ctx = use_existing_ctx || new OpCtx();
 
-  let ent = (await reg.get_cat(actor.data.type).get_live(ctx, id)) as LiveEntryTypes<T>;
-  // let cat = reg.get_cat(actor.data.type) as FoundryRegCat<T>;
-  // let ent = await cat.wrap_doc(ctx, actor as any) as LiveEntryTypes<T>; // Poor typescript doesn't know how to handle these
+  // let ent = (await reg.get_cat(actor.data.type).get_live(ctx, id)) as LiveEntryTypes<T>;
+  let cat = reg.get_cat(actor.data.type) as FoundryRegCat<T>;
+  let ent = await cat.wrap_doc(ctx, actor as any) as LiveEntryTypes<T>; // Poor typescript doesn't know how to handle these
   if (!ent) {
     throw new Error("Something went wrong while trying to contextualize an actor...");
   }

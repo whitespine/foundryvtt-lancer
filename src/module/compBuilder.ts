@@ -61,7 +61,6 @@ async function transfer_cat<T extends EntryType>(
   // Insinuate each item in the cat
   invalidate_cached_pack_map(type);
   let from_cat = from.get_cat(type);
-  let promises: Array<Promise<RegEntry<T>>> = [];
 
   let new_items: RegEntry<T>[] = [];
   let linked_items: RegEntry<T>[] = [];
@@ -80,10 +79,7 @@ async function transfer_cat<T extends EntryType>(
             linked_items.push(by_id as any);
             return by_id;
           }
-        }
-
-        // Then by name, but only if not an npc feature
-        if (dest_cat.cat != EntryType.NPC_FEATURE) {
+        } else {
           let by_name = await dest_cat.lookup_live(ctx, cand => cand.name == src_item.Name);
           if (by_name) {
             new_v = false;
