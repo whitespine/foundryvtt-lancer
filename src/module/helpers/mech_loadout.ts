@@ -368,6 +368,33 @@ export function mech_weapon_refview(
               </span>`;
   }
 
+  // Generate profile segment as needed
+  let profile_display = "";
+  if(weapon instanceof MechWeapon && weapon.Profiles.length > 1) {
+    // Ugh
+    let si = weapon.SelectedProfileIndex;
+    let ti = weapon.Profiles.length;
+    let grid = `display: grid; grid-template: 20px / ${inc_if(`repeat(${si}, 20px)`, si)} 1fr ${inc_if(`repeat(${ti - si - 1}, 20px)`, ti - si - 1)};`;
+    let items = [];
+    for(let i=0; i<ti; i++) {
+      if(i == si) {
+        let button = new DOMTag("div").with_class("weapon-profile-button", "selected");
+        items.push(button.render(weapon.Profiles[i].Name));
+      } else {
+        let button = new DOMTag("div").with_class("weapon-profile-button").control({
+          action: "set",
+          path: `${weapon_path}.SelectedProfileIndex`,
+          value: `(int)${i}`,
+          commit_override: weapon_path
+        });
+        items.push(button.render((i + 1).toString()));
+      }
+      grid += " 20px"
+    }
+
+    profile_display = `<div style="${grid}">${items.join(" ")}</div>`;
+  }
+
   // Generate limited segment as needed
   let uses = "";
   let max_uses = funcs.tag_util.limited_max(weapon);
@@ -405,6 +432,7 @@ export function mech_weapon_refview(
       <a class="gen-control fas fa-trash" data-action="null" data-path="${weapon_path}"></a>
     </div> 
     <div class="lancer-body">
+      ${profile_display}
       <div class="flexrow flexcenter" style="text-align: left; white-space: nowrap;">
         ${macro}
         <hr class="vsep--m">

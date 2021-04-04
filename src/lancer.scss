@@ -645,10 +645,14 @@ tr.lcp-index-header {
   min-width: fit-content;
 }
 
-/* Put on any ref or reffable location */
-/*.ref {
-
-}*/
+/** Weapon profile selectors */
+.weapon-profile-button {
+  border: 1px solid black;
+  text-align: center;
+  &.selected {
+    background-color: #db9833;
+  }
+}
 
 /* Put specifically on the rectangular card style of ref */
 .list-card {
