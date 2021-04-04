@@ -10,6 +10,8 @@ import {
   RegDeployableData,
   OpCtx,
   LiveEntryTypes,
+  StaticReg,
+  RegEnv,
 } from "machine-mind";
 import { FoundryRegActorData, FoundryRegItemData } from "../mm-util/foundry-reg";
 import { LancerHooks, LancerSubscription } from "../helpers/hooks";
@@ -152,6 +154,22 @@ export class LancerActor<T extends LancerActorType> extends Actor {
     // Need to wait for system ready to avoid having this break if prepareData called during init step (spoiler alert - it is)
     let mmec_promise = system_ready
       .then(() => mm_wrap_actor(this, this._actor_ctx))
+      .catch(async (e) => {
+        // This is 90% of the time a token not being able to resolve itself due to canvas not loading yet
+        console.warn("Token unable to prepare - hopefully trying again when canvas ready. In meantime, using dummy");
+        console.warn(e);
+
+        // Make a dummy value
+        let ctx = new OpCtx();
+        let env = new RegEnv();
+        let reg = new StaticReg(env);
+        let ent = await reg.get_cat(this.data.type).create_default(ctx);
+        return {
+          reg,
+          ent,
+          ctx
+        };
+      })
       .then(mmec => {
         // Always save the context
         // Save the context via defineProperty so it does not show up in JSON stringifies. Also, no point in having it writeable

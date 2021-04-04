@@ -55,6 +55,8 @@ import {
 } from "./db_abstractions";
 import { MMEntityContext } from "./helpers";
 
+export const HACKJOB_TOKEN_CACHE: any = {};
+
 // Pluck
 const defaults = funcs.defaults;
 
@@ -225,7 +227,7 @@ export class FoundryReg extends Registry {
       // Id is found, which means this is an inventory
       if (item_src == ITEMS_TOKEN_INV) {
         // Recover the token. Only works on current scene, unfortunately
-        let token: Token | null | undefined = canvas.tokens.get(item_src_id);
+        let token: Token | null | undefined = HACKJOB_TOKEN_CACHE[item_src_id] || canvas.tokens.get(item_src_id);
         if (token) {
           reg = new FoundryReg({
             actor_source: actors,
@@ -540,6 +542,22 @@ export class FoundryRegCat<T extends EntryType> extends RegCat<T> {
       return null;
     }
     return this.revive_and_flag(retrieved, ctx);
+  }
+
+  // Directly wrap a foundry document, without going through resolution mechanism. Careful here
+  async wrap_doc(ctx: OpCtx, ent: T extends LancerActorType ? LancerActor<T> : T extends LancerItemType ? LancerItem<T> : never): Promise<LiveEntryTypes<T> | null> {
+    // ID depends on if token or not
+    let id = ent.id;
+    if(ent instanceof LancerActor && ent.isToken) {
+      id = ent.token.id;
+    }
+    let contrived: GetResult<T> = {
+      entity: ent as any,
+      id,
+      item: ent.data.data as any,
+      type: ent.data.type as T
+    };
+    return this.revive_and_flag(contrived, ctx);
   }
 
   // Just call revive on each of the 'entries'
