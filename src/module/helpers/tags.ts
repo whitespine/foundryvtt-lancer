@@ -1,7 +1,17 @@
 import { EntryType, TagInstance, typed_lancer_data } from "machine-mind";
-import { array_path_edit, HelperData, inc_if, resolve_dotpath, resolve_helper_dotpath } from "./commons";
+import {
+  array_path_edit,
+  HelperData,
+  inc_if,
+  resolve_dotpath,
+  resolve_helper_dotpath,
+} from "./commons";
 import { LancerActorSheetData, LancerItemSheetData } from "../interfaces";
-import { enable_native_dropping, enable_native_dropping_mm_wrap, enable_simple_ref_dropping } from "./dragdrop";
+import {
+  enable_native_dropping,
+  enable_native_dropping_mm_wrap,
+  enable_simple_ref_dropping,
+} from "./dragdrop";
 import { ref_params } from "./refs";
 
 const TAGS = typed_lancer_data.tags;
@@ -68,7 +78,9 @@ function prepareTag(tag: TagData | null): TagData {
 export function compact_tag(tag_path: string, tag: TagInstance): string {
   // Format the {VAL} out of the name
   let formatted_name = tag.Tag.Name.replace("{VAL}", `${tag.Value ?? "?"}`);
-  return `<div class="editable-tag-instance valid ref compact-tag flexrow" data-path="${tag_path}" ${ref_params(tag.Tag.as_ref())}>
+  return `<div class="editable-tag-instance valid ref compact-tag flexrow" data-path="${tag_path}" ${ref_params(
+    tag.Tag.as_ref()
+  )}>
       <i class="mdi mdi-label i--s i--light"></i>
       <span style="margin: 3px;" >${formatted_name}</span>
     </div>`;
@@ -99,7 +111,7 @@ export function compact_tag_list(tag_array_path: string, helper: HelperData): st
     return `<div class="compact-tag-row tag-list-append" data-path="${tag_array_path}">
       ${processed_tags.join("")}
     </div>`;
-  } else if(processed_tags.length) {
+  } else if (processed_tags.length) {
     return `<div class="compact-tag-row">
       ${processed_tags.join("")}
     </div>`;
@@ -114,7 +126,7 @@ export function compact_tag_list(tag_array_path: string, helper: HelperData): st
  */
 export function tag_list_display(tag_array_path: string, helper: HelperData): string {
   let tags_array = resolve_helper_dotpath<TagInstance[]>(helper, tag_array_path);
-  if(!tags_array) return "err";
+  if (!tags_array) return "err";
 
   // Render each tag
   return `
@@ -189,7 +201,7 @@ export function HANDLER_activate_tag_context_menus<
               tag_instance.Value = new_val;
 
               // At last, commit
-              return commit_func(cd); 
+              return commit_func(cd);
             },
           },
         },
@@ -232,11 +244,11 @@ export function HANDLER_activate_tag_dropping<T>(
     async (tag_ent_ctx, dest, evt) => {
       // Well, we got a drop!
       let path = dest[0].dataset.path!;
-      if(path) {
+      if (path) {
         // Make an instance of the tag
         let tag_instance = new TagInstance(tag_ent_ctx.reg, tag_ent_ctx.ctx, {
           tag: tag_ent_ctx.ent.as_ref(),
-          val: 1
+          val: 1,
         });
         await tag_instance.ready();
 
@@ -247,5 +259,6 @@ export function HANDLER_activate_tag_dropping<T>(
       }
     },
     [EntryType.TAG],
-    undefined);
+    undefined
+  );
 }

@@ -65,7 +65,8 @@ export const registerSettings = function () {
 
   game.settings.register(LANCER.sys_name, LANCER.setting_auto_limited, {
     name: "Auto-Consume Limited Charges",
-    hint: "When using an action that consumes limited charges, should they automatically be consumed?",
+    hint:
+      "When using an action that consumes limited charges, should they automatically be consumed?",
     scope: "world",
     config: true,
     type: Boolean,
@@ -74,7 +75,8 @@ export const registerSettings = function () {
 
   game.settings.register(LANCER.sys_name, LANCER.setting_auto_loading, {
     name: "Auto-Handle Loaded Weapons",
-    hint: "When using a weapon that has the loading tag, should we automatically unload it when firing?",
+    hint:
+      "When using a weapon that has the loading tag, should we automatically unload it when firing?",
     scope: "world",
     config: true,
     type: Boolean,
@@ -107,7 +109,7 @@ export const registerSettings = function () {
     type: Boolean,
     default: true,
   });
-  
+
   game.settings.register(LANCER.sys_name, LANCER.setting_120, {
     name: "Show v0.1.20 Warning",
     scope: "world",

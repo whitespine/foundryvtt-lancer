@@ -38,16 +38,16 @@ export class LancerNPCSheet extends LancerActorSheet<EntryType.NPC> {
   }
 
   // Want to explicitly have npc class, for convenience
-  async getData(): Promise<LancerActorSheetData<EntryType.NPC> & {class: NpcClass | null}> {
+  async getData(): Promise<LancerActorSheetData<EntryType.NPC> & { class: NpcClass | null }> {
     let pre = await super.getData();
     let class_: NpcClass | null = null;
-    if(pre.mm.ent.Classes.length) {
-      class_ =  pre.mm.ent.Classes[0];
-    } 
+    if (pre.mm.ent.Classes.length) {
+      class_ = pre.mm.ent.Classes[0];
+    }
     return {
       class: class_,
-      ...pre
-    }
+      ...pre,
+    };
   }
 
   /* -------------------------------------------- */
@@ -55,7 +55,7 @@ export class LancerNPCSheet extends LancerActorSheet<EntryType.NPC> {
   async _onDrop(event: any): Promise<any> {
     let drop: ResolvedNativeDrop | null = await super._onDrop(event);
     if (drop?.type != "Item") {
-      return null; // Bail. 
+      return null; // Bail.
     }
 
     const sheet_data = await this.getDataLazy();
@@ -76,13 +76,14 @@ export class LancerNPCSheet extends LancerActorSheet<EntryType.NPC> {
     let new_live_item = await item_mm.ent.insinuate(this_mm.reg, new_ctx);
 
     // Go ahead and bring in base features from templates
-    if(new_live_item.Type == EntryType.NPC_TEMPLATE) {
-      for(let b of new_live_item.BaseFeatures) {
+    if (new_live_item.Type == EntryType.NPC_TEMPLATE) {
+      for (let b of new_live_item.BaseFeatures) {
         await b.insinuate(this_mm.reg, new_ctx);
       }
     }
-    if(new_live_item.Type == EntryType.NPC_CLASS && !this_mm.ent.ActiveClass) { // Only bring in everything if we don't already have a class
-      for(let b of new_live_item.BaseFeatures) {
+    if (new_live_item.Type == EntryType.NPC_CLASS && !this_mm.ent.ActiveClass) {
+      // Only bring in everything if we don't already have a class
+      for (let b of new_live_item.BaseFeatures) {
         await b.insinuate(this_mm.reg, new_ctx);
       }
     }

@@ -3,7 +3,13 @@ import { limited_max } from "machine-mind/dist/classes/mech/EquipUtil";
 import { AnyMMActor } from "../actor/lancer-actor";
 import { TypeIcon } from "../config";
 import { WeaponMacroCtx, macro_elt_params, ItemMacroCtx, TalentMacroCtx } from "../macros";
-import { HelperData, resolve_helper_dotpath, resolve_dotpath, inc_if, ext_helper_hash } from "./commons";
+import {
+  HelperData,
+  resolve_helper_dotpath,
+  resolve_dotpath,
+  inc_if,
+  ext_helper_hash,
+} from "./commons";
 import { show_range_array, show_damage_array, uses_control } from "./item";
 import { ref_commons, ref_params } from "./refs";
 import { compact_tag_list } from "./tags";
@@ -95,13 +101,13 @@ export function pilot_weapon_refview(weapon_path: string, helper: HelperData): s
 
   // Make a macro, maybe
   let macro = "";
-  if(helper.hash["macro-actor"]) {
+  if (helper.hash["macro-actor"]) {
     let macro_ctx: WeaponMacroCtx = {
       name: weapon.Name,
       type: "weapon",
       item: weapon.as_ref(),
-      actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref()
-    }
+      actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref(),
+    };
     macro = `<a class="lancer-macro i--sm fas fa-dice-d20" ${macro_elt_params(macro_ctx)}> </a>`;
   }
 
@@ -147,12 +153,12 @@ export function pilot_gear_refview(gear_path: string, helper: HelperData): strin
 
   // Assert not null. Setup helper to intercept gen-controls
   let gear = gear_!;
-  helper = ext_helper_hash(helper, {"override": gear_path});
+  helper = ext_helper_hash(helper, { override: gear_path });
 
   // Conditionally show uses
   let uses = "";
   let limited = gear.Tags.find(t => t.Tag.IsLimited);
-  if(limited) {
+  if (limited) {
     uses = uses_control(`${gear_path}.Uses`, limited.as_number(1), helper);
     uses = `
       <div class="compact-stat">
@@ -165,13 +171,13 @@ export function pilot_gear_refview(gear_path: string, helper: HelperData): strin
 
   // Macro if needed
   let macro = "";
-  if(helper.hash["macro-actor"]) {
+  if (helper.hash["macro-actor"]) {
     let macro_ctx: ItemMacroCtx = {
       item: gear.as_ref(),
       name: gear.Name,
       type: "generic_item",
-      actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref()
-    }
+      actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref(),
+    };
     macro = macro_elt_params(macro_ctx);
   }
 
@@ -197,24 +203,31 @@ export function pilot_gear_refview(gear_path: string, helper: HelperData): strin
 }
 
 // Shows an individual rank. Path is needed for macros
-function talent_rank_refview(talent: Talent, rank_index: number, macro_actor: AnyMMActor | null, unlocked: boolean): string {
+function talent_rank_refview(
+  talent: Talent,
+  rank_index: number,
+  macro_actor: AnyMMActor | null,
+  unlocked: boolean
+): string {
   let rank = talent.Ranks[rank_index];
 
   // Macro if needed
   let macro = "";
-  if(macro_actor) {
+  if (macro_actor) {
     let macro_ctx: TalentMacroCtx = {
       item: talent.as_ref(),
       name: rank.Name,
       type: "talent",
       rank: rank_index + 1,
-      actor: macro_actor.as_ref()
-    }
+      actor: macro_actor.as_ref(),
+    };
     macro = macro_elt_params(macro_ctx);
   }
 
   // Retern the item
-  return `<div class="card ${inc_if("locked", !unlocked)}" style="grid-area: 1/${rank_index + 1}/2/${rank_index + 2}">
+  return `<div class="card ${inc_if("locked", !unlocked)}" style="grid-area: 1/${
+    rank_index + 1
+  }/2/${rank_index + 2}">
     <div class="lancer-header">
       <i class="cci cci-rank-${rank_index + 1} i--s"></i>
       ${inc_if(`<a class="lancer-macro mdi mdi-message" ${macro}></a>`, macro)}
@@ -231,7 +244,7 @@ function talent_rank_refview(talent: Talent, rank_index: number, macro_actor: An
  * @argument "macro-actor" If supplied in hash, this MM actor entry will be used as the macro's actor
  */
 export function pilot_talent_refview(talent_path: string, helper: HelperData): string {
-// Fetch the item
+  // Fetch the item
   let talent_: Talent | null = resolve_dotpath(helper.data?.root, talent_path);
 
   // Generate commons
@@ -246,8 +259,10 @@ export function pilot_talent_refview(talent_path: string, helper: HelperData): s
 
   // Draw out each rank
   let ranks: string[] = [];
-  for(let i=0; i < talent.Ranks.length; i++) {
-    ranks.push(talent_rank_refview(talent, i, helper.hash["macro-actor"] ?? null, talent.CurrentRank > i));
+  for (let i = 0; i < talent.Ranks.length; i++) {
+    ranks.push(
+      talent_rank_refview(talent, i, helper.hash["macro-actor"] ?? null, talent.CurrentRank > i)
+    );
   }
 
   // Finally, render the whole box

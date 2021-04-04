@@ -4,10 +4,7 @@ import { ActivationType } from "../enums";
 import { ItemMacroCtx, macro_elt_params, TechMacroCtx, WeaponMacroCtx } from "../macros";
 import { MMEntityContext } from "../mm-util/helpers";
 import { effect_box, HelperData, inc_if, resolve_helper_dotpath } from "./commons";
-import {
-  show_damage_array,
-  show_range_array,
-} from "./item";
+import { show_damage_array, show_range_array } from "./item";
 import { ref_params } from "./refs";
 import { compact_tag_list } from "./tags";
 
@@ -81,27 +78,32 @@ export function action_type_selector(a_type: string, data_target: string) {
 
 // TODO: Make this globally consistent
 function del_button(path: string): string {
-  return `<a class="gen-control fas fa-trash" data-action="delete" data-path="${path}"></a>`
+  return `<a class="gen-control fas fa-trash" data-action="delete" data-path="${path}"></a>`;
 }
 
 /** A generic format to render all npc features
  * @argument "macro-actor" If supplied in hash, this MM actor entry will be used as the macro's actor
  */
-function npc_feature_scaffold(path: string, npc_feature: NpcFeature, body: string, helper: HelperData) {
-  let feature_class = `npc-${npc_feature.FeatureType.toLowerCase()}`
+function npc_feature_scaffold(
+  path: string,
+  npc_feature: NpcFeature,
+  body: string,
+  helper: HelperData
+) {
+  let feature_class = `npc-${npc_feature.FeatureType.toLowerCase()}`;
 
   // Macro if needed
   let macro = "";
-  if(helper.hash["macro-actor"]) {
+  if (helper.hash["macro-actor"]) {
     let macro_ctx: ItemMacroCtx = {
       item: npc_feature.as_ref(),
       name: npc_feature.Name,
       type: "generic_item",
-      actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref()
-    }
+      actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref(),
+    };
     macro = macro_elt_params(macro_ctx);
-  }  
-  
+  }
+
   // Generate recharge segment as needed
   /*
   let loading = "";
@@ -115,14 +117,16 @@ function npc_feature_scaffold(path: string, npc_feature: NpcFeature, body: strin
   */
 
   // Decide icon
-  let feature_icon =`cci cci-${npc_feature.FeatureType.toLowerCase()}`;
-  if(npc_feature.FeatureType == NpcFeatureType.Tech) {
-    feature_icon ="cci cci-tech-quick";
+  let feature_icon = `cci cci-${npc_feature.FeatureType.toLowerCase()}`;
+  if (npc_feature.FeatureType == NpcFeatureType.Tech) {
+    feature_icon = "cci cci-tech-quick";
   }
 
   return `
   <div class="valid ref card ${feature_class} double-click-ref" ${ref_params(npc_feature.as_ref())}>
-    <div class="flexrow lancer-header clipped-top collapse-ctrl" collapse-id="${npc_feature.RegistryID}" >
+    <div class="flexrow lancer-header clipped-top collapse-ctrl" collapse-id="${
+      npc_feature.RegistryID
+    }" >
       <i class="${feature_icon} i--m"> </i>
       ${inc_if(`<a class="lancer-macro mdi mdi-message" ${macro}></a>`, macro)}
       <span class="major grow">${npc_feature.Name}</span>
@@ -173,10 +177,7 @@ export function npc_trait_effect_preview(path: string, helper: HelperData) {
 /** Creates a preview for a tech effect
  * @argument "macro-actor" If supplied in hash, this MM actor entry will be used as the macro's actor
  */
-export function npc_tech_effect_preview(
-  path: string,
-  helper: HelperData
-) {
+export function npc_tech_effect_preview(path: string, helper: HelperData) {
   // Get the feature
   let npc_feature: NpcFeature = resolve_helper_dotpath(helper, path);
 
@@ -187,21 +188,23 @@ export function npc_tech_effect_preview(
   let subheader_items: string[] = [];
 
   // Make up a macro if necessary
-  if(helper.hash["macro-actor"]) {
+  if (helper.hash["macro-actor"]) {
     let macro: TechMacroCtx = {
       item: npc_feature.as_ref(),
       name: npc_feature.Name,
       type: "tech",
-      actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref()
+      actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref(),
     };
-    subheader_items.push(`<a class="lancer-macro i--m fas fa-dice-d20 no-grow" ${macro_elt_params(macro)}></a>`);
+    subheader_items.push(
+      `<a class="lancer-macro i--m fas fa-dice-d20 no-grow" ${macro_elt_params(macro)}></a>`
+    );
   }
 
   let attack_bonus = npc_feature.AttackBonus[tier_index];
   let from_sys = false;
 
   // If we didn't find one, retrieve. Maybe check for undefined as we want an explicit 0 to be a true 0? How to support this in UI?
-  if(!attack_bonus) {
+  if (!attack_bonus) {
     resolve_helper_dotpath(helper, "mm.ent.Systems", 0); // A bit lazy. Expand this to cover more cases if needed
     from_sys = true;
   }
@@ -235,10 +238,7 @@ export function npc_tech_effect_preview(
 /** Creates a preview for a weapon
  * @argument "macro-actor" If supplied in hash, this MM actor entry will be used as the macro's actor
  */
-export function npc_weapon_effect_preview(
-  path: string,
-  helper: HelperData
-) {
+export function npc_weapon_effect_preview(path: string, helper: HelperData) {
   // Get the feature
   let npc_feature: NpcFeature = resolve_helper_dotpath(helper, path);
 
@@ -247,16 +247,18 @@ export function npc_weapon_effect_preview(
 
   let sep = `<hr class="vsep--m">`;
   let subheader_items = [];
-  
+
   // Make up a macro if necessary
-  if(helper.hash["macro-actor"]) {
+  if (helper.hash["macro-actor"]) {
     let macro: WeaponMacroCtx = {
       item: npc_feature.as_ref(),
       name: npc_feature.Name,
       type: "weapon",
-      actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref()
+      actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref(),
     };
-    subheader_items.push(`<a class="lancer-macro i--m fas fa-dice-d20 no-grow" ${macro_elt_params(macro)}></a>`);
+    subheader_items.push(
+      `<a class="lancer-macro i--m fas fa-dice-d20 no-grow" ${macro_elt_params(macro)}></a>`
+    );
   }
 
   // Weapon info
@@ -286,7 +288,9 @@ export function npc_weapon_effect_preview(
         ${subheader_items.join(sep)}
       </div>
       <div>
-        <span>${npc_feature.WepType ?? "Weapon"} // ${npc_feature.Origin.name} ${npc_feature.Origin.type} Feature</span>
+        <span>${npc_feature.WepType ?? "Weapon"} // ${npc_feature.Origin.name} ${
+      npc_feature.Origin.type
+    } Feature</span>
       </div>
       ${effect_box("ON HIT", npc_feature.OnHit, helper)}
       ${effect_box("EFFECT", npc_feature.Effect, helper)}
@@ -318,13 +322,13 @@ export function npc_accuracy_preview(acc: number) {
   if (acc > 0) {
     icon = "accuracy";
     text = `+${acc} ACCURACY`;
-  } else if(acc < 0) {
+  } else if (acc < 0) {
     icon = "difficulty";
     text = `-${acc} DIFFICULTY`;
   } else {
     return "";
   }
-  
+
   return `<div class="compact-acc">
       <i style="margin-right: 5px" class="cci cci-${icon} i--m"></i>
       <span class="medium">${text}</span>
@@ -349,5 +353,3 @@ export function npc_feature_preview(npc_feature_path: string, helper: HelperData
       return "bad feature";
   }
 }
-
-

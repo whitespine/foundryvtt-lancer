@@ -10,12 +10,8 @@
 // Import TypeScript modules
 import { LANCER, STATUSES, TypeIcon, WELCOME } from "./module/config";
 import { LancerGame } from "./module/lancer-game";
-import stringify  = require("json-stringify-pretty-compact");
-import {
-  AnyLancerActor,
-  LancerActor,
-  lancerActorInit,
-} from "./module/actor/lancer-actor";
+import stringify = require("json-stringify-pretty-compact");
+import { AnyLancerActor, LancerActor, lancerActorInit } from "./module/actor/lancer-actor";
 import { LancerItem, lancerItemInit } from "./module/item/lancer-item";
 
 import {
@@ -36,9 +32,7 @@ import { LancerFrameSheet } from "./module/item/frame-sheet";
 // Import helpers
 import { preloadTemplates } from "./module/preloadTemplates";
 import { registerSettings } from "./module/settings";
-import {
-  compact_tag_list, tag_list_display
-} from "./module/helpers/tags";
+import { compact_tag_list, tag_list_display } from "./module/helpers/tags";
 import * as migrations from "./module/migration";
 import { addLCPManager } from "./module/apps/lcpManager";
 
@@ -69,15 +63,47 @@ import {
   manufacturer_ref,
   uses_control,
 } from "./module/helpers/item";
-import { clicker_num_input, clicker_stat_card, compact_stat_edit, compact_stat_view, deployer_slot, npc_clicker_stat_card, npc_tier_selector, overcharge_button, stat_edit_card, stat_edit_card_max, stat_view_card, stress_macro_button, struct_macro_button, } from "./module/helpers/actor";
-import { editable_mm_ref_list_item, simple_mm_ref, mm_ref_portrait, mm_ref_list_append_slot, editable_mm_ref_list_item_native, resolve_ref_element, HANDLER_activate_native_ref_dragging } from "./module/helpers/refs";
-import { mech_loadout, mech_system_refview, mech_weapon_refview, pilot_slot } from "./module/helpers/mech_loadout";
+import {
+  clicker_num_input,
+  clicker_stat_card,
+  compact_stat_edit,
+  compact_stat_view,
+  deployer_slot,
+  npc_clicker_stat_card,
+  npc_tier_selector,
+  overcharge_button,
+  stat_edit_card,
+  stat_edit_card_max,
+  stat_view_card,
+  stress_macro_button,
+  struct_macro_button,
+} from "./module/helpers/actor";
+import {
+  editable_mm_ref_list_item,
+  simple_mm_ref,
+  mm_ref_portrait,
+  mm_ref_list_append_slot,
+  editable_mm_ref_list_item_native,
+  resolve_ref_element,
+  HANDLER_activate_native_ref_dragging,
+} from "./module/helpers/refs";
+import {
+  mech_loadout,
+  mech_system_refview,
+  mech_weapon_refview,
+  pilot_slot,
+} from "./module/helpers/mech_loadout";
 import { LancerNPCSheet } from "./module/actor/npc-sheet";
 import { bonus_list_display } from "./module/helpers/bonuses";
 import { action_list_display } from "./module/helpers/actions";
 import { NativeDrop, resolve_native_drop } from "./module/helpers/dragdrop";
 import { funcs } from "machine-mind";
-import { pilot_armor_slot, pilot_weapon_refview, pilot_gear_refview, pilot_talent_refview } from "./module/helpers/pilot_loadout";
+import {
+  pilot_armor_slot,
+  pilot_weapon_refview,
+  pilot_gear_refview,
+  pilot_talent_refview,
+} from "./module/helpers/pilot_loadout";
 import { heat_display } from "./module/helpers/statuses";
 import { deployable_list_display } from "./module/helpers/deploy";
 
@@ -169,7 +195,7 @@ Hooks.once("init", async function () {
       EntryType.WEAPON_MOD,
       EntryType.NPC_FEATURE,
       EntryType.MANUFACTURER,
-      EntryType.QUIRK
+      EntryType.QUIRK,
     ],
     makeDefault: true,
   });
@@ -200,12 +226,12 @@ Hooks.once("init", async function () {
 
   // rp, to resolve path values strs. Helps use effectively half as many arguments for many helpers/partials
   // Using this, {{{rp path}}} {{path}} would show the value at path, and path, respectively. No need to pass both!
-  Handlebars.registerHelper("rp", function(path: string, helper: HelperData) {
+  Handlebars.registerHelper("rp", function (path: string, helper: HelperData) {
     return resolve_helper_dotpath(helper, path);
   });
 
   // get-set, to resolve situations wherein we read and write to the same path via "value" and "name" element properties
-  Handlebars.registerHelper("getset", function(path: string, helper: HelperData) {
+  Handlebars.registerHelper("getset", function (path: string, helper: HelperData) {
     let value = resolve_helper_dotpath(helper, path);
     return ` name="${path}" value="${value}" `;
   });
@@ -282,7 +308,6 @@ Hooks.once("init", async function () {
     return accum;
   });
 
-
   // ------------------------------------------------------------------------
   // Generic components
   Handlebars.registerHelper("l-num-input", clicker_num_input);
@@ -300,7 +325,6 @@ Hooks.once("init", async function () {
   Handlebars.registerHelper("textarea-card", large_textbox_card);
   Handlebars.registerHelper("popout-editor-button", popout_editor_button);
 
-
   // ------------------------------------------------------------------------
   // Stat helpers
   Handlebars.registerHelper("compact-stat-edit", compact_stat_edit);
@@ -314,8 +338,8 @@ Hooks.once("init", async function () {
   Handlebars.registerHelper("std-num-input", std_num_input);
   Handlebars.registerHelper("std-checkbox", std_checkbox);
   Handlebars.registerHelper("crit-class", (roll_base: number, roll_total: number) => {
-    if(roll_total >= 20) {
-      if(roll_base == 20) {
+    if (roll_total >= 20) {
+      if (roll_base == 20) {
         return " crit nat-20 ";
       } else {
         return " crit ";
@@ -324,7 +348,7 @@ Hooks.once("init", async function () {
       return "";
     }
   });
-  
+
   // Condition-type stuff
   Handlebars.registerHelper("heat", heat_display);
 
@@ -404,14 +428,16 @@ Hooks.once("init", async function () {
 /* When ready                           */
 /* ------------------------------------ */
 // Make an awaitable for when this shit is done
-export const system_ready: Promise<void> = new Promise((success) => {
+export const system_ready: Promise<void> = new Promise(success => {
   Hooks.once("ready", async function () {
     // Determine whether a system migration is required and feasible
     const currentVersion = game.settings.get(LANCER.sys_name, LANCER.setting_migration);
     // Modify these constants to set which Lancer version numbers need and permit migration.
     const NEEDS_MIGRATION_VERSION = "0.1.7";
     const COMPATIBLE_MIGRATION_VERSION = "0.1.6";
-    let needMigration = currentVersion ? compareVersions(currentVersion, NEEDS_MIGRATION_VERSION) : 1;
+    let needMigration = currentVersion
+      ? compareVersions(currentVersion, NEEDS_MIGRATION_VERSION)
+      : 1;
 
     // Check whether system has been updated since last run.
     if (compareVersions(currentVersion, game.system.data.version) != 0 && game.user.isGM) {
@@ -497,7 +523,7 @@ Hooks.on("renderChatMessage", async (cm: ChatMessage, html: JQuery<HTMLElement>,
   }
 
   // now do gm only stuff
-  if(game.user.isGM) {
+  if (game.user.isGM) {
     let gm_zones = html.find(".gm-only");
     gm_zones.removeClass("gm-only");
     HANDLER_activate_native_ref_dragging(gm_zones);
@@ -507,21 +533,21 @@ Hooks.on("renderChatMessage", async (cm: ChatMessage, html: JQuery<HTMLElement>,
 Hooks.on("hotbarDrop", async (_bar: any, data: macros.DraggedMacro, slot: number) => {
   let macro: macros.AnyMacroCtx = data.macro;
   console.log(`${lp} Data dropped on hotbar:`, data);
-  if(data.shibboleth != "yep") {
+  if (data.shibboleth != "yep") {
     // Ah shoot - it's a world item, probably. Coerce into an item macro
-    let messy_drop = (data as unknown as NativeDrop)!;
+    let messy_drop = ((data as unknown) as NativeDrop)!;
 
     // Attempt to resolve it
     let resolved = await resolve_native_drop(messy_drop);
 
     // No dice
-    if(!resolved) {
+    if (!resolved) {
       console.error("Couldn't make macro for data: ", data);
       return;
     }
 
     // Ok, we can make this.
-    if(resolved.type == "Item" && resolved.entity.isOwned) {
+    if (resolved.type == "Item" && resolved.entity.isOwned) {
       let as_mm = await resolved.entity.data.data.derived.mmec_promise;
       let ala = resolved.entity.actor as AnyLancerActor;
       let actor_as_mm = await ala.data.data.derived.mmec_promise;
@@ -530,9 +556,9 @@ Hooks.on("hotbarDrop", async (_bar: any, data: macros.DraggedMacro, slot: number
         type: "generic_item",
         icon: TypeIcon(as_mm.ent.Type),
         item: as_mm.ent.as_ref(),
-        actor: actor_as_mm.ent.as_ref()
-      }
-      macro = new_macro
+        actor: actor_as_mm.ent.as_ref(),
+      };
+      macro = new_macro;
     } else {
       // No idea what do do here - it's an actor or something weird, lol. Just ignore
       return;
@@ -546,7 +572,7 @@ Hooks.on("hotbarDrop", async (_bar: any, data: macros.DraggedMacro, slot: number
   // Attempt to not reproduce the exact same macro
   // @ts-ignore
   // let macro = game.macros.entities.find(
-    // (m: Macro) => m.name === title && (m.data as any).command === command
+  // (m: Macro) => m.name === title && (m.data as any).command === command
   // );
   // if (!macro) {
   Macro.create(
@@ -559,15 +585,15 @@ Hooks.on("hotbarDrop", async (_bar: any, data: macros.DraggedMacro, slot: number
     { displaySheet: false }
   ).then(macro => game.user.assignHotbarMacro(macro as Macro, slot));
   // }  else {
-   //  game.user.assignHotbarMacro(macro, slot).then();
+  //  game.user.assignHotbarMacro(macro, slot).then();
   // }
 });
 
 // Make derived fields properly update their intended origin target
 Hooks.on("modifyTokenAttribute", (_: any, data: any) => {
-  for(let key of Object.keys(data)) {
+  for (let key of Object.keys(data)) {
     // If starts with "data.derived", replace with just "data"
-    if(key.includes("data.derived.")) {
+    if (key.includes("data.derived.")) {
       // Cut the .derived, and also remove any trailing .value to resolve pseudo-bars
       let new_key = key.replace(/^data\.derived\./, "data.");
       new_key = new_key.replace(/\.value$/, "");
@@ -576,4 +602,4 @@ Hooks.on("modifyTokenAttribute", (_: any, data: any) => {
       console.log(`Overrode assignment from ${key} to ${new_key}`);
     }
   }
-})
+});

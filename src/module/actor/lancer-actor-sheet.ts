@@ -1,8 +1,22 @@
 import { LANCER } from "../config";
 import { CollapseHandler, HANDLER_activate_collapsibles } from "../helpers/collapse";
-import { HANDLER_activate_general_controls,  gentle_merge, HANDLER_activate_popout_text_editor, HANDLER_intercept_form_changes } from "../helpers/commons";
-import { enable_native_dropping_mm_wrap, ResolvedNativeDrop, resolve_native_drop } from "../helpers/dragdrop";
-import { HANDLER_activate_ref_dragging, HANDLER_activate_ref_drop_clearing, HANDLER_activate_ref_drop_setting, HANDLER_activate_click_open_ref as HANDLER_activate_ref_clicking } from "../helpers/refs";
+import {
+  HANDLER_activate_general_controls,
+  gentle_merge,
+  HANDLER_activate_popout_text_editor,
+  HANDLER_intercept_form_changes,
+} from "../helpers/commons";
+import {
+  enable_native_dropping_mm_wrap,
+  ResolvedNativeDrop,
+  resolve_native_drop,
+} from "../helpers/dragdrop";
+import {
+  HANDLER_activate_ref_dragging,
+  HANDLER_activate_ref_drop_clearing,
+  HANDLER_activate_ref_drop_setting,
+  HANDLER_activate_click_open_ref as HANDLER_activate_ref_clicking,
+} from "../helpers/refs";
 import { LancerActorSheetData } from "../interfaces";
 import { HANDLER_activate_macros } from "../macros";
 import { LancerActor, LancerActorType } from "./lancer-actor";
@@ -92,7 +106,7 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
       async (item, dest, evt) => {
         // We trust that our outer handlers did all data validation.
         let path = dest[0].dataset.path!;
-        if(path) {
+        if (path) {
           let data = await this.getDataLazy();
           gentle_merge(data, { [path]: item.ent });
           await this._commitCurrMM();
@@ -101,7 +115,6 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
       [] // We only accept if data-type set
     );
   }
-
 
   /**
    * Converts the data from a DragEvent event into an Item (or actor/journal/whatever) to add to the Actor.
@@ -161,7 +174,7 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
     }
 
     // Numeric selects are annoying
-    if("npctier" in formData) {
+    if ("npctier" in formData) {
       formData["mm.ent.Tier"] = Number.parseInt(formData["npctier"]) || 1;
     }
 
@@ -185,8 +198,8 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
     // Do a separate update depending on mm data
     if (need_top_update) {
       let top_update = {} as any;
-      for(let key of Object.keys(formData)) {
-        if(!key.includes("mm.ent")) {
+      for (let key of Object.keys(formData)) {
+        if (!key.includes("mm.ent")) {
           top_update[key] = formData[key];
         }
       }
@@ -206,7 +219,7 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
    */
   // @ts-ignore Foundry-pc-types does not properly acknowledge that sheet `getData` functions can be/are asynchronous
   async getData(): Promise<LancerActorSheetData<T>> {
-    const data = (await super.getData()) as unknown as LancerActorSheetData<T>; // Not fully populated yet!
+    const data = ((await super.getData()) as unknown) as LancerActorSheetData<T>; // Not fully populated yet!
 
     // Drag up the mm context (when ready) to a top level entry in the sheet data
     data.mm = await (this.actor.data as LancerActor<T>["data"]).data.derived.mmec_promise;
@@ -227,10 +240,10 @@ export class LancerActorSheet<T extends LancerActorType> extends ActorSheet {
     console.log("Committing ", this._currData);
     let cd = this._currData;
     this._currData = null;
-    await cd?.mm.ent.writeback() ?? null;
+    (await cd?.mm.ent.writeback()) ?? null;
 
     // Compendium entries don't re-draw appropriately
-    if(this.actor.compendium) {
+    if (this.actor.compendium) {
       this.render();
     }
   }

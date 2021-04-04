@@ -1,7 +1,26 @@
 import { LANCER, TypeIcon } from "../config";
-import { EntryType, License, LiveEntryTypes, MechSystem, MechWeapon, NpcFeatureType, OpCtx, PilotArmor, PilotGear, PilotWeapon, RegRef, WeaponMod } from "machine-mind";
+import {
+  EntryType,
+  License,
+  LiveEntryTypes,
+  MechSystem,
+  MechWeapon,
+  NpcFeatureType,
+  OpCtx,
+  PilotArmor,
+  PilotGear,
+  PilotWeapon,
+  RegRef,
+  WeaponMod,
+} from "machine-mind";
 import { FoundryRegActorData, FoundryRegItemData } from "../mm-util/foundry-reg";
-import { AnyMMActor, LancerActor, LancerActorType, LancerMech, LancerPilot } from "../actor/lancer-actor";
+import {
+  AnyMMActor,
+  LancerActor,
+  LancerActorType,
+  LancerMech,
+  LancerPilot,
+} from "../actor/lancer-actor";
 import { system_ready } from "../../lancer";
 import { find_license_for, MMEntityContext, mm_wrap_item } from "../mm-util/helpers";
 
@@ -40,8 +59,8 @@ export class LancerItem<T extends LancerItemType> extends Item {
     data: {
       // Include additional derived info
       derived: {
-        license: RegRef<EntryType.LICENSE> | null, // The license granting this item, if one could be found
-        max_uses: number // The max uses, augmented to also include any actor bonuses
+        license: RegRef<EntryType.LICENSE> | null; // The license granting this item, if one could be found
+        max_uses: number; // The max uses, augmented to also include any actor bonuses
       };
     };
   };
@@ -69,8 +88,8 @@ export class LancerItem<T extends LancerItemType> extends Item {
         license: null,
         max_uses: 0,
         mmec: null as any, // We will set this shortly
-        mmec_promise: null as any // We will set this shortly
-      }
+        mmec_promise: null as any, // We will set this shortly
+      };
 
       // We set it normally.
       this.data.data.derived = dr;
@@ -84,65 +103,63 @@ export class LancerItem<T extends LancerItemType> extends Item {
 
     // Spool up our Machine Mind wrapping process
     let mmec_promise = system_ready
-        .then(() => mm_wrap_item(this, actor_ctx))
-        .then(async mmec => {
-          // Always save the context
-          // Save the context via defineProperty so it does not show up in JSON stringifies. Also, no point in having it writeable
-          Object.defineProperty(dr, "mmec", {
-            value: mmec,
-            configurable: true,
-            enumerable: false
-          });
-
-          // Additionally we would like to find a matching license. Re-use ctx, try both a world and global reg, actor as well if it exists
-          let found_license: RegRef<EntryType.LICENSE> | null;
-          if(this.actor?.data.type == EntryType.PILOT || this.actor?.data.type == EntryType.MECH) {
-             found_license = await find_license_for(mmec, this.actor! as LancerMech | LancerPilot);
-           } else {
-             found_license = await find_license_for(mmec);
-           }
-
-          // Store the found license
-          dr.license = found_license;
-
-          // Also, compute max uses if needed
-          let base_limit = (mmec.ent as any).BaseLimit;
-          if(base_limit)  {
-            dr.max_uses = base_limit; // A decent baseline - start with the limited tag
-
-            // If we have an actor, then try to get limited bonuses
-            if(this.actor) {
-              let actor_mmec: MMEntityContext<LancerActorType> = await this.actor.data.data.derived.mmec_promise;
-              if(actor_mmec.ent.Type == EntryType.MECH || actor_mmec.ent.Type == EntryType.PILOT) {
-                // Add pilot/mech lim bonus
-                dr.max_uses += actor_mmec.ent.LimitedBonus;
-              }
-            }
-          }
-
-          return mmec;
+      .then(() => mm_wrap_item(this, actor_ctx))
+      .then(async mmec => {
+        // Always save the context
+        // Save the context via defineProperty so it does not show up in JSON stringifies. Also, no point in having it writeable
+        Object.defineProperty(dr, "mmec", {
+          value: mmec,
+          configurable: true,
+          enumerable: false,
         });
 
-      // Also assign the promise via defineProperty, similarly to prevent enumerability
-      Object.defineProperty(dr, "mmec_promise", {
-        value: mmec_promise,
-        configurable: true,
-        enumerable: false
-      });
-    }
-  
+        // Additionally we would like to find a matching license. Re-use ctx, try both a world and global reg, actor as well if it exists
+        let found_license: RegRef<EntryType.LICENSE> | null;
+        if (this.actor?.data.type == EntryType.PILOT || this.actor?.data.type == EntryType.MECH) {
+          found_license = await find_license_for(mmec, this.actor! as LancerMech | LancerPilot);
+        } else {
+          found_license = await find_license_for(mmec);
+        }
 
-  /** @override 
+        // Store the found license
+        dr.license = found_license;
+
+        // Also, compute max uses if needed
+        let base_limit = (mmec.ent as any).BaseLimit;
+        if (base_limit) {
+          dr.max_uses = base_limit; // A decent baseline - start with the limited tag
+
+          // If we have an actor, then try to get limited bonuses
+          if (this.actor) {
+            let actor_mmec: MMEntityContext<LancerActorType> = await this.actor.data.data.derived
+              .mmec_promise;
+            if (actor_mmec.ent.Type == EntryType.MECH || actor_mmec.ent.Type == EntryType.PILOT) {
+              // Add pilot/mech lim bonus
+              dr.max_uses += actor_mmec.ent.LimitedBonus;
+            }
+          }
+        }
+
+        return mmec;
+      });
+
+    // Also assign the promise via defineProperty, similarly to prevent enumerability
+    Object.defineProperty(dr, "mmec_promise", {
+      value: mmec_promise,
+      configurable: true,
+      enumerable: false,
+    });
+  }
+
+  /** @override
    * Want to destroy derived data before passing it to an update
-  */
-  async update(data: any, options={}) {
-    if(data?.data?.derived) {
+   */
+  async update(data: any, options = {}) {
+    if (data?.data?.derived) {
       delete data.data.derived;
     }
     return super.update(data, options);
   }
-
-
 
   // ============================================================
   //          WEAPONS
@@ -339,7 +356,8 @@ export type LancerWeaponMod = LancerItem<EntryType.WEAPON_MOD>;
 export type AnyLancerItem = LancerItem<LancerItemType>;
 export type AnyMMItem = LiveEntryTypes<LancerItemType>;
 
-export type LancerItemType =  EntryType.CORE_BONUS
+export type LancerItemType =
+  | EntryType.CORE_BONUS
   | EntryType.FACTION
   | EntryType.FRAME
   | EntryType.LICENSE
@@ -391,11 +409,21 @@ export function is_item_type(type: LancerActorType | LancerItemType): type is La
   return LancerItemTypes.includes(type as LancerActorType);
 }
 
-export function has_uses(item: AnyMMItem): item is PilotArmor | PilotWeapon | PilotGear | MechSystem | MechWeapon | WeaponMod {
-  return item.Type == EntryType.PILOT_ARMOR || item.Type == EntryType.PILOT_GEAR || item.Type == EntryType.PILOT_WEAPON || item.Type == EntryType.MECH_SYSTEM || item.Type == EntryType.MECH_WEAPON || item.Type == EntryType.WEAPON_MOD;
+export function has_uses(
+  item: AnyMMItem
+): item is PilotArmor | PilotWeapon | PilotGear | MechSystem | MechWeapon | WeaponMod {
+  return (
+    item.Type == EntryType.PILOT_ARMOR ||
+    item.Type == EntryType.PILOT_GEAR ||
+    item.Type == EntryType.PILOT_WEAPON ||
+    item.Type == EntryType.MECH_SYSTEM ||
+    item.Type == EntryType.MECH_WEAPON ||
+    item.Type == EntryType.WEAPON_MOD
+  );
 }
 
-export function has_mmid<T extends AnyMMItem | AnyMMActor>(item: AnyMMItem | AnyMMActor): item is T & {ID: string} {
+export function has_mmid<T extends AnyMMItem | AnyMMActor>(
+  item: AnyMMItem | AnyMMActor
+): item is T & { ID: string } {
   return (item as any).ID != undefined;
 }
-

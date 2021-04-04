@@ -1,6 +1,17 @@
 import { LANCER } from "../config";
 import { LancerActorSheet } from "./lancer-actor-sheet";
-import { EntryType, funcs, MechWeapon, MountType, OpCtx, RegRef, SystemMount, WeaponMount, WeaponSlot, quick_relinker } from "machine-mind";
+import {
+  EntryType,
+  funcs,
+  MechWeapon,
+  MountType,
+  OpCtx,
+  RegRef,
+  SystemMount,
+  WeaponMount,
+  WeaponSlot,
+  quick_relinker,
+} from "machine-mind";
 import { MMEntityContext, mm_wrap_item } from "../mm-util/helpers";
 import { ResolvedNativeDrop } from "../helpers/dragdrop";
 import { resolve_dotpath } from "../helpers/commons";
@@ -47,7 +58,7 @@ export class LancerMechSheet extends LancerActorSheet<EntryType.MECH> {
   async _onDrop(event: any): Promise<any> {
     let drop: ResolvedNativeDrop | null = await super._onDrop(event);
     if (drop?.type != "Item") {
-      return null; // Bail. 
+      return null; // Bail.
     }
 
     // Prep data
@@ -69,9 +80,12 @@ export class LancerMechSheet extends LancerActorSheet<EntryType.MECH> {
     let new_ctx = new OpCtx();
     let new_live_item = await item_mm.ent.insinuate(this_mm.reg, new_ctx, {
       relinker: quick_relinker<any>({
-        key_pairs: [["ID", "id"], ["Name", "name"]],
-        blacklist: [item_mm.ent.OrigData.id] // If they dragged in the item, they probably don't want to relink it. Everything else is fair game
-      })
+        key_pairs: [
+          ["ID", "id"],
+          ["Name", "name"],
+        ],
+        blacklist: [item_mm.ent.OrigData.id], // If they dragged in the item, they probably don't want to relink it. Everything else is fair game
+      }),
     });
 
     // Update this, to re-populate arrays etc to reflect new item
@@ -97,10 +111,10 @@ export class LancerMechSheet extends LancerActorSheet<EntryType.MECH> {
 
     // Always return the item if we haven't failed for some reason
     return item;
-  }  
-  
+  }
+
   /**
-   * Handles actions in the overcharge panel 
+   * Handles actions in the overcharge panel
    */
   _activateOverchargeControls(html: any) {
     let button = html.find(".overcharge-button");
@@ -115,7 +129,7 @@ export class LancerMechSheet extends LancerActorSheet<EntryType.MECH> {
   }
 
   /**
-   * Handles more niche controls in the loadout in the overcharge panel 
+   * Handles more niche controls in the loadout in the overcharge panel
    */
   _activateLoadoutControls(html: any) {
     html.find(".reset-weapon-mount-button").on("click", async (evt: JQuery.ClickEvent) => {
@@ -129,16 +143,15 @@ export class LancerMechSheet extends LancerActorSheet<EntryType.MECH> {
     html.find(".reset-system-mount-button").on("click", async (evt: JQuery.ClickEvent) => {
       this._event_handler("reset-sys", evt);
     });
-
   }
 
   // Allows user to change mount size via right click ctx
   _activateMountContextMenus(html: any) {
     let mount_options: any[] = [];
-    for(let mount_type of Object.values(MountType)) {
+    for (let mount_type of Object.values(MountType)) {
       mount_options.push({
         name: mount_type,
-        icon: '',
+        icon: "",
         // condition: game.user.isGM,
         callback: async (html: JQuery) => {
           let cd = await this.getDataLazy();
@@ -146,64 +159,76 @@ export class LancerMechSheet extends LancerActorSheet<EntryType.MECH> {
 
           // Get the current mount
           let mount: WeaponMount = resolve_dotpath(cd, mount_path);
-          if(!mount) {
+          if (!mount) {
             console.error("Bad mountpath:", mount_path);
           }
 
-          // Edit it. 
+          // Edit it.
           let old_weapons = mount.Slots.map(s => s.Weapon).filter(w => w) as MechWeapon[];
 
           // Sort biggest to smallest
-          old_weapons.sort((a, b) => funcs.weapon_size_magnitude(b.Size) - funcs.weapon_size_magnitude(a.Size));
+          old_weapons.sort(
+            (a, b) => funcs.weapon_size_magnitude(b.Size) - funcs.weapon_size_magnitude(a.Size)
+          );
 
           // Change the weapon mount and clear it
           mount.MountType = mount_type;
           mount.reset();
 
           // Try re-adding all weapons, biggest to smallest
-          for(let wep of old_weapons) {
+          for (let wep of old_weapons) {
             mount.try_add_weapon(wep);
           }
 
           // Write back
           await this._commitCurrMM();
-        }
+        },
       });
     }
 
     new ContextMenu(html, ".mount-type-ctx-root", mount_options);
   }
 
-
-
   // Save ourselves repeat work by handling most events clicks actual operations here
-  async _event_handler(mode: "reset-wep" | "reset-all-weapon-mounts" | "reset-sys" | "overcharge" | "overcharge-rollback", evt: JQuery.ClickEvent) {
+  async _event_handler(
+    mode:
+      | "reset-wep"
+      | "reset-all-weapon-mounts"
+      | "reset-sys"
+      | "overcharge"
+      | "overcharge-rollback",
+    evt: JQuery.ClickEvent
+  ) {
     evt.stopPropagation();
     let data = await this.getDataLazy();
     let ent = data.mm.ent;
     let path = evt.currentTarget?.dataset?.path;
 
-    switch(mode) {
+    switch (mode) {
       case "reset-all-weapon-mounts":
         await ent.Loadout.reset_weapon_mounts();
         break;
       case "reset-sys":
-        if(!path) return;
+        if (!path) return;
         let sys_mount = resolve_dotpath(data, path) as SystemMount;
         sys_mount.System = null;
         break;
       case "reset-wep":
-        if(!path) return;
+        if (!path) return;
         let wep_mount = resolve_dotpath(data, path) as WeaponMount;
         wep_mount?.reset();
         break;
       case "overcharge-rollback":
-        ent.CurrentOvercharge = funcs.bound_int(ent.CurrentOvercharge - 1, 0, OVERCHARGE_SEQUENCE.length - 1);
+        ent.CurrentOvercharge = funcs.bound_int(
+          ent.CurrentOvercharge - 1,
+          0,
+          OVERCHARGE_SEQUENCE.length - 1
+        );
         break;
       default:
         return; // no-op
     }
 
     await this._commitCurrMM();
-  };
+  }
 }

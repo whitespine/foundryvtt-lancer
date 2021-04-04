@@ -1,20 +1,44 @@
-import { EntryType, Mech, MechLoadout, SystemMount, Pilot, Frame, Damage, DamageType, FittingSize, MechWeapon, WeaponMount, Range, MechSystem, funcs  } from "machine-mind";
+import {
+  EntryType,
+  Mech,
+  MechLoadout,
+  SystemMount,
+  Pilot,
+  Frame,
+  Damage,
+  DamageType,
+  FittingSize,
+  MechWeapon,
+  WeaponMount,
+  Range,
+  MechSystem,
+  funcs,
+} from "machine-mind";
 import { AnyMMActor } from "../actor/lancer-actor";
 import { TypeIcon } from "../config";
-import { WeaponMacroCtx, macro_elt_params, ActionMacroCtx, ItemMacroCtx, FrameMacroCtx } from "../macros";
+import {
+  WeaponMacroCtx,
+  macro_elt_params,
+  ActionMacroCtx,
+  ItemMacroCtx,
+  FrameMacroCtx,
+} from "../macros";
 import { action_list_display } from "./actions";
-import { effect_box, ext_helper_hash, HelperData, icon_class_to_path, inc_if, resolve_helper_dotpath } from "./commons";
+import {
+  effect_box,
+  ext_helper_hash,
+  HelperData,
+  icon_class_to_path,
+  inc_if,
+  resolve_helper_dotpath,
+} from "./commons";
 import { deployable_list_display } from "./deploy";
 import { show_damage_array, show_range_array, uses_control } from "./item";
 import { ref_commons, ref_params, simple_mm_ref } from "./refs";
 import { compact_tag_list } from "./tags";
 
 // A drag-drop slot for a system mount. TODO: delete button, clear button
-function system_mount(
-  mech_path: string,
-  mount_path: string,
-  helper: HelperData
-): string {
+function system_mount(mech_path: string, mount_path: string, helper: HelperData): string {
   let slot = mech_system_refview(`${mount_path}.System`, mech_path, helper);
 
   return ` 
@@ -30,15 +54,17 @@ function system_mount(
     </div>`;
 }
 
-// A drag-drop slot for a weapon mount. 
-function weapon_mount(
-  mech_path: string,
-  mount_path: string,
-  helper: HelperData
-): string {
-  let mount = resolve_helper_dotpath(helper, mount_path) as WeaponMount
+// A drag-drop slot for a weapon mount.
+function weapon_mount(mech_path: string, mount_path: string, helper: HelperData): string {
+  let mount = resolve_helper_dotpath(helper, mount_path) as WeaponMount;
   // let mech = resolve_helper_dotpath(helper, mech_path, EntryType.MECH);
-  let slots = mount.Slots.map((slot, index) => mech_weapon_refview(`${mount_path}.Slots.${index}.Weapon`, mech_path, ext_helper_hash(helper, {size: slot.Size})));
+  let slots = mount.Slots.map((slot, index) =>
+    mech_weapon_refview(
+      `${mount_path}.Slots.${index}.Weapon`,
+      mech_path,
+      ext_helper_hash(helper, { size: slot.Size })
+    )
+  );
   let err = mount.validate() ?? "";
 
   return ` 
@@ -48,9 +74,11 @@ function weapon_mount(
         <a class="gen-control fas fa-trash" data-action="splice" data-path="${mount_path}"></a>
         <a class="reset-weapon-mount-button fas fa-redo" data-path="${mount_path}"></a>
       </div>
-      ${inc_if(`
-        <span class="lancer-header error">${err.toUpperCase()}</span>`, 
-        err)}
+      ${inc_if(
+        `
+        <span class="lancer-header error">${err.toUpperCase()}</span>`,
+        err
+      )}
       <div class="lancer-body">
         ${slots.join("")}
       </div>
@@ -60,7 +88,9 @@ function weapon_mount(
 // Helper to display all weapon mounts on a mech loadout
 function all_weapon_mount_view(mech_path: string, loadout_path: string, helper: HelperData) {
   let loadout = resolve_helper_dotpath(helper, loadout_path) as MechLoadout;
-  const weapon_mounts = loadout.WepMounts.map((wep, index) => weapon_mount(mech_path, `${loadout_path}.WepMounts.${index}`, helper));
+  const weapon_mounts = loadout.WepMounts.map((wep, index) =>
+    weapon_mount(mech_path, `${loadout_path}.WepMounts.${index}`, helper)
+  );
 
   return `
     <span class="lancer-header loadout-category submajor">
@@ -77,7 +107,9 @@ function all_weapon_mount_view(mech_path: string, loadout_path: string, helper: 
 // Helper to display all system mounts on a mech loadout
 function all_system_mount_view(mech_path: string, loadout_path: string, helper: HelperData) {
   let loadout = resolve_helper_dotpath(helper, loadout_path) as MechLoadout;
-  const system_slots = loadout.SysMounts.map((sys, index) => system_mount(mech_path, `${loadout_path}.SysMounts.${index}`, helper));
+  const system_slots = loadout.SysMounts.map((sys, index) =>
+    system_mount(mech_path, `${loadout_path}.SysMounts.${index}`, helper)
+  );
 
   return `
     <span class="lancer-header loadout-category submajor">
@@ -99,7 +131,9 @@ function all_system_mount_view(mech_path: string, loadout_path: string, helper: 
  */
 export function mech_loadout(mech_path: string, helper: HelperData): string {
   const mech: Mech = resolve_helper_dotpath(helper, mech_path);
-  if(!mech) {return "err";}
+  if (!mech) {
+    return "err";
+  }
   const loadout_path = `${mech_path}.Loadout`;
 
   return `
@@ -114,16 +148,20 @@ export function mech_loadout(mech_path: string, helper: HelperData): string {
 export function pilot_slot(data_path: string, helper: HelperData): string {
   // get the existing
   let existing = resolve_helper_dotpath<Pilot | null>(helper, data_path, null);
-  return simple_mm_ref(EntryType.PILOT, existing, ext_helper_hash(helper, {
-    fallback: "No Pilot",
-    "slot-path": data_path, 
-    "native-drop": true
-  }));
+  return simple_mm_ref(
+    EntryType.PILOT,
+    existing,
+    ext_helper_hash(helper, {
+      fallback: "No Pilot",
+      "slot-path": data_path,
+      "native-drop": true,
+    })
+  );
 }
 
 // A drag-drop slot for a frame. TODO: fancify, giving basic stats or something???
 /**
- * Handlebars helper for a frame preview card. Doubles as a slot. 
+ * Handlebars helper for a frame preview card. Doubles as a slot.
  * @argument "macro-actor" If supplied in hash, this MM actor entry will be used as the macro's actor
  */
 export function frame_refview(frame_path: string, helper: HelperData): string {
@@ -159,18 +197,18 @@ export function frame_refview(frame_path: string, helper: HelperData): string {
 
   // Generate traits
   let traits: string[] = [];
-  for(let i=0; i<frame.Traits.length; i++) {
+  for (let i = 0; i < frame.Traits.length; i++) {
     let trait = frame.Traits[i];
     let macro = "";
 
     // Gen macro if possible
-    if(helper.hash["macro-actor"]) {
+    if (helper.hash["macro-actor"]) {
       let macro_ctx: FrameMacroCtx = {
         actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref(),
         name: trait.Name,
         type: "frame",
         subtype: "trait",
-        trait_index: i
+        trait_index: i,
       };
       macro = `<a class="lancer-macro i--sm mdi mdi-message" ${macro_elt_params(macro_ctx)}></a>`;
     }
@@ -186,15 +224,15 @@ export function frame_refview(frame_path: string, helper: HelperData): string {
   // Generate core details
   let cs = frame.CoreSystem;
   let core_passive = ``;
-  if(cs.PassiveEffect.trim()) {
+  if (cs.PassiveEffect.trim()) {
     let macro = "";
-    if(helper.hash["macro-actor"]) {
+    if (helper.hash["macro-actor"]) {
       let macro_ctx: FrameMacroCtx = {
         name: cs.PassiveName,
         subtype: "passive",
         type: "frame",
         actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref(),
-        icon: icon_class_to_path("corebonus")
+        icon: icon_class_to_path("corebonus"),
       };
       macro = `<a class="lancer-macro i--sm cci cci-corebonus" ${macro_elt_params(macro_ctx)}></a>`;
     }
@@ -205,18 +243,17 @@ export function frame_refview(frame_path: string, helper: HelperData): string {
         ${macro}
       </div>`;
   }
-  
-  
+
   let core_active = ``;
-  if(cs.ActiveName.trim()) {
+  if (cs.ActiveName.trim()) {
     let macro = "";
-    if(helper.hash["macro-actor"]) {
+    if (helper.hash["macro-actor"]) {
       let macro_ctx: FrameMacroCtx = {
         name: cs.ActiveName,
         subtype: "active",
         type: "frame",
         actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref(),
-        icon: icon_class_to_path("corebonus")
+        icon: icon_class_to_path("corebonus"),
       };
       macro = `<a class="lancer-macro i--sm cci cci-corebonus" ${macro_elt_params(macro_ctx)}></a>`;
     }
@@ -227,7 +264,6 @@ export function frame_refview(frame_path: string, helper: HelperData): string {
         ${macro}
       </div>`;
   }
-
 
   return `
     <div class="${EntryType.FRAME} ref drop-settable card">
@@ -251,7 +287,11 @@ export function frame_refview(frame_path: string, helper: HelperData): string {
  * Handlebars helper for a mech weapon preview card. Doubles as a slot. Mech path needed for bonuses
  * @argument "macro-actor" If supplied in hash, this MM actor entry will be used as the macro's actor
  */
-export function mech_weapon_refview(weapon_path: string, mech_path: string, helper: HelperData): string { 
+export function mech_weapon_refview(
+  weapon_path: string,
+  mech_path: string,
+  helper: HelperData
+): string {
   // Fetch the item(s)
   let weapon_: MechWeapon | null = resolve_helper_dotpath(helper, weapon_path);
   let mech_: Mech | null = resolve_helper_dotpath(helper, mech_path);
@@ -275,7 +315,7 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string, help
 
   // Assert not null
   let weapon = weapon_!;
-  helper = ext_helper_hash(helper, {"override": weapon_path});
+  helper = ext_helper_hash(helper, { override: weapon_path });
 
   // What profile are we using?
   let profile = weapon.SelectedProfile;
@@ -283,17 +323,17 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string, help
 
   // Augment ranges
   let ranges = profile.BaseRange;
-  if(mech_) {
+  if (mech_) {
     ranges = Range.calc_range_with_bonuses(weapon, profile, mech_);
   }
 
   // Augment damages
   let damages = profile.BaseDamage;
-  if(mech_) {
+  if (mech_) {
     let dmg_bonuses = mech_.AllBonuses.filter(b => b.ID == "damage");
     dmg_bonuses = dmg_bonuses.filter(d => {
-      for(let r of ranges) {
-        if(d.applies_to_weapon(weapon, profile, r)) {
+      for (let r of ranges) {
+        if (d.applies_to_weapon(weapon, profile, r)) {
           return true;
         }
       }
@@ -301,18 +341,20 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string, help
     });
 
     // We don't know the types, just fix as variable
-    for(let b of dmg_bonuses) {
-      damages.push(new Damage({
-        type: DamageType.Variable,
-        val: b.Value
-      }));
+    for (let b of dmg_bonuses) {
+      damages.push(
+        new Damage({
+          type: DamageType.Variable,
+          val: b.Value,
+        })
+      );
     }
   }
 
   // Generate loading segment as needed
   let loading = "";
-  if(weapon.IsLoading) {
-    let loading_icon = `i--m mdi mdi-hexagon-${weapon.Loaded ? 'slice-6' : 'outline'}`;
+  if (weapon.IsLoading) {
+    let loading_icon = `i--m mdi mdi-hexagon-${weapon.Loaded ? "slice-6" : "outline"}`;
     loading = `<span> 
                 LOADED: 
                 <a class="gen-control ${loading_icon}" data-action="set" data-action-value="(bool)${!weapon.Loaded}" data-path="${weapon_path}.Loaded" data-commit-item="${weapon_path}"></a>
@@ -322,24 +364,23 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string, help
   // Generate limited segment as needed
   let uses = "";
   let max_uses = funcs.tag_util.limited_max(weapon);
-  if(max_uses) {
+  if (max_uses) {
     let lb = mech_?.LimitedBonus ?? 0;
     uses = uses_control(`${weapon_path}.Uses`, max_uses + lb, helper);
   }
 
   // Make a macro, maybe
   let macro = "";
-  if(helper.hash["macro-actor"]) {
+  if (helper.hash["macro-actor"]) {
     let macro_ctx: WeaponMacroCtx = {
       name: weapon.Name,
       type: "weapon",
       item: weapon.as_ref(),
-      actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref()
+      actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref(),
       // Should we specify profile? Or just use selected? Opting with the latter for now
-    }
+    };
     macro = `<a class="lancer-macro i--m fas fa-dice-d20" ${macro_elt_params(macro_ctx)}> </a>`;
   }
-
 
   // Generate effects
   let effect = profile.Effect ? effect_box("Effect", profile.Effect, helper) : "";
@@ -354,7 +395,9 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string, help
                 style="max-height: fit-content;">
     <div class="lancer-header">
       <i class="cci cci-weapon i--m"> </i>
-      <span class="minor">${weapon.Name} // ${weapon.Size.toUpperCase()} ${weapon.SelectedProfile.WepType.toUpperCase()}</span>
+      <span class="minor">${
+        weapon.Name
+      } // ${weapon.Size.toUpperCase()} ${weapon.SelectedProfile.WepType.toUpperCase()}</span>
       <a class="gen-control fas fa-trash" data-action="null" data-path="${weapon_path}"></a>
     </div> 
     <div class="lancer-body">
@@ -377,16 +420,20 @@ export function mech_weapon_refview(weapon_path: string, mech_path: string, help
         ${compact_tag_list(profile_path + ".Tags", helper)}
       </div>
     </div>
-  </div>`
-};
+  </div>`;
+}
 
 /**
  * Handlebars helper for a mech system preview card. Doubles as a slot. Mech path needed for bonuses
  * @argument "macro-actor" If supplied in hash, this MM actor entry will be used as the macro's actor
- * 
- * NOTE: Trash can option is assuming this is in a weapon slot. 
+ *
+ * NOTE: Trash can option is assuming this is in a weapon slot.
  */
-export function mech_system_refview(system_path: string, mech_path: string, helper: HelperData): string { 
+export function mech_system_refview(
+  system_path: string,
+  mech_path: string,
+  helper: HelperData
+): string {
   // Fetch the item(s)
   let system_: MechSystem | null = resolve_helper_dotpath(helper, system_path);
   let mech_: Mech | null = resolve_helper_dotpath(helper, mech_path);
@@ -407,32 +454,42 @@ export function mech_system_refview(system_path: string, mech_path: string, help
 
   // Assert not null
   let system = system_!;
-  helper = ext_helper_hash(helper, {"override": system_path});
+  helper = ext_helper_hash(helper, { override: system_path });
 
   // Make a macro, maybe
   let macro = "";
-  if(helper.hash["macro-actor"]) {
+  if (helper.hash["macro-actor"]) {
     let macro_ctx: ItemMacroCtx = {
       name: system.Name,
       type: "generic_item",
       item: system.as_ref(),
-      actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref()
-    }
-    macro = `<a class="lancer-macro" style="max-width: min-content;"  ${macro_elt_params(macro_ctx)}>
+      actor: (helper.hash["macro-actor"] as AnyMMActor).as_ref(),
+    };
+    macro = `<a class="lancer-macro" style="max-width: min-content;"  ${macro_elt_params(
+      macro_ctx
+    )}>
                 <i class="mdi mdi-message i--sm"></i>
               </a>`;
   }
-  
+
   // Generate limited segment as needed
   let uses = "";
   let max_uses = funcs.tag_util.limited_max(system);
-  if(max_uses) {
+  if (max_uses) {
     let lb = mech_?.LimitedBonus ?? 0;
     uses = uses_control(`${system_path}.Uses`, max_uses + lb, helper);
   }
 
-  let actions = action_list_display(system_path, "Actions", ext_helper_hash(helper, {card: false, collapse: false}));
-  let deployables = deployable_list_display(system_path, "Deployables", ext_helper_hash(helper, {card: false, collapse: false}));
+  let actions = action_list_display(
+    system_path,
+    "Actions",
+    ext_helper_hash(helper, { card: false, collapse: false })
+  );
+  let deployables = deployable_list_display(
+    system_path,
+    "Deployables",
+    ext_helper_hash(helper, { card: false, collapse: false })
+  );
 
   return `
   <div class="valid ${EntryType.MECH_SYSTEM} ref drop-settable double-click-ref flexcol clipped-top"
@@ -453,7 +510,5 @@ export function mech_system_refview(system_path: string, mech_path: string, help
       ${inc_if(actions, system.Actions.length)}
       ${inc_if(deployables, system.Deployables.length)}
     </div>
-  </div>`
-};
-
-
+  </div>`;
+}

@@ -57,11 +57,11 @@ const lp = LANCER.log_prefix;
 
 // No matter what, we want these basics
 interface MacroCtx {
-  // If not supplied, default to the current speaker (in most cases this will be the selected token). 
-  // When drag-generated, will by default be specific to the sheet actor, but not to the sheet token. 
+  // If not supplied, default to the current speaker (in most cases this will be the selected token).
+  // When drag-generated, will by default be specific to the sheet actor, but not to the sheet token.
   // If clicked, however, it will be of the sheet token synthetic actor if possible, as we assume in that case maximum specificity is desired
   name: string; // The name the macro itself should have.
-  actor?: RegRef<LancerActorType>; 
+  actor?: RegRef<LancerActorType>;
   type: string;
   icon?: string; // What it should show up as when drawn. Controls both the in-sheet icon and the hotbar appearance
   skip_acc_prompt?: boolean; // Should we disable showing the acc prompt?
@@ -77,7 +77,7 @@ interface MacroRollMods {
 export interface ActionMacroCtx extends MacroCtx, MacroRollMods {
   type: "action";
   item: RegRef<LancerItemType> | null; // Some actions are item-based such as specific skirmishes etc
-  action_path: string; // Path to the action on the item. E.x: "Actions.2". 
+  action_path: string; // Path to the action on the item. E.x: "Actions.2".
   // ^ Also supports any action id's located here. Only check these if no item. https://github.com/massif-press/lancer-data/blob/9117622a10cdf692f5aa0ad2c5a27d12cc7c0011/lib/actions.json
   profile?: number; // The profile index, if applicable
 }
@@ -101,26 +101,26 @@ export interface WeaponMacroCtx extends MacroCtx, MacroRollMods {
 
 export interface ItemMacroCtx extends MacroCtx {
   type: "generic_item";
-  item: RegRef<LancerItemType>; 
+  item: RegRef<LancerItemType>;
 }
 
 // Unique only for the fact that we deduce a rank on it
 export interface SkillMacroCtx extends MacroCtx {
   type: "skill";
-  item: RegRef<EntryType.SKILL>; 
+  item: RegRef<EntryType.SKILL>;
 }
 
 // Rank parameter necessary so we know which to show
 export interface TalentMacroCtx extends MacroCtx {
   type: "talent";
-  item: RegRef<EntryType.TALENT>; 
-  rank: number; 
+  item: RegRef<EntryType.TALENT>;
+  rank: number;
 }
 
 // Just a system (not an action on a system)
 export interface SystemMacroCtx extends MacroCtx {
   type: "system";
-  item: RegRef<EntryType.MECH_SYSTEM>; 
+  item: RegRef<EntryType.MECH_SYSTEM>;
 }
 
 // Just text
@@ -157,8 +157,8 @@ export interface StatMacroCtx extends MacroCtx, MacroRollMods {
 // Pressing the button does not itself creates the deployable. It will create a chat card that the GM can then click to get the deployable
 export interface DeployableMacroCtx extends MacroCtx {
   type: "deployable";
-  item: RegRef<LancerItemType>; 
-  deployable_path: string; // Path to the deployable on the item. E.x: "Deployables.2". 
+  item: RegRef<LancerItemType>;
+  deployable_path: string; // Path to the deployable on the item. E.x: "Deployables.2".
 }
 
 // Necessities for rolling the details for a Frame's systems. Rolls the current frame of the mech, if avaailable
@@ -185,12 +185,11 @@ export type AnyMacroCtx =
   | StatMacroCtx
   | FrameMacroCtx;
 
-// What we prefer to yield on drag. 
+// What we prefer to yield on drag.
 export interface DraggedMacro {
-  shibboleth: "yep",
+  shibboleth: "yep";
   macro: AnyMacroCtx;
 }
-
 
 // Describes a d20 roll
 export interface Lancer20Roll {
@@ -207,29 +206,29 @@ export interface Lancer20Roll {
 export async function prepareMacro(any_macro: AnyMacroCtx) {
   console.log("PREPARING MACRO: ", any_macro);
   // Attempt to use more specific options
-  if(any_macro.type == "action") {
+  if (any_macro.type == "action") {
     return prepareActionMacro(any_macro);
-  } else if(any_macro.type == "frame") {
+  } else if (any_macro.type == "frame") {
     return prepareFrameMacro(any_macro);
-  } else if(any_macro.type == "stat") {
+  } else if (any_macro.type == "stat") {
     return prepareStatMacro(any_macro);
-  } else if(any_macro.type == "tech") {
+  } else if (any_macro.type == "tech") {
     return prepareTechMacro(any_macro);
-  } else if(any_macro.type == "text") {
+  } else if (any_macro.type == "text") {
     return prepareTextMacro(any_macro);
-  } else if(any_macro.type == "weapon") {
+  } else if (any_macro.type == "weapon") {
     return prepareWeaponMacro(any_macro);
-  } else if(any_macro.type == "overcharge") {
+  } else if (any_macro.type == "overcharge") {
     return prepareOverchargeMacro(any_macro);
-  } else if(any_macro.type == "deployable") {
+  } else if (any_macro.type == "deployable") {
     return prepareDeployableMacro(any_macro);
-  } else if(any_macro.type == "struct") {
+  } else if (any_macro.type == "struct") {
     return prepareStructureMacro(any_macro);
-  } else if(any_macro.type == "stress") {
+  } else if (any_macro.type == "stress") {
     return prepareOverheatMacro(any_macro);
-  } else if(any_macro.type == "skill") {
+  } else if (any_macro.type == "skill") {
     return prepareTriggerMacro(any_macro);
-  } else if(any_macro.type != "generic_item") {
+  } else if (any_macro.type != "generic_item") {
     // abandon hope
     ui.notifications.error("Invalid macro type " + (any_macro as any).type);
     return;
@@ -251,7 +250,7 @@ export async function prepareMacro(any_macro: AnyMacroCtx) {
       await prepareTriggerMacro({
         ...any_macro,
         item: any_macro.item as RegRef<EntryType.SKILL>,
-        type: "skill"
+        type: "skill",
       });
       break;
     // Pilot OR Mech weapon. We prefer direct invocation of prepareAttackMacro, but this is fine
@@ -269,7 +268,7 @@ export async function prepareMacro(any_macro: AnyMacroCtx) {
       prepareSystemMacro({
         ...macro,
         type: "system",
-        item: macro.item as RegRef<EntryType.MECH_SYSTEM>
+        item: macro.item as RegRef<EntryType.MECH_SYSTEM>,
       });
       break;
     // Talents
@@ -278,7 +277,7 @@ export async function prepareMacro(any_macro: AnyMacroCtx) {
         ...any_macro,
         item: any_macro.item as RegRef<EntryType.TALENT>,
         type: "talent",
-        rank: 1
+        rank: 1,
       });
       break;
     // Gear
@@ -391,9 +390,9 @@ Foundry will do its best to use the selected token whenever that token is an ins
   // Sanity check - don't allow macro invocation of unlinked actors if not resolved as token
   //@ts-ignore actorLink isn't documented
   // if (result.data?.token?.actorLink && !was_actor_supplied) {
-    // ui.notifications.error(
-      // `Macros for an unlinked actor must be invoked with a specific token selected. If this is undesired, link the actor's token prototype.`
-    // );
+  // ui.notifications.error(
+  // `Macros for an unlinked actor must be invoked with a specific token selected. If this is undesired, link the actor's token prototype.`
+  // );
   // }
 
   return result;
@@ -430,16 +429,16 @@ export async function renderMacro(actor: Actor, template: string, templateData: 
   // Find the d20 result if we can. Currently assumes a single dice. Augment the template with this if available
   let d20_roll = 0;
   let d20s: Die[] | undefined = roll?.dice.filter((d: Die) => (d as any).faces == 20);
-  if(d20s?.length) {
+  if (d20s?.length) {
     console.log("d20s", d20s);
     //@ts-ignore Dice result type is wrong
     d20_roll = d20s[0].results[0]?.result;
   }
 
   const html = await renderTemplate(template, {
-    ...templateData, 
+    ...templateData,
     roll,
-    d20_roll
+    d20_roll,
   });
 
   let chat_data = {
@@ -481,7 +480,7 @@ export async function prepareStatMacro(macro: StatMacroCtx) {
   // Determine which Actor to speak as
   let actor = await get_macro_speaker(macro.actor);
   let ent = await actor.data.data.derived.mmec_promise;
-  let stat = resolve_dotpath({mm: ent}, macro.stat_path);
+  let stat = resolve_dotpath({ mm: ent }, macro.stat_path);
 
   await rollStatMacro(actor, {
     ...macro,
@@ -502,32 +501,35 @@ async function prepareActionMacro(macro: ActionMacroCtx) {
   let action: Action;
   let heat_tag_val;
   let tags: TagInstance[];
-  if(raw_item) {
+  if (raw_item) {
     // Get as mm
     item = (await raw_item.data.data.derived.mmec_promise).ent;
 
     // Attempt to resolve from item actions
     let x: Action | null = resolve_dotpath(item, macro.action_path);
-    if(!x) {
+    if (!x) {
       throw new Error(`Could not resolve action "${macro.action_path}"`);
     }
 
     // Get tags/heat. Kinda annoying since we gotta resolve down to profiles
     let corrected: MechWeaponProfile | AnyMMItem = item;
-    if(item instanceof MechWeapon) {
+    if (item instanceof MechWeapon) {
       corrected = macro.profile != null ? item.Profiles[macro.profile] : item.SelectedProfile;
     }
 
     tags = crude_get_tags(corrected);
     action = x;
     heat_tag_val = roll_item_heat(corrected, action);
-
   } else {
     // Attempt to resolve from global actions
     let x = BaseActionsMap.get(macro.action_path.toString());
-    if(!x) {
+    if (!x) {
       console.error("Unresolved reference: ", macro.item);
-      throw new Error("Macro item reference failed to resolve, and " + macro.action_path + " is not a valid global action id");
+      throw new Error(
+        "Macro item reference failed to resolve, and " +
+          macro.action_path +
+          " is not a valid global action id"
+      );
     }
     action = x;
     heat_tag_val = action.HeatCost ?? 0;
@@ -539,19 +541,19 @@ async function prepareActionMacro(macro: ActionMacroCtx) {
   await renderMacro(actor, template, {
     action,
     heat_cost: heat_tag_val,
-    tags
+    tags,
   });
 
   // Only increase heat if we haven't disabled it
-  if (game.settings.get(LANCER.sys_name, LANCER.setting_automation)) { 
+  if (game.settings.get(LANCER.sys_name, LANCER.setting_automation)) {
     // Apply heat
-    if(game.settings.get(LANCER.sys_name, LANCER.setting_action_heat) && has_heat(mm.ent)) {
+    if (game.settings.get(LANCER.sys_name, LANCER.setting_action_heat) && has_heat(mm.ent)) {
       (mm.ent as Mech | Npc | Deployable).CurrentHeat += heat_tag_val;
       await mm.ent.writeback();
     }
 
     // Consume limited
-    if(item && game.settings.get(LANCER.sys_name, LANCER.setting_auto_limited) && has_uses(item)) {
+    if (item && game.settings.get(LANCER.sys_name, LANCER.setting_auto_limited) && has_uses(item)) {
       item.Uses = bound_int(item.Uses - 1, 0, 999);
       await item.writeback();
     }
@@ -606,7 +608,7 @@ async function rollStatMacro(actor: Actor, data: Lancer20Roll) {
 async function prepareTalentMacro(macro: TalentMacroCtx) {
   // Determine which Actor to speak as
   let actor = await get_macro_speaker(macro.actor);
-  let talent = (await get_macro_item(macro, true)) as LancerTalent
+  let talent = (await get_macro_item(macro, true)) as LancerTalent;
   let mm_talent = await talent.data.data.derived.mmec_promise;
 
   // Construct the template
@@ -650,11 +652,11 @@ async function prepareWeaponMacro(macro: WeaponMacroCtx) {
   let tags = corrected.Tags;
   let overkill = corrected.Tags.some(t => t.Tag.IsOverkill);
   let effects: Effect[] = [];
-  
-  if(corrected.Effect) {
+
+  if (corrected.Effect) {
     effects.push({
       title: "EFFECT",
-      body:  corrected.Effect
+      body: corrected.Effect,
     });
   }
 
@@ -664,10 +666,10 @@ async function prepareWeaponMacro(macro: WeaponMacroCtx) {
     let feature = item as NpcFeature;
     tier = funcs.bound_int(feature.TierOverride || actor.Tier, 1, 3) - 1;
     let on_hit = (item as NpcFeature).OnHit;
-    if(on_hit) {
+    if (on_hit) {
       effects.push({
         title: "EFFECT",
-        body: NpcFeature.format_tiered_string(on_hit, tier)
+        body: NpcFeature.format_tiered_string(on_hit, tier),
       });
     }
   }
@@ -707,28 +709,33 @@ async function prepareWeaponMacro(macro: WeaponMacroCtx) {
 
   // Set hit effects for mech weapons
   if (corrected instanceof MechWeaponProfile) {
-    if(corrected.OnAttack) {
+    if (corrected.OnAttack) {
       effects.push({
         title: "ON ATTACK",
-        body: corrected.OnAttack
+        body: corrected.OnAttack,
       });
     }
-    if(corrected.OnHit) {
+    if (corrected.OnHit) {
       effects.push({
         title: "ON HIT",
-        body: corrected.OnHit
+        body: corrected.OnHit,
       });
     }
-    if(corrected.OnCrit) {
+    if (corrected.OnCrit) {
       effects.push({
         title: "ON CRIT",
-        body: corrected.OnCrit
+        body: corrected.OnCrit,
       });
     }
   }
 
   // Formerly its own function - we now move on to the task of actually rolling things
-  let atk_str = await buildAttackRollString(title, acc, flat_bonuses.join("+"), macro.skip_acc_prompt);
+  let atk_str = await buildAttackRollString(
+    title,
+    acc,
+    flat_bonuses.join("+"),
+    macro.skip_acc_prompt
+  );
   if (!atk_str) return;
   let attack_roll = new Roll(atk_str).roll();
   const attack_tt = await attack_roll.getTooltip();
@@ -788,21 +795,21 @@ async function prepareWeaponMacro(macro: WeaponMacroCtx) {
         roll: droll,
         tt: tt,
         d_type: dam.DamageType,
-        total: droll.total
+        total: droll.total,
       });
     }
   }
 
   // Bump up to reliable
   let total_damage = 0;
-  for(let d of damage_results) {
+  for (let d of damage_results) {
     total_damage += d.roll.total;
   }
-  // If not meeting reliable, then bump up (either by promoting first entry, or 
-  if(total_damage < reliable) {
-    if(damage_results.length) {
+  // If not meeting reliable, then bump up (either by promoting first entry, or
+  if (total_damage < reliable) {
+    if (damage_results.length) {
       let first_roll = damage_results[0];
-      first_roll.total += (reliable - total_damage);
+      first_roll.total += reliable - total_damage;
     } else {
       // No rolls? Make our own
       let roll = new Roll(reliable.toString());
@@ -810,7 +817,7 @@ async function prepareWeaponMacro(macro: WeaponMacroCtx) {
         d_type: DamageType.Variable,
         roll,
         tt: await roll.getTooltip(),
-        total: reliable
+        total: reliable,
       });
     }
   }
@@ -821,29 +828,29 @@ async function prepareWeaponMacro(macro: WeaponMacroCtx) {
   // Inflict overkill heat / consume limited / unload
   if (game.settings.get(LANCER.sys_name, LANCER.setting_automation)) {
     // Overkill
-    if(game.settings.get(LANCER.sys_name, LANCER.setting_overkill_heat)) {
+    if (game.settings.get(LANCER.sys_name, LANCER.setting_overkill_heat)) {
       if (has_heat(actor)) {
         actor.CurrentHeat += overkill_heat;
       }
     }
 
     // Self heat
-    if(game.settings.get(LANCER.sys_name, LANCER.setting_action_heat)) {
+    if (game.settings.get(LANCER.sys_name, LANCER.setting_action_heat)) {
       if (has_heat(actor)) {
         actor.CurrentHeat += tag_heat;
       }
     }
 
     // Limited
-    if(game.settings.get(LANCER.sys_name, LANCER.setting_auto_limited)) {
-      if(funcs.tag_util.is_limited(corrected)) {
-        item.Uses = funcs.bound_int(item.Uses -  1, 0, raw_item.data.data.derived.max_uses);
+    if (game.settings.get(LANCER.sys_name, LANCER.setting_auto_limited)) {
+      if (funcs.tag_util.is_limited(corrected)) {
+        item.Uses = funcs.bound_int(item.Uses - 1, 0, raw_item.data.data.derived.max_uses);
       }
     }
 
     // Unload
-    if(game.settings.get(LANCER.sys_name, LANCER.setting_auto_loading)) {
-      if(funcs.tag_util.is_loading(corrected)) {
+    if (game.settings.get(LANCER.sys_name, LANCER.setting_auto_loading)) {
+      if (funcs.tag_util.is_loading(corrected)) {
         item.Loaded = false;
       }
     }
@@ -939,7 +946,7 @@ export async function prepareDeployableMacro(macro: DeployableMacroCtx) {
   // Get as MM
   let item = (await raw_item.data.data.derived.mmec_promise).ent;
   let deployable: Deployable | null = resolve_dotpath(item, macro.deployable_path);
-  if(!deployable) {
+  if (!deployable) {
     throw new Error(`Could not resolve deployable "${macro.deployable_path}"`);
   }
 
@@ -952,7 +959,7 @@ export async function prepareDeployableMacro(macro: DeployableMacroCtx) {
   });
 }
 
-export async function prepareSystemMacro(macro: SystemMacroCtx) {  
+export async function prepareSystemMacro(macro: SystemMacroCtx) {
   // Split up args into sensible bits
   let raw_actor = await get_macro_speaker(macro.actor);
   let raw_item = (await get_macro_item(macro, true)) as LancerMechSystem | LancerNpcFeature;
@@ -963,7 +970,7 @@ export async function prepareSystemMacro(macro: SystemMacroCtx) {
 
   // Apply heat if tagged to do so
   let heat_cost = roll_item_heat(item);
-  if(has_heat(actor)) {
+  if (has_heat(actor)) {
     if (
       game.settings.get(LANCER.sys_name, LANCER.setting_automation) &&
       game.settings.get(LANCER.sys_name, LANCER.setting_pilot_oc_heat)
@@ -978,7 +985,7 @@ export async function prepareSystemMacro(macro: SystemMacroCtx) {
     title: item.Name,
     description: item.Effect,
     tags: item.Tags,
-    heat_cost
+    heat_cost,
   });
 }
 
@@ -1062,7 +1069,15 @@ export async function prepareTechMacro(macro: TechMacroCtx) {
   ];
 
   // Got all o' the ingredients
-  await rollTechMacro(raw_actor, item.Name, acc, flat_bonuses.join("+"), effects, item.Tags, macro.skip_acc_prompt);
+  await rollTechMacro(
+    raw_actor,
+    item.Name,
+    acc,
+    flat_bonuses.join("+"),
+    effects,
+    item.Tags,
+    macro.skip_acc_prompt
+  );
 }
 
 async function rollTechMacro(
@@ -1072,7 +1087,7 @@ async function rollTechMacro(
   flat_bonus: string,
   effects: Effect[],
   tags: TagInstance[],
-  skip?: boolean // Skip acc/diff 
+  skip?: boolean // Skip acc/diff
 ) {
   let atk_str = await buildAttackRollString(title, acc, flat_bonus, skip);
   if (!atk_str) return;
@@ -1093,9 +1108,13 @@ async function rollTechMacro(
 }
 
 // asks for accuracy and difficulty. Returns the result. The supplied accuracy is used as a default value
-export async function promptAccDiffModifier(acc: number, skip?: boolean, title?: string): Promise<number> {
+export async function promptAccDiffModifier(
+  acc: number,
+  skip?: boolean,
+  title?: string
+): Promise<number> {
   if (!acc) acc = 0;
-  if(skip) return acc;
+  if (skip) return acc;
   let diff = 0;
   if (acc < 0) {
     diff = -acc;
@@ -1200,7 +1219,7 @@ export async function prepareOverheatMacro(macro: StressMacroCtx) {
   // Verify type
   if (has_struct_stress(actor)) {
     // Subtract if we plan on doing so. The overheat_mech call will writeback
-    if(macro.subtract) {
+    if (macro.subtract) {
       actor.CurrentStress = funcs.bound_int(actor.CurrentStress - 1, 0, 99);
     }
 
@@ -1223,12 +1242,11 @@ export async function prepareStructureMacro(macro: StructMacroCtx) {
   let actor = (await raw_actor.data.data.derived.mmec_promise).ent;
 
   // Verify type
-  if (has_struct_stress(actor)) {  
+  if (has_struct_stress(actor)) {
     // Subtract if we plan on doing so. The overheat_mech call will writeback
-    if(macro.subtract) {
+    if (macro.subtract) {
       actor.CurrentStructure = funcs.bound_int(actor.CurrentStructure - 1, 0, 99);
     }
-
 
     // Hand it off to the actor to overheat
     await structure_mech(raw_actor, actor);
@@ -1239,12 +1257,12 @@ export async function prepareStructureMacro(macro: StructMacroCtx) {
   }
 }
 
-function any_to_b64( dat: any ): string {
-    return window.btoa(encodeURIComponent(JSON.stringify(dat)));
+function any_to_b64(dat: any): string {
+  return window.btoa(encodeURIComponent(JSON.stringify(dat)));
 }
 
-function b64_to_any( str: string ): any {
-    return JSON.parse(decodeURIComponent(window.atob( str )));
+function b64_to_any(str: string): any {
+  return JSON.parse(decodeURIComponent(window.atob(str)));
 }
 
 // Converts an ActionMacroCtx into the appropriate parameters
@@ -1269,7 +1287,6 @@ interface Effect {
   body: string;
 }
 
-
 // Allows clicking/dragging of macros
 export function HANDLER_activate_macros(html: JQuery) {
   let macro_elts = html.find("[data-macro-info]");
@@ -1285,7 +1302,7 @@ export function HANDLER_activate_macros(html: JQuery) {
     let macro = recover_macro_from_elt(elt[0]);
     let drag_payload: DraggedMacro = {
       macro,
-      shibboleth: "yep"
+      shibboleth: "yep",
     };
     return JSON.stringify(drag_payload);
   });
@@ -1294,18 +1311,18 @@ export function HANDLER_activate_macros(html: JQuery) {
 // Quickly return the tag/action heat for using an item. Respects dice based heat increases
 function roll_item_heat(item: AnyMMItem | MechWeaponProfile, action?: Action): number {
   // Action heatcost always override
-  if(action?.HeatCost != null) {
+  if (action?.HeatCost != null) {
     return action.HeatCost;
   }
 
   // No tags? bail
-  if((item as any).Tags == null) {
+  if ((item as any).Tags == null) {
     return 0;
   }
 
   let self_heat_tag = crude_get_tags(item).find(t => t.Tag.ID == "tg_heat_self");
-  if(self_heat_tag?.Value) {
-     return (new Roll(self_heat_tag.Value.toString())).roll().total;
+  if (self_heat_tag?.Value) {
+    return new Roll(self_heat_tag.Value.toString()).roll().total;
   } else {
     return 0;
   }
