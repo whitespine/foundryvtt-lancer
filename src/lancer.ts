@@ -28,20 +28,23 @@ import { LancerDeployableSheet } from "./module/actor/deployable-sheet";
 import { LancerMechSheet } from "./module/actor/mech-sheet";
 import { LancerItemSheet } from "./module/item/item-sheet";
 import { LancerFrameSheet } from "./module/item/frame-sheet";
-
-// Import helpers
-import { preloadTemplates } from "./module/preloadTemplates";
-import { registerSettings } from "./module/settings";
-import { compact_tag_list, tag_list_display } from "./module/helpers/tags";
-import * as migrations from "./module/migration";
 import { addLCPManager } from "./module/apps/lcpManager";
-
-// Import Machine Mind and helpers
-import * as macros from "./module/macros";
 
 // Import node modules
 import compareVersions = require("compare-versions");
+
+// Import Machine Mind 
 import { EntryType } from "machine-mind";
+
+// Import macros/utility
+import * as macros from "./module/macros";
+import { registerSettings } from "./module/settings";
+import { preloadTemplates } from "./module/preloadTemplates";
+import * as migrations from "./module/migration";
+import { WeaponRangeTemplate } from "./module/pixi/weapon-range-template";
+
+// Import helpers
+import { compact_tag_list, tag_list_display } from "./module/helpers/tags";
 import {
   resolve_helper_dotpath,
   popout_editor_button,
@@ -128,6 +131,9 @@ Hooks.once("init", async function () {
     entities: {
       LancerActor,
       LancerItem,
+    },
+    canvas: {
+      WeaponRangeTemplate,
     },
     prepareMacro: macros.prepareMacro,
     prepareTechMacro: macros.prepareTechMacro,
@@ -429,34 +435,7 @@ Hooks.once("init", async function () {
 // Make an awaitable for when this shit is done
 export const system_ready: Promise<void> = new Promise(success => {
   Hooks.once("ready", async function () {
-    // Determine whether a system migration is required and feasible
-    const currentVersion = game.settings.get(LANCER.sys_name, LANCER.setting_migration);
-    // Modify these constants to set which Lancer version numbers need and permit migration.
-    const NEEDS_MIGRATION_VERSION = "0.1.7";
-    const COMPATIBLE_MIGRATION_VERSION = "0.1.6";
-    let needMigration = currentVersion
-      ? compareVersions(currentVersion, NEEDS_MIGRATION_VERSION)
-      : 1;
-
-    // Check whether system has been updated since last run.
-    if (compareVersions(currentVersion, game.system.data.version) != 0 && game.user.isGM) {
-      // Un-hide the welcome message
-      await game.settings.set(LANCER.sys_name, LANCER.setting_welcome, false);
-
-      if (needMigration <= 0) {
-        if (currentVersion && compareVersions(currentVersion, COMPATIBLE_MIGRATION_VERSION) < 0) {
-          // System version is too old for migration
-          ui.notifications.error(
-            `Your LANCER system data is from too old a version and cannot be reliably migrated to the latest version. The process will be attempted, but errors may occur.`,
-            { permanent: true }
-          );
-        }
-        // Perform the migration
-        await migrations.migrateWorld();
-      }
-      // Set the version for future migration and welcome message checking
-      await game.settings.set(LANCER.sys_name, LANCER.setting_migration, game.system.data.version);
-    }
+    await versionCheck();
 
     // Show welcome message if not hidden.
     if (!game.settings.get(LANCER.sys_name, LANCER.setting_welcome)) {
@@ -532,6 +511,7 @@ Hooks.on("renderChatMessage", async (cm: ChatMessage, html: JQuery<HTMLElement>,
 Hooks.on("hotbarDrop", async (_bar: any, data: macros.DraggedMacro, slot: number) => {
   let macro: macros.AnyMacroCtx = data.macro;
   console.log(`${lp} Data dropped on hotbar:`, data);
+  // Ignore macro
   if (data.shibboleth != "yep") {
     // Ah shoot - it's a world item, probably. Coerce into an item macro
     let messy_drop = ((data as unknown) as NativeDrop)!;
@@ -616,3 +596,63 @@ Hooks.on("canvasReady", (canvas: any) => {
   }
 });
 */
+
+
+/**
+ * Performs our version validation
+ * Uses window.FEATURES to check theoretical Foundry compatibility with our features
+ * Also performs system version checks
+ */
+async function versionCheck() {
+  // Determine whether a system migration is required and feasible
+  const currentVersion = game.settings.get(LANCER.sys_name, LANCER.setting_migration);
+  // Modify these constants to set which Lancer version numbers need and permit migration.
+  const NEEDS_MIGRATION_VERSION = "0.1.7";
+  const COMPATIBLE_MIGRATION_VERSION = "0.1.6";
+  let needMigration = currentVersion ? compareVersions(currentVersion, NEEDS_MIGRATION_VERSION) : 1;
+
+  // Check whether system has been updated since last run.
+  if (compareVersions(currentVersion, game.system.data.version) != 0 && game.user.isGM) {
+    // Un-hide the welcome message
+    await game.settings.set(LANCER.sys_name, LANCER.setting_welcome, false);
+
+    if (needMigration <= 0) {
+      if (currentVersion && compareVersions(currentVersion, COMPATIBLE_MIGRATION_VERSION) < 0) {
+        // System version is too old for migration
+        ui.notifications.error(
+          `Your LANCER system data is from too old a version and cannot be reliably migrated to the latest version. The process will be attempted, but errors may occur.`,
+          { permanent: true }
+        );
+      }
+      // Perform the migration
+      await migrations.migrateWorld();
+    }
+    // Set the version for future migration and welcome message checking
+    await game.settings.set(LANCER.sys_name, LANCER.setting_migration, game.system.data.version);
+  }
+
+  // Use the new FEATURES dict to see if we can assume that there will be issues
+  // I think this is up to date with all currently in use, but we'll need to keep it updated
+  // https://gitlab.com/foundrynet/foundryvtt/-/issues/3959#note_441254976
+  let supportedFeatures = {
+    ACTORS: 2,
+    CHAT: 2,
+    COMPENDIUM: 2,
+    ENTITIES: 4,
+    ITEMS: 2,
+    MACROS: 1,
+    SETTINGS: 2,
+    TOKENS: 3,
+  };
+
+  for (const k in supportedFeatures) {
+    // This is fine so...
+    //@ts-ignore
+    if (supportedFeatures[k] !== window.FEATURES[k]) {
+      console.log(`Major version error for feature ${k}`);
+      ui.notifications.error(
+        `Warning: A major version incompatibility has been detected. You may experience issues, please return to a supported version.`
+      );
+    }
+  }
+}

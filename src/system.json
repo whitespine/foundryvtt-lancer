@@ -2,10 +2,10 @@
   "name": "lancer",
   "title": "LANCER",
   "description": "A Foundry VTT game system for <a href=\"https://massif-press.itch.io/corebook-pdf\">Lancer</a> by <a href=\"https://massif-press.itch.io/\">Massif Press</a>, a mud-and-lasers tactical mech RPG.",
-  "version": "0.1.13",
+  "version": "4.2.0",
   "minimumCoreVersion": "0.7.0",
-  "compatibleCoreVersion": "0.7.6",
-  "author": "Eranziel",
+  "compatibleCoreVersion": "0.7.9",
+  "author": "UNSHACKLED WHITESPINE",
   "scripts": [],
   "esmodules": ["lancer.js"],
   "styles": [
@@ -13,18 +13,34 @@
     "fonts/compcon/glyphs.css",
     "fonts/mdi/css/materialdesignicons.css"
   ],
-  "packs": [],
+  "packs": [
+    {
+      "name": "aoe-templates",
+      "label": "AoE Templates",
+      "system": "lancer",
+      "module": "lancer",
+      "path": "packs/aoe-templates.db",
+      "entity": "Macro"
+    },
+    {
+      "name": "core_macros",
+      "label": "LANCER Macros",
+      "system": "lancer",
+      "path": "./packs/core_macros.db",
+      "entity": "Macro"
+    }
+  ],
   "languages": [],
   "socket": true,
   "gridDistance": 1,
   "gridUnits": "",
-  "primaryTokenAttribute": "mech.hp",
-  "secondaryTokenAttribute": "mech.heat",
-  "url": "https://github.com/Eranziel/foundryvtt-lancer",
-  "manifest": "https://raw.githubusercontent.com/Eranziel/foundryvtt-lancer/master/src/system.json",
-  "download": "https://github.com/Eranziel/foundryvtt-lancer/raw/v0.1.13/package/lancer-v0.1.13.zip",
+  "primaryTokenAttribute": "derived.current_hp",
+  "secondaryTokenAttribute": "derived.current_heat",
+  "url": "https://github.com/whitespine/foundryvtt-lancer",
+  "manifest": "https://raw.githubusercontent.com/whitespine/foundryvtt-lancer/master/src/system.json",
+  "download": "https://github.com/Eranziel/foundryvtt-lancer/raw/v0.1.19/package/lancer-v0.1.19.zip",
   "license": "GNU GPLv3",
-  "readme": "https://github.com/Eranziel/foundryvtt-lancer/blob/master/README.md",
-  "bugs": "https://github.com/Eranziel/foundryvtt-lancer/issues/new/choose",
-  "changelog": "https://github.com/Eranziel/foundryvtt-lancer/blob/master/CHANGELOG.md"
+  "readme": "https://github.com/whitespine/foundryvtt-lancer/blob/master/README.md",
+  "bugs": "https://github.com/whitespine/foundryvtt-lancer/issues/new/choose",
+  "changelog": "https://github.com/shitespine/foundryvtt-lancer/blob/master/CHANGELOG.md"
 }
