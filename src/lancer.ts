@@ -511,10 +511,13 @@ Hooks.on("renderChatMessage", async (cm: ChatMessage, html: JQuery<HTMLElement>,
 Hooks.on("hotbarDrop", async (_bar: any, data: macros.DraggedMacro, slot: number) => {
   let macro: macros.AnyMacroCtx = data.macro;
   console.log(`${lp} Data dropped on hotbar:`, data);
-  // Ignore macro
+
   if (data.shibboleth != "yep") {
     // Ah shoot - it's a world item, probably. Coerce into an item macro
     let messy_drop = ((data as unknown) as NativeDrop)!;
+
+    // Ignore macro
+    if(messy_drop.type == "Macro") return;
 
     // Attempt to resolve it
     let resolved = await resolve_native_drop(messy_drop);

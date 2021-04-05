@@ -195,6 +195,11 @@ export type NativeDrop =
       pack?: string;
     }
   | {
+      type: "Macro";
+      id: string;
+      pack?: string;
+    }
+  | {
       type: "JournalEntry";
       id: string;
       pack?: string;
