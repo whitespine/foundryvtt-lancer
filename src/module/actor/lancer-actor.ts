@@ -22,6 +22,9 @@ import { renderMacro } from "../macros";
 const lp = LANCER.log_prefix;
 
 export function lancerActorInit(data: any) {
+  // As a crude heuristic, we assume that if our incoming data has an id, we should bail - it's already initialized
+  if(data._id) return;
+
   // Produce our default data
   let default_data: any = {};
   let display_mode: number = CONST.TOKEN_DISPLAY_MODES.HOVER;

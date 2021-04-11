@@ -66,10 +66,15 @@ export class LancerNPCSheet extends LancerActorSheet<EntryType.NPC> {
       return null;
     }
 
+    // Delete prior classes if we're dropping a new one
+    if(item.type == EntryType.NPC_CLASS) {
+      await Promise.all(sheet_data.mm.ent.Classes.map(c => c.destroy_entry()));
+    }
+
     // Make the context for the item
     const item_mm: MMEntityContext<EntryType> = await mm_wrap_item(item);
 
-    // Always add the item to the pilot inventory, now that we know it is a valid pilot posession
+    // Always add the item to the npc inventory, now that we know it is a valid npc posession
     // Make a new ctx to hold the item and a post-item-add copy of our mech
     let new_ctx = new OpCtx();
     let new_live_item = await item_mm.ent.insinuate(this_mm.reg, new_ctx);
